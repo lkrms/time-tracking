@@ -1,0 +1,14 @@
+{
+    "name": "lkrms/clockify-automation",
+    "license": "MIT",
+    "description": "Clockify utilities",
+    "require": {
+        "php": ">=7.2",
+        "lkrms/util": "^0.4.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lkrms\\Clockify\\": "src/"
+        }
+    }
+}
