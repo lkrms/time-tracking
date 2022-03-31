@@ -8,7 +8,7 @@ namespace Lkrms\Clockify\Entity;
  *
  * @package Lkrms\Clockify
  */
-class Workspace extends \Lkrms\Sync\SyncEntity
+class User extends \Lkrms\Sync\SyncEntity
 {
     /**
      * @var string
@@ -18,12 +18,12 @@ class Workspace extends \Lkrms\Sync\SyncEntity
     /**
      * @var string
      */
-    public $Name;
+    public $Email;
 
     /**
-     * @var array
+     * @var string
      */
-    public $HourlyRate;
+    public $Name;
 
     /**
      * @var array
@@ -31,19 +31,29 @@ class Workspace extends \Lkrms\Sync\SyncEntity
     public $Memberships;
 
     /**
+     * @var string
+     */
+    public $ProfilePicture;
+
+    /**
+     * @var string
+     */
+    public $ActiveWorkspace;
+
+    /**
+     * @var string
+     */
+    public $DefaultWorkspace;
+
+    /**
      * @var array
      */
-    public $WorkspaceSettings;
+    public $Settings;
 
     /**
      * @var string
      */
-    public $ImageUrl;
-
-    /**
-     * @var string
-     */
-    public $FeatureSubscriptionType;
+    public $Status;
 
 }
 

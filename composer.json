@@ -4,7 +4,7 @@
     "description": "Clockify utilities",
     "require": {
         "php": ">=7.2",
-        "lkrms/util": "^0.4.5"
+        "lkrms/util": "^0.7.2"
     },
     "autoload": {
         "psr-4": {

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "524b42cc4a8aeee1346b143e6b5e2771",
+    "content-hash": "cb3148b9a20976f42bc7aefafad05519",
     "packages": [
         {
             "name": "filp/whoops",
@@ -78,28 +78,79 @@
             "time": "2022-01-07T12:00:00+00:00"
         },
         {
-            "name": "lkrms/util",
-            "version": "v0.4.5",
+            "name": "lkrms/dice",
+            "version": "v4.0.3.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/lkrms/util-php.git",
-                "reference": "37f45d1efb4dc961af14f891aeab204dac756b49"
+                "url": "https://github.com/lkrms/Dice.git",
+                "reference": "50a8c9c01510194faa5ef72ed87f91e10e237623"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/util-php/zipball/37f45d1efb4dc961af14f891aeab204dac756b49",
-                "reference": "37f45d1efb4dc961af14f891aeab204dac756b49",
+                "url": "https://api.github.com/repos/lkrms/Dice/zipball/50a8c9c01510194faa5ef72ed87f91e10e237623",
+                "reference": "50a8c9c01510194faa5ef72ed87f91e10e237623",
                 "shasum": ""
             },
             "require": {
+                "php": ">=7.0.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Dice\\": "./"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-2-Clause"
+            ],
+            "description": "A minimalist Dependency injection container (DIC) for PHP. Forked from level-2/dice.",
+            "homepage": "http://r.je/dice.html",
+            "keywords": [
+                "dependency injection",
+                "dependency injection container",
+                "di",
+                "ioc"
+            ],
+            "support": {
+                "source": "https://github.com/lkrms/Dice/tree/v4.0.3.1"
+            },
+            "time": "2022-03-23T23:40:39+00:00"
+        },
+        {
+            "name": "lkrms/util",
+            "version": "v0.7.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/lkrms/util-php.git",
+                "reference": "3af2c705058918f9859063d0d07fe03f214fa94e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/lkrms/util-php/zipball/3af2c705058918f9859063d0d07fe03f214fa94e",
+                "reference": "3af2c705058918f9859063d0d07fe03f214fa94e",
+                "shasum": ""
+            },
+            "require": {
+                "composer-runtime-api": "^2.2",
                 "filp/whoops": "^2.14",
-                "lib-curl": "*",
+                "lkrms/dice": "^4.0.3.1",
                 "php": ">=7.2",
                 "psr/log": "^1.1"
             },
-            "suggest": {
-                "analog/analog": "Use Analog as a target for console output methods in \\Lkrms\\Console"
+            "require-dev": {
+                "analog/analog": "^1.0",
+                "phpstan/phpstan": "^1.5"
             },
+            "suggest": {
+                "analog/analog": "Log console output to Analog"
+            },
+            "bin": [
+                "bin/lk-util"
+            ],
             "type": "library",
             "autoload": {
                 "psr-4": {
@@ -110,12 +161,12 @@
             "license": [
                 "MIT"
             ],
-            "description": "Frequently used functions + cURL wrapper + CLI helper",
+            "description": "A PHP toolkit with opinionated defaults and a small footprint",
             "support": {
                 "issues": "https://github.com/lkrms/util-php/issues",
-                "source": "https://github.com/lkrms/util-php/tree/v0.4.5"
+                "source": "https://github.com/lkrms/util-php/tree/v0.7.3"
             },
-            "time": "2022-03-03T06:10:37+00:00"
+            "time": "2022-03-31T23:26:25+00:00"
         },
         {
             "name": "psr/log",
