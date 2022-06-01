@@ -2,16 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Lkrms\Clockify\Entity;
+namespace Lkrms\Time\Entity;
 
-/**
- *
- * @package Lkrms\Clockify
- */
 class TimeEntry extends \Lkrms\Sync\SyncEntity
 {
     /**
-     * @var string
+     * @var int|string
      */
     public $Id;
 
@@ -19,11 +15,6 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
      * @var string
      */
     public $Description;
-
-    /**
-     * @var array
-     */
-    public $Tags;
 
     /**
      * @var User
@@ -36,19 +27,29 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
     public $Billable;
 
     /**
-     * @var array
+     * @var Task
      */
     public $Task;
 
     /**
-     * @var array
+     * @var Project
      */
     public $Project;
 
     /**
-     * @var array
+     * @var DateTime
      */
-    public $TimeInterval;
+    public $Start;
+
+    /**
+     * @var DateTime
+     */
+    public $End;
+
+    /**
+     * @var int
+     */
+    public $Seconds;
 
     /**
      * @var Workspace
@@ -56,19 +57,27 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
     public $Workspace;
 
     /**
-     * @var array
+     * @var float
      */
-    public $HourlyRate;
-
-    /**
-     * @var array
-     */
-    public $CustomFieldValues;
+    public $BillableRate;
 
     /**
      * @var bool
      */
     public $IsLocked;
 
-}
+    public function getBillableAmount(): float
+    {
+        return $this->Billable
+            ? round(($this->BillableRate ?: 0) * ($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            : 0;
+    }
 
+    public function getBillableHours(): float
+    {
+        return $this->Billable
+            ? round(($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            : 0;
+    }
+
+}

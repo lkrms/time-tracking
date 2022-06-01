@@ -1,0 +1,21 @@
+#!/usr/bin/env php
+<?php
+
+use Lkrms\App\App;
+use Lkrms\Cli\Cli;
+use Lkrms\Time\ClockifyProvider;
+use Lkrms\Time\Command\GenerateInvoices;
+
+require (__DIR__ . "/../vendor/autoload.php");
+
+ini_set("memory_limit", "-1");
+
+$app = App::load(dirname(__DIR__));
+$app->enableCache();
+
+ClockifyProvider::register();
+
+GenerateInvoices::register(["invoice", "generate"]);
+
+$status = Cli::run();
+exit ($status);

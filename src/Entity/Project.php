@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
-class Workspace extends \Lkrms\Sync\SyncEntity
+class Project extends \Lkrms\Sync\SyncEntity
 {
     /**
      * @var int|string
@@ -22,23 +22,38 @@ class Workspace extends \Lkrms\Sync\SyncEntity
     public $HourlyRate;
 
     /**
-     * @var array
+     * @var Client
      */
-    public $Memberships;
+    public $Client;
 
     /**
-     * @var array
+     * @var Workspace
      */
-    public $WorkspaceSettings;
+    public $Workspace;
+
+    /**
+     * @var bool
+     */
+    public $Billable;
 
     /**
      * @var string
      */
-    public $ImageUrl;
+    public $Color;
+
+    /**
+     * @var bool
+     */
+    public $Archived;
+
+    /**
+     * @var Task[]
+     */
+    public $Tasks;
 
     /**
      * @var string
      */
-    public $FeatureSubscriptionType;
+    public $Note;
 
 }

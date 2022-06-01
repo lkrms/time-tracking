@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cb3148b9a20976f42bc7aefafad05519",
+    "content-hash": "20229a32a9a49d4b61cd417bab5fa84a",
     "packages": [
         {
             "name": "filp/whoops",
@@ -122,28 +122,30 @@
         },
         {
             "name": "lkrms/util",
-            "version": "v0.7.3",
+            "version": "v0.13.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lkrms/util-php.git",
-                "reference": "3af2c705058918f9859063d0d07fe03f214fa94e"
+                "reference": "80079317ba00e89c41f0b80d022fb24820e89a8d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/util-php/zipball/3af2c705058918f9859063d0d07fe03f214fa94e",
-                "reference": "3af2c705058918f9859063d0d07fe03f214fa94e",
+                "url": "https://api.github.com/repos/lkrms/util-php/zipball/80079317ba00e89c41f0b80d022fb24820e89a8d",
+                "reference": "80079317ba00e89c41f0b80d022fb24820e89a8d",
                 "shasum": ""
             },
             "require": {
                 "composer-runtime-api": "^2.2",
-                "filp/whoops": "^2.14",
+                "filp/whoops": "^2",
                 "lkrms/dice": "^4.0.3.1",
-                "php": ">=7.2",
-                "psr/log": "^1.1"
+                "php": ">=7.4",
+                "psr/container": "^2",
+                "psr/log": "^1"
             },
             "require-dev": {
-                "analog/analog": "^1.0",
-                "phpstan/phpstan": "^1.5"
+                "analog/analog": "^1",
+                "phpstan/phpstan": "^1",
+                "phpunit/phpunit": "^9"
             },
             "suggest": {
                 "analog/analog": "Log console output to Analog"
@@ -164,9 +166,62 @@
             "description": "A PHP toolkit with opinionated defaults and a small footprint",
             "support": {
                 "issues": "https://github.com/lkrms/util-php/issues",
-                "source": "https://github.com/lkrms/util-php/tree/v0.7.3"
+                "source": "https://github.com/lkrms/util-php/tree/v0.13.2"
             },
-            "time": "2022-03-31T23:26:25+00:00"
+            "time": "2022-05-31T23:21:03+00:00"
+        },
+        {
+            "name": "psr/container",
+            "version": "2.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/container.git",
+                "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/container/zipball/c71ecc56dfe541dbd90c5360474fbc405f8d5963",
+                "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Container\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common Container Interface (PHP FIG PSR-11)",
+            "homepage": "https://github.com/php-fig/container",
+            "keywords": [
+                "PSR-11",
+                "container",
+                "container-interface",
+                "container-interop",
+                "psr"
+            ],
+            "support": {
+                "issues": "https://github.com/php-fig/container/issues",
+                "source": "https://github.com/php-fig/container/tree/2.0.2"
+            },
+            "time": "2021-11-05T16:47:00+00:00"
         },
         {
             "name": "psr/log",
@@ -219,15 +274,75 @@
             "time": "2021-05-03T11:20:27+00:00"
         }
     ],
-    "packages-dev": [],
+    "packages-dev": [
+        {
+            "name": "phpstan/phpstan",
+            "version": "1.7.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpstan/phpstan.git",
+                "reference": "c602f80d66ba425943b0f4aaa27010c822dd8f87"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/c602f80d66ba425943b0f4aaa27010c822dd8f87",
+                "reference": "c602f80d66ba425943b0f4aaa27010c822dd8f87",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2|^8.0"
+            },
+            "conflict": {
+                "phpstan/phpstan-shim": "*"
+            },
+            "bin": [
+                "phpstan",
+                "phpstan.phar"
+            ],
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHPStan - PHP Static Analysis Tool",
+            "support": {
+                "issues": "https://github.com/phpstan/phpstan/issues",
+                "source": "https://github.com/phpstan/phpstan/tree/1.7.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/ondrejmirtes",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/phpstan",
+                    "type": "github"
+                },
+                {
+                    "url": "https://www.patreon.com/phpstan",
+                    "type": "patreon"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/phpstan/phpstan",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2022-05-26T12:59:20+00:00"
+        }
+    ],
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.2"
+        "php": ">=7.4"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }

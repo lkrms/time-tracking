@@ -2,16 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Lkrms\Clockify\Entity;
+namespace Lkrms\Time\Entity;
 
-/**
- *
- * @package Lkrms\Clockify
- */
 class User extends \Lkrms\Sync\SyncEntity
 {
     /**
-     * @var string
+     * @var int|string
      */
     public $Id;
 
@@ -56,4 +52,3 @@ class User extends \Lkrms\Sync\SyncEntity
     public $Status;
 
 }
-

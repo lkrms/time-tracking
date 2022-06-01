@@ -1,0 +1,11 @@
+includes:
+  - phpstan-baseline.neon
+
+parameters:
+  level: 4
+  paths:
+    - src
+    - bin/lk-time
+    - tests
+  bootstrapFiles:
+    - tests/bootstrap.php

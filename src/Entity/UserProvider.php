@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Lkrms\Clockify\Entity;
+namespace Lkrms\Time\Entity;
 
 /**
  * Synchronises User objects with a backend
  *
- * @package Lkrms\Clockify
  */
 interface UserProvider extends \Lkrms\Sync\Provider\ISyncProvider
 {
@@ -23,4 +22,3 @@ interface UserProvider extends \Lkrms\Sync\Provider\ISyncProvider
     public function getUsers(): array;
 
 }
-

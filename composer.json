@@ -1,14 +1,20 @@
 {
-    "name": "lkrms/clockify-automation",
+    "name": "lkrms/time-tracking",
     "license": "MIT",
-    "description": "Clockify utilities",
+    "description": "Time entry automation",
     "require": {
-        "php": ">=7.2",
-        "lkrms/util": "^0.7.2"
+        "php": ">=7.4",
+        "lkrms/util": "^0.13.2"
     },
     "autoload": {
         "psr-4": {
-            "Lkrms\\Clockify\\": "src/"
+            "Lkrms\\Time\\": "src/"
         }
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1"
+    },
+    "config": {
+        "sort-packages": true
     }
 }
