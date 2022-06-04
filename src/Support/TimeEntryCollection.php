@@ -2,91 +2,118 @@
 
 namespace Lkrms\Time\Support;
 
-use ArrayAccess;
-use Countable;
-use Iterator;
+use Lkrms\Container\DI;
+use Lkrms\Core\CollectionOf;
 use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Util\Convert;
+use Lkrms\Util\Env;
+use Lkrms\Util\Generate;
+use Lkrms\Util\Test;
 use UnexpectedValueException;
 
 /**
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
- * @todo Add this to lkrms/util as a generic collection
+ * @method TimeEntry[] toArray()
+ * @method TimeEntryCollection sort()
  */
-class TimeEntryCollection implements Iterator, ArrayAccess, Countable
+class TimeEntryCollection extends CollectionOf
 {
+    protected function getItemClass(): string
+    {
+        return TimeEntry::class;
+    }
+
     /**
-     * @var TimeEntry[]
+     * @param TimeEntry $a
+     * @param TimeEntry $b
+     * @return int
      */
-    private $Items = [];
+    protected function compareItems($a, $b): int
+    {
+        // Sort entries by start time if possible
+        if ($a->Start && $b->Start)
+        {
+            if ($a < $b) { return - 1; }
+            elseif ($a > $b) { return 1; }
+        }
+
+        // If not, sort by ID if both entries have integer IDs
+        if (Test::isIntValue($a->Id) && Test::isIntValue($b->Id))
+        {
+            return ((int)$a->Id) - ((int)$b->Id);
+        }
+
+        // Otherwise leave them as-is
+        return 0;
+    }
 
     /**
-     * @var int
+     * Sort and merge time entries based on the values being displayed and used
+     *
+     * @param int $show A bitmask of `TimeEntry::*` values. Passed to
+     * {@see TimeEntry::getSummary()} when populating the `Description` of
+     * merged entries.
+     * @param callable|null $callback A callback to return values other entries
+     * must match--in addition to the display values enabled by `$show`--to
+     * merge with the given entry.
+     *
+     * This callback, for example, prevents entries with different project IDs
+     * or billable rates being merged:
+     *
+     * ```php
+     * fn(TimeEntry $entry) => [$entry->Project->Id ?? null, $entry->BillableRate]
+     * ```
+     * @return TimeEntryCollection
      */
-    private $Pointer = 0;
-
-    public function current(): mixed
+    public function groupBy(
+        $show = TimeEntry::ALL,
+        callable $callback = null
+    ): TimeEntryCollection
     {
-        return $this->Items[$this->Pointer] ?? false;
-    }
+        $dateFormat = Env::get("time_entry_date_format", "d/m/Y");
+        $timeFormat = Env::get("time_entry_time_format", "g.ia");
 
-    public function key(): mixed
-    {
-        return array_key_exists($this->Pointer, $this->Items)
-            ? $this->Pointer
-            : null;
-    }
+        $times = $this->sort()->toArray();
 
-    public function next(): void
-    {
-        $this->Pointer++;
-    }
-
-    public function rewind(): void
-    {
-        $this->Pointer = 0;
-    }
-
-    public function valid(): bool
-    {
-        return array_key_exists($this->Pointer, $this->Items);
-    }
-
-    public function offsetExists(mixed $offset): bool
-    {
-        return array_key_exists($offset, $this->Items);
-    }
-
-    public function offsetGet(mixed $offset): mixed
-    {
-        return $this->Items[$offset];
-    }
-
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        if (!($value instanceof TimeEntry))
+        /** @var array<string,TimeEntry> */
+        $groupTime    = [];
+        $groupSummary = [];
+        foreach ($times as $t)
         {
-            throw new UnexpectedValueException("Expected an instance of: " . TimeEntry::class);
+            $summary = $t->getSummary(
+                $show & ~TimeEntry::DESCRIPTION,
+                $dateFormat,
+                $timeFormat
+            );
+
+            $groupBy   = !is_null($callback) ? $callback($t) : [];
+            $groupBy[] = $summary;
+            $groupBy   = Generate::hash(...$groupBy);
+
+            if (!array_key_exists($groupBy, $groupTime))
+            {
+                $groupTime[$groupBy]    = $t;
+                $groupSummary[$groupBy] = $summary;
+                continue;
+            }
+
+            $groupTime[$groupBy] = $groupTime[$groupBy]->mergeWith($t);
         }
 
-        if (is_null($offset))
+        /** @var TimeEntryCollection */
+        $grouped = DI::get(static::class);
+        foreach ($groupTime as $groupBy => $time)
         {
-            $this->Items[] = $value;
+            $time->Description = Convert::sparseToString("\n", [
+                $groupSummary[$groupBy],
+                ($show & TimeEntry::DESCRIPTION
+                    ? Convert::mergeLists($time->Description)
+                    : null),
+            ]);
+            $grouped[] = $time;
         }
-        else
-        {
-            $this->Items[$offset] = $value;
-        }
-    }
-
-    public function offsetUnset(mixed $offset): void
-    {
-        unset($this->Items[$offset]);
-    }
-
-    public function count(): int
-    {
-        return count($this->Items);
+        return $grouped;
     }
 
     public function __get(string $name)
@@ -95,14 +122,14 @@ class TimeEntryCollection implements Iterator, ArrayAccess, Countable
         {
             case "BillableAmount":
                 return array_reduce(
-                    $this->Items,
+                    $this->toArray(),
                     fn($prev, TimeEntry $item) => $prev + $item->getBillableAmount(),
                     0
                 );
 
             case "BillableHours":
                 return array_reduce(
-                    $this->Items,
+                    $this->toArray(),
                     fn($prev, TimeEntry $item) => $prev + $item->getBillableHours(),
                     0
                 );
