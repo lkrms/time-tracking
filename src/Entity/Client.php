@@ -7,27 +7,27 @@ namespace Lkrms\Time\Entity;
 class Client extends \Lkrms\Sync\SyncEntity
 {
     /**
-     * @var int|string
+     * @var int|string|null
      */
     public $Id;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Name;
 
     /**
-     * @var Workspace
+     * @var Workspace|null
      */
     public $Workspace;
 
     /**
-     * @var bool
+     * @var bool|null
      */
     public $Archived;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Note;
 

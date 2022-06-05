@@ -7,17 +7,17 @@ namespace Lkrms\Time\Entity;
 class Task extends \Lkrms\Sync\SyncEntity
 {
     /**
-     * @var int|string
+     * @var int|string|null
      */
     public $Id;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Name;
 
     /**
-     * @var Project
+     * @var Project|null
      */
     public $Project;
 

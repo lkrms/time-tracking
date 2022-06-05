@@ -3,7 +3,7 @@
 namespace Lkrms\Time\Support;
 
 use Lkrms\Container\DI;
-use Lkrms\Core\CollectionOf;
+use Lkrms\Core\TypedCollection;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Util\Convert;
 use Lkrms\Util\Env;
@@ -17,7 +17,7 @@ use UnexpectedValueException;
  * @method TimeEntry[] toArray()
  * @method TimeEntryCollection sort()
  */
-class TimeEntryCollection extends CollectionOf
+class TimeEntryCollection extends TypedCollection
 {
     protected function getItemClass(): string
     {

@@ -7,52 +7,52 @@ namespace Lkrms\Time\Entity;
 class Project extends \Lkrms\Sync\SyncEntity
 {
     /**
-     * @var int|string
+     * @var int|string|null
      */
     public $Id;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Name;
 
     /**
-     * @var array
+     * @var array|null
      */
     public $HourlyRate;
 
     /**
-     * @var Client
+     * @var Client|null
      */
     public $Client;
 
     /**
-     * @var Workspace
+     * @var Workspace|null
      */
     public $Workspace;
 
     /**
-     * @var bool
+     * @var bool|null
      */
     public $Billable;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Color;
 
     /**
-     * @var bool
+     * @var bool|null
      */
     public $Archived;
 
     /**
-     * @var Task[]
+     * @var Task[]|null
      */
     public $Tasks;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Note;
 

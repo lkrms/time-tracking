@@ -7,37 +7,37 @@ namespace Lkrms\Time\Entity;
 class Workspace extends \Lkrms\Sync\SyncEntity
 {
     /**
-     * @var int|string
+     * @var int|string|null
      */
     public $Id;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Name;
 
     /**
-     * @var array
+     * @var array|null
      */
     public $HourlyRate;
 
     /**
-     * @var array
+     * @var array|null
      */
     public $Memberships;
 
     /**
-     * @var array
+     * @var array|null
      */
     public $WorkspaceSettings;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $ImageUrl;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $FeatureSubscriptionType;
 

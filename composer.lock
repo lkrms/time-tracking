@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "20229a32a9a49d4b61cd417bab5fa84a",
+    "content-hash": "c89c91c67d3ec5dd35ed5a1f76cb3257",
     "packages": [
         {
             "name": "filp/whoops",
@@ -122,16 +122,16 @@
         },
         {
             "name": "lkrms/util",
-            "version": "v0.13.2",
+            "version": "v0.14.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lkrms/util-php.git",
-                "reference": "80079317ba00e89c41f0b80d022fb24820e89a8d"
+                "reference": "1d9eda4d6a2467c8d271214309f1592d22454e84"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/util-php/zipball/80079317ba00e89c41f0b80d022fb24820e89a8d",
-                "reference": "80079317ba00e89c41f0b80d022fb24820e89a8d",
+                "url": "https://api.github.com/repos/lkrms/util-php/zipball/1d9eda4d6a2467c8d271214309f1592d22454e84",
+                "reference": "1d9eda4d6a2467c8d271214309f1592d22454e84",
                 "shasum": ""
             },
             "require": {
@@ -166,9 +166,9 @@
             "description": "A PHP toolkit with opinionated defaults and a small footprint",
             "support": {
                 "issues": "https://github.com/lkrms/util-php/issues",
-                "source": "https://github.com/lkrms/util-php/tree/v0.13.2"
+                "source": "https://github.com/lkrms/util-php/tree/v0.14.0"
             },
-            "time": "2022-05-31T23:21:03+00:00"
+            "time": "2022-06-05T15:13:22+00:00"
         },
         {
             "name": "psr/container",

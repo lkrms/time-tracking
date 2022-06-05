@@ -7,47 +7,47 @@ namespace Lkrms\Time\Entity;
 class User extends \Lkrms\Sync\SyncEntity
 {
     /**
-     * @var int|string
+     * @var int|string|null
      */
     public $Id;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Email;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Name;
 
     /**
-     * @var array
+     * @var array|null
      */
     public $Memberships;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $ProfilePicture;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $ActiveWorkspace;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $DefaultWorkspace;
 
     /**
-     * @var array
+     * @var array|null
      */
     public $Settings;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Status;
 

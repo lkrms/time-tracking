@@ -18,62 +18,62 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
     public const ALL         = (1 << 6) - 1;
 
     /**
-     * @var int|string
+     * @var int|string|null
      */
     public $Id;
 
     /**
-     * @var string
+     * @var string|null
      */
     public $Description;
 
     /**
-     * @var User
+     * @var User|null
      */
     public $User;
 
     /**
-     * @var bool
+     * @var bool|null
      */
     public $Billable;
 
     /**
-     * @var Task
+     * @var Task|null
      */
     public $Task;
 
     /**
-     * @var Project
+     * @var Project|null
      */
     public $Project;
 
     /**
-     * @var DateTime
+     * @var DateTime|null
      */
     public $Start;
 
     /**
-     * @var DateTime
+     * @var DateTime|null
      */
     public $End;
 
     /**
-     * @var int
+     * @var int|null
      */
     public $Seconds;
 
     /**
-     * @var Workspace
+     * @var Workspace|null
      */
     public $Workspace;
 
     /**
-     * @var float
+     * @var float|null
      */
     public $BillableRate;
 
     /**
-     * @var bool
+     * @var bool|null
      */
     public $IsLocked;
 

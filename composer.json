@@ -4,7 +4,7 @@
     "description": "Time entry automation",
     "require": {
         "php": ">=7.4",
-        "lkrms/util": "^0.13.2"
+        "lkrms/util": "^0.14.0"
     },
     "autoload": {
         "psr-4": {
