@@ -29,9 +29,8 @@ use RuntimeException;
 
 class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, UserProvider, TimeEntryProvider
 {
-    public static function register(string ...$interfaces): void
+    protected function bindCustom(): void
     {
-        parent::register(...$interfaces);
         DI::bind(TimeEntry::class, \Lkrms\Time\Entity\Clockify\TimeEntry::class);
         DI::bind(Project::class, \Lkrms\Time\Entity\Clockify\Project::class);
         DI::bind(Task::class, \Lkrms\Time\Entity\Clockify\Task::class);

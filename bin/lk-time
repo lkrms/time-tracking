@@ -5,6 +5,7 @@ use Lkrms\App\App;
 use Lkrms\Cli\Cli;
 use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\Command\GenerateInvoices;
+use Lkrms\Time\XeroProvider;
 
 require (__DIR__ . "/../vendor/autoload.php");
 
@@ -13,7 +14,10 @@ ini_set("memory_limit", "-1");
 $app = App::load(dirname(__DIR__));
 $app->enableCache();
 
-ClockifyProvider::register();
+XeroProvider::bind();
+XeroProvider::bindInterfaces();
+ClockifyProvider::bind();
+ClockifyProvider::bindInterfaces();
 
 GenerateInvoices::register(["invoice", "generate"]);
 

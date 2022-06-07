@@ -10,18 +10,32 @@ use Firebase\JWT\JWT;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Lkrms\Console\Console;
+use Lkrms\Core\Support\ClosureBuilder;
 use Lkrms\Curler\CurlerHeaders;
+use Lkrms\Exception\SyncOperationNotImplementedException;
 use Lkrms\Store\Cache;
 use Lkrms\Support\HttpRequest;
 use Lkrms\Support\HttpResponse;
 use Lkrms\Support\HttpServer;
 use Lkrms\Sync\Provider\HttpSyncProvider;
+use Lkrms\Sync\SyncOperation;
+use Lkrms\Time\Entity\Client;
+use Lkrms\Time\Entity\Invoice;
+use Lkrms\Time\Entity\InvoiceProvider;
+use Lkrms\Util\Convert;
 use Lkrms\Util\Env;
 use RuntimeException;
 use Throwable;
 
-class XeroProvider extends HttpSyncProvider
+class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 {
+    private const SYNC_ENTITY_MAPS = [
+        Client::class      => [
+            "ContactID"    => "Id",
+            "EmailAddress" => "Email",
+        ]
+    ];
+
     /**
      * @var string[]
      * @link https://developer.xero.com/documentation/oauth2/scopes
@@ -31,6 +45,7 @@ class XeroProvider extends HttpSyncProvider
         "email",
         "profile",
         "offline_access",
+        "accounting.contacts",
         "accounting.transactions",
     ];
 
@@ -97,6 +112,7 @@ class XeroProvider extends HttpSyncProvider
     protected function getHeaders(?string $path): ?CurlerHeaders
     {
         $headers = new CurlerHeaders();
+        $headers->setHeader("Accept", "application/json");
         $headers->setHeader("Authorization", "Bearer " . $this->getAccessToken());
 
         if ($path != "/connections")
@@ -136,8 +152,18 @@ class XeroProvider extends HttpSyncProvider
 
     private function getAccessToken(): string
     {
-        while (!($token = Cache::get($this->TokenKey)))
+        while (!($token = Cache::get($this->TokenKey)) || array_diff(
+            self::OAUTH2_SCOPES,
+            $this->getVerifiedJwt($token)["scope"]
+        ))
         {
+            // If scopes have been added since the token was issued, reauthorize
+            // interactively
+            if ($token)
+            {
+                $this->authorize(false, true);
+                continue;
+            }
             $this->authorize();
         }
 
@@ -318,6 +344,81 @@ class XeroProvider extends HttpSyncProvider
         Cache::delete("{$this->TokenKey}/id");
         Cache::delete("{$this->TokenKey}/refresh");
         Cache::delete($this->TenantIdKey);
+    }
+
+    private function buildWhere(
+        array & $where,
+        array $filter,
+        string $filterField,
+        string $whereField
+    ): void
+    {
+        if ($values = $filter[$filterField] ?? null)
+        {
+            $where[] = array_map(
+                fn($value) => "$whereField=\"$value\"",
+                Convert::toArray($values)
+            );
+        }
+    }
+
+    private function buildQuery(array $where): ?array
+    {
+        if (!$where)
+        {
+            return null;
+        }
+        $query = [];
+        foreach ($where as $group)
+        {
+            $expr = implode(" OR ", $group);
+            if (count($where) > 1 && count($group) > 1)
+            {
+                $expr = "($expr)";
+            }
+            $query[] = $expr;
+        }
+        return ["where" => implode(" AND ", $query)];
+    }
+
+    public function getClient($id): Client
+    {
+        return Client::fromMappedArray(
+            $this,
+            $this->getCurler("/api.xro/2.0/Contacts/$id")->getJson()["Contacts"],
+            self::SYNC_ENTITY_MAPS[Client::class],
+            false,
+            ClosureBuilder::SKIP_MISSING
+        );
+    }
+
+    public function getClients(): array
+    {
+        list ($where, $filter) = [[], $this->getListFilter(func_get_args())];
+        $this->buildWhere($where, $filter, "name", "Name");
+        $this->buildWhere($where, $filter, "email", "EmailAddress");
+        return Client::listFromMappedArrays(
+            $this,
+            $this->getCurler("/api.xro/2.0/Contacts")->getJson($this->buildQuery($where))["Contacts"],
+            self::SYNC_ENTITY_MAPS[Client::class],
+            false,
+            ClosureBuilder::SKIP_MISSING
+        );
+    }
+
+    public function createInvoice(Invoice $invoice): Invoice
+    {
+        throw new SyncOperationNotImplementedException(static::class, Invoice::class, SyncOperation::CREATE);
+    }
+
+    public function getInvoice($id): Invoice
+    {
+        throw new SyncOperationNotImplementedException(static::class, Invoice::class, SyncOperation::READ);
+    }
+
+    public function getInvoices(): array
+    {
+        throw new SyncOperationNotImplementedException(static::class, Invoice::class, SyncOperation::READ_LIST);
     }
 
 }

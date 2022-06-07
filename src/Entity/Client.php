@@ -17,6 +17,11 @@ class Client extends \Lkrms\Sync\SyncEntity
     public $Name;
 
     /**
+     * @var string|null
+     */
+    public $Email;
+
+    /**
      * @var Workspace|null
      */
     public $Workspace;
