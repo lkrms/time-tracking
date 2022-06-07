@@ -135,12 +135,11 @@ class GenerateInvoices extends CliCommand
             {
                 foreach ($entries as $entry)
                 {
-                    Console::log(
-                        sprintf("$%.2f (%.2f hours):", $entry->getBillableAmount(), $entry->getBillableHours()),
-                        $entry->Description
-                    );
+                    printf("==> \$%.2f (%.2f hours):\n  %s\n\n",
+                        $entry->getBillableAmount(),
+                        $entry->getBillableHours(),
+                        str_replace("\n", "\n  ", $entry->Description));
                 }
-
             }
         }
 

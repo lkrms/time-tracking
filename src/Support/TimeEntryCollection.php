@@ -34,8 +34,8 @@ class TimeEntryCollection extends TypedCollection
         // Sort entries by start time if possible
         if ($a->Start && $b->Start)
         {
-            if ($a < $b) { return - 1; }
-            elseif ($a > $b) { return 1; }
+            if ($a->Start < $b->Start) { return - 1; }
+            elseif ($a->Start > $b->Start) { return 1; }
         }
 
         // If not, sort by ID if both entries have integer IDs

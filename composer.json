@@ -4,6 +4,8 @@
     "description": "Time entry automation",
     "require": {
         "php": ">=7.4",
+        "firebase/php-jwt": "^6.2",
+        "league/oauth2-client": "^2.6",
         "lkrms/util": "^0.14.0"
     },
     "autoload": {
