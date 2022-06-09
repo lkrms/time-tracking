@@ -137,6 +137,12 @@ class GenerateInvoices extends CliCommand
             $timeEntryCount++;
         }
 
+        if (!$timeEntryCount)
+        {
+            Console::info("No uninvoiced time entries");
+            return;
+        }
+
         Console::info("Retrieving clients from", $this->InvoiceProviderName);
         $invClients = Convert::listToMap(
             iterator_to_array($this->InvoiceProvider->getClients(["name" => $clientNames])),
@@ -189,6 +195,7 @@ class GenerateInvoices extends CliCommand
             Convert::classToBasename(self::class),
             $this->InvoiceProviderName . "-" . $this->InvoiceProvider->getBackendHash()
         ]));
+
         foreach ($clientTimes as $clientId => $entries)
         {
             $name    = $clientNames[$clientId];
@@ -220,6 +227,8 @@ class GenerateInvoices extends CliCommand
                 continue;
             }
 
+            $markInvoiced = [];
+
             /** @var Invoice */
             $invoice            = DI::get(Invoice::class);
             $invoice->Number    = $next ? $prefix . ($next++) : null;
@@ -237,6 +246,8 @@ class GenerateInvoices extends CliCommand
                 $item->UnitAmount  = $entry->BillableRate;
                 $item->ItemCode    = Env::get("invoice_item_code", "") ?: null;
                 $item->AccountCode = Env::get("invoice_account_code", "") ?: null;
+
+                array_push($markInvoiced, ...($entry->getMerged() ?: [$entry]));
             }
 
             $invoice = $this->InvoiceProvider->createInvoice($invoice);
@@ -251,7 +262,14 @@ class GenerateInvoices extends CliCommand
                     $invoice->Total
                 ));
 
+            // TODO: something better with this data
             file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));
+            file_put_contents($tempDir . "/{$invoice->Number}-timeEntries.json", json_encode($markInvoiced));
+
+            Console::info("Marking " . Convert::numberToNoun(
+                count($markInvoiced), "time entry", "time entries", true
+            ) . " as invoiced in", $this->TimeEntryProviderName);
+            $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced);
         }
     }
 }

@@ -56,4 +56,12 @@ interface TimeEntryProvider extends ClientProvider, ProjectProvider, TaskProvide
         bool $billed   = null
     ): iterable;
 
+    /**
+     * @param iterable<TimeEntry> $timeEntries
+     */
+    public function markTimeEntriesInvoiced(
+        iterable $timeEntries,
+        bool $unmark = false
+    ): void;
+
 }

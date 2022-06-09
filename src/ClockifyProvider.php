@@ -345,6 +345,36 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     }
 
     /**
+     * Mark time entries as invoiced
+     *
+     * @param iterable<TimeEntry> $timeEntries
+     * @param bool $unmark
+     */
+    public function markTimeEntriesInvoiced(
+        iterable $timeEntries,
+        bool $unmark = false
+    ): void
+    {
+        $workspaceId = $this->getWorkspaceId();
+        $data        = [
+            "timeEntryIds" => [],
+            "invoiced"     => !$unmark,
+        ];
+
+        foreach ($timeEntries as $time)
+        {
+            $data["timeEntryIds"][] = $time->Id;
+        }
+
+        if (!$data["timeEntryIds"])
+        {
+            return;
+        }
+
+        $this->getCurler("/workspaces/$workspaceId/time-entries/invoiced")->patchJson($data);
+    }
+
+    /**
      * @param TimeEntry $timeEntry
      * @return TimeEntry
      */
