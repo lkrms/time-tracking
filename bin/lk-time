@@ -5,6 +5,7 @@ use Lkrms\App\App;
 use Lkrms\Cli\Cli;
 use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\Command\GenerateInvoices;
+use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\XeroProvider;
 
 require (__DIR__ . "/../vendor/autoload.php");
@@ -19,6 +20,7 @@ XeroProvider::bindInterfaces();
 ClockifyProvider::bind();
 ClockifyProvider::bindInterfaces();
 
+ListClients::register(["client", "list"]);
 GenerateInvoices::register(["invoice", "generate"]);
 
 $status = Cli::run();

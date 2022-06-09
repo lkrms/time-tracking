@@ -10,6 +10,7 @@ use Firebase\JWT\JWT;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Lkrms\Console\Console;
+use Lkrms\Container\Container;
 use Lkrms\Core\Support\ClosureBuilder;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Exception\SyncOperationNotImplementedException;
@@ -26,6 +27,7 @@ use Lkrms\Util\Convert;
 use Lkrms\Util\Env;
 use RuntimeException;
 use Throwable;
+use UnexpectedValueException;
 
 class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 {
@@ -33,7 +35,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         Client::class      => [
             "ContactID"    => "Id",
             "EmailAddress" => "Email",
-        ]
+        ],
+        Invoice::class     => [
+            "Contact"      => "Client",
+            "CurrencyCode" => "Currency",
+        ],
     ];
 
     /**
@@ -48,6 +54,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         "accounting.contacts",
         "accounting.transactions",
     ];
+
+    /**
+     * @var Container
+     */
+    private $Container;
 
     /**
      * @var HttpServer
@@ -79,8 +90,15 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
      */
     private $Connections;
 
-    public function __construct()
+    protected function bindCustom(): void
     {
+        $this->Container->bind(Invoice::class, \Lkrms\Time\Entity\Xero\Invoice::class);
+    }
+
+    public function __construct(Container $container)
+    {
+        $this->Container = $container;
+
         $host = Env::get("app_host", "localhost");
         $port = (int)Env::get("app_port", "27755");
 
@@ -346,39 +364,82 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         Cache::delete($this->TenantIdKey);
     }
 
-    private function buildWhere(
-        array & $where,
-        array $filter,
-        string $filterField,
-        string $whereField
-    ): void
+    private function buildQuery(
+        array $args,
+        array $fieldMap,
+        array $where      = [],
+        string $groupGlue = " AND ",
+        string $fieldGlue = " OR "
+    ): array
     {
-        if ($values = $filter[$filterField] ?? null)
+        $filter = $this->getListFilter($args);
+        foreach ($fieldMap as $filterField => $field)
         {
-            $where[] = array_map(
-                fn($value) => "$whereField=\"$value\"",
-                Convert::toArray($values)
-            );
-        }
-    }
-
-    private function buildQuery(array $where): ?array
-    {
-        if (!$where)
-        {
-            return null;
-        }
-        $query = [];
-        foreach ($where as $group)
-        {
-            $expr = implode(" OR ", $group);
-            if (count($where) > 1 && count($group) > 1)
+            if ($values = $filter[$filterField] ?? null)
             {
-                $expr = "($expr)";
+                unset($filter[$filterField]);
+                // Don't replace values passed in by provider code
+                if (array_key_exists($field, $where))
+                {
+                    continue;
+                }
+                // TODO: escape each $value
+                $where[$field] = array_map(function ($value) use ($field)
+                {
+                    $expr = preg_replace(
+                        ['/^\*([^*]*)\*$/', '/^([^*]*)\*$/', '/^\*([^*]*)$/'],
+                        [
+                            "{$field}.Contains(\"\$1\")",
+                            "{$field}.StartsWith(\"\$1\")",
+                            "{$field}.EndsWith(\"\$1\")",
+                        ],
+                        $value
+                    );
+                    if ($expr == $value)
+                    {
+                        return "{$field}=\"$value\"";
+                    }
+                    return $expr;
+                }, Convert::toArray($values));
             }
-            $query[] = $expr;
         }
-        return ["where" => implode(" AND ", $query)];
+        $query = ["page" => 1];
+        if ($where)
+        {
+            $parts = [];
+            foreach ($where as $group)
+            {
+                $expr = implode($fieldGlue, $group);
+                if (count($where) > 1 && count($group) > 1)
+                {
+                    $expr = "($expr)";
+                }
+                $parts[] = $expr;
+            }
+            $query["where"] = implode($groupGlue, $parts);
+        }
+        if ($filter['$orderby'] ?? null)
+        {
+            $parts = [];
+            // Format: "<field-name>[ (ASC|DESC)][,...]"
+            foreach (explode(",", $filter['$orderby']) as $expr)
+            {
+                $expr = preg_split('/\h+/', trim($expr));
+                if (count($expr) > 2)
+                {
+                    throw new UnexpectedValueException("Invalid \$orderby value '{$filter['$orderby']}'");
+                }
+                if ($field = $fieldMap[$expr[0]] ?? null)
+                {
+                    $parts[] = $field . (strtoupper($expr[1] ?? "") == "DESC" ? " DESC" : "");
+                }
+            }
+            if ($parts)
+            {
+                $query["order"] = implode(",", $parts);
+            }
+        }
+        return $query;
     }
 
     public function getClient($id): Client
@@ -392,23 +453,69 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         );
     }
 
-    public function getClients(): array
+    public function getClients(): iterable
     {
-        list ($where, $filter) = [[], $this->getListFilter(func_get_args())];
-        $this->buildWhere($where, $filter, "name", "Name");
-        $this->buildWhere($where, $filter, "email", "EmailAddress");
+        $query = $this->buildQuery(func_get_args(), [
+            "name"  => "Name",
+            "email" => "EmailAddress"
+        ]);
         return Client::listFromMappedArrays(
             $this,
-            $this->getCurler("/api.xro/2.0/Contacts")->getJson($this->buildQuery($where))["Contacts"],
+            $this->getCurler("/api.xro/2.0/Contacts")->getAllByPage($query, "Contacts"),
             self::SYNC_ENTITY_MAPS[Client::class],
             false,
             ClosureBuilder::SKIP_MISSING
         );
     }
 
+    private function filterInvoices(iterable $invoices): iterable
+    {
+        foreach ($invoices as $invoice)
+        {
+            if ($invoice["Type"] != "ACCREC")
+            {
+                continue;
+            }
+            yield $invoice;
+        }
+    }
+
     public function createInvoice(Invoice $invoice): Invoice
     {
-        throw new SyncOperationNotImplementedException(static::class, Invoice::class, SyncOperation::CREATE);
+        $data                  = [];
+        $data["Type"]          = "ACCREC";
+        $data["Contact"]       = ["ContactID" => $invoice->Client->Id];
+        $data["InvoiceNumber"] = $invoice->Number;
+        $data["Reference"]     = $invoice->Reference;
+        $data["Date"]          = $invoice->Date;
+        $data["DueDate"]       = $invoice->DueDate;
+        $data["LineItems"]     = [];
+        $data["Status"]        = $invoice->Status;
+
+        $data = array_filter($data, fn($value) => !is_null($value));
+
+        foreach ($invoice->LineItems as $lineItem)
+        {
+            $line = [];
+            $line["Description"] = $lineItem->Description;
+            $line["Quantity"]    = $lineItem->Quantity;
+            $line["UnitAmount"]  = $lineItem->UnitAmount;
+            $line["ItemCode"]    = $lineItem->ItemCode;
+            $line["AccountCode"] = $lineItem->AccountCode;
+            $line["Tracking"]    = $lineItem->Tracking;
+
+            $line = array_filter($line, fn($value) => !is_null($value));
+
+            $data["LineItems"][] = $line;
+        }
+
+        return Invoice::fromMappedArray(
+            $this,
+            $this->getCurler("/api.xro/2.0/Invoices")->putJson($data)["Invoices"][0],
+            self::SYNC_ENTITY_MAPS[Invoice::class],
+            false,
+            ClosureBuilder::SKIP_MISSING
+        );
     }
 
     public function getInvoice($id): Invoice
@@ -416,9 +523,20 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         throw new SyncOperationNotImplementedException(static::class, Invoice::class, SyncOperation::READ);
     }
 
-    public function getInvoices(): array
+    public function getInvoices(): iterable
     {
-        throw new SyncOperationNotImplementedException(static::class, Invoice::class, SyncOperation::READ_LIST);
+        $query = $this->buildQuery(func_get_args(), [
+            "number"    => "InvoiceNumber",
+            "reference" => "Reference",
+            "date"      => "Date",
+            "due_date"  => "DueDate",
+        ]);
+        return Invoice::listFromMappedArrays(
+            $this,
+            $this->filterInvoices($this->getCurler("/api.xro/2.0/Invoices")->getAllByPage($query, "Invoices")),
+            self::SYNC_ENTITY_MAPS[Invoice::class],
+            false,
+            ClosureBuilder::SKIP_MISSING
+        );
     }
-
 }

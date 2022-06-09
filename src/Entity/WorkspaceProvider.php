@@ -17,8 +17,8 @@ interface WorkspaceProvider extends \Lkrms\Sync\Provider\ISyncProvider
     public function getWorkspace($id): Workspace;
 
     /**
-     * @return Workspace[]
+     * @return iterable<Workspace>
      */
-    public function getWorkspaces(): array;
+    public function getWorkspaces(): iterable;
 
 }

@@ -19,8 +19,8 @@ interface TaskProvider extends \Lkrms\Sync\Provider\ISyncProvider
 
     /**
      * @param int|string|null $projectId
-     * @return Task[]
+     * @return iterable<Task>
      */
-    public function getTasks($projectId): array;
+    public function getTasks($projectId): iterable;
 
 }

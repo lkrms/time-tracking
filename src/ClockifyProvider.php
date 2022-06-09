@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Lkrms\Time;
 
 use DateTime;
-use Lkrms\Container\DI;
+use Lkrms\Container\Container;
 use Lkrms\Curler\CachingCurler;
 use Lkrms\Curler\Curler;
 use Lkrms\Curler\CurlerHeaders;
@@ -29,11 +29,21 @@ use RuntimeException;
 
 class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, UserProvider, TimeEntryProvider
 {
+    /**
+     * @var Container
+     */
+    private $Container;
+
+    public function __construct(Container $container)
+    {
+        $this->Container = $container;
+    }
+
     protected function bindCustom(): void
     {
-        DI::bind(TimeEntry::class, \Lkrms\Time\Entity\Clockify\TimeEntry::class);
-        DI::bind(Project::class, \Lkrms\Time\Entity\Clockify\Project::class);
-        DI::bind(Task::class, \Lkrms\Time\Entity\Clockify\Task::class);
+        $this->Container->bind(TimeEntry::class, \Lkrms\Time\Entity\Clockify\TimeEntry::class);
+        $this->Container->bind(Project::class, \Lkrms\Time\Entity\Clockify\Project::class);
+        $this->Container->bind(Task::class, \Lkrms\Time\Entity\Clockify\Task::class);
     }
 
     protected function getBackendIdentifier(): array
@@ -94,9 +104,9 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     /**
      * Get all my workspaces
      *
-     * @return Workspace[]
+     * @return iterable<Workspace>
      */
-    public function getWorkspaces(): array
+    public function getWorkspaces(): iterable
     {
         return Workspace::listFromArrays($this, $this->getCurler("/workspaces")->getJson());
     }
@@ -109,15 +119,15 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
      */
     public function getWorkspace($id): Workspace
     {
-        return Convert::listToMap($this->getWorkspaces(), "id")[$id];
+        return Convert::listToMap(iterator_to_array($this->getWorkspaces()), "id")[$id];
     }
 
     /**
      * Find all users on workspace
      *
-     * @return User[]
+     * @return iterable<User>
      */
-    public function getUsers(): array
+    public function getUsers(): iterable
     {
         $workspaceId = $this->getWorkspaceId();
         return User::listFromArrays($this, $this->getCurler("/workspaces/$workspaceId/users")->getJson());
@@ -133,7 +143,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     {
         if (!is_null($id))
         {
-            return Convert::listToMap($this->getUsers(), "id")[$id];
+            return Convert::listToMap(iterator_to_array($this->getUsers()), "id")[$id];
         }
         else
         {
@@ -144,9 +154,9 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     /**
      * Find clients on workspace
      *
-     * @return Client[]
+     * @return iterable<Client>
      */
-    public function getClients(): array
+    public function getClients(): iterable
     {
         $workspaceId = $this->getWorkspaceId();
         return Client::listFromArrays($this, $this->getCurler("/workspaces/$workspaceId/clients")->getJson());
@@ -167,9 +177,9 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     /**
      * Get all projects on workspace
      *
-     * @return Project[]
+     * @return iterable<Project>
      */
-    public function getProjects(): array
+    public function getProjects(): iterable
     {
         $workspaceId = $this->getWorkspaceId();
         $query       = ["hydrated" => true];
@@ -193,9 +203,9 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
      * Find tasks on project
      *
      * @param int|string|null $projectId
-     * @return Task[]
+     * @return iterable<Task>
      */
-    public function getTasks($projectId): array
+    public function getTasks($projectId): iterable
     {
         if (!$projectId)
         {
@@ -246,7 +256,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     }
 
     /**
-     * @return TimeEntry[]
+     * @return iterable<TimeEntry>
      */
     public function getTimeEntries(
         $user          = null,
@@ -256,7 +266,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
         DateTime $to   = null,
         bool $billable = null,
         bool $billed   = null
-    ): array
+    ): iterable
     {
         $workspaceId = $this->getWorkspaceId();
 

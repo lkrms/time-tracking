@@ -17,8 +17,8 @@ interface UserProvider extends \Lkrms\Sync\Provider\ISyncProvider
     public function getUser($id = null): User;
 
     /**
-     * @return User[]
+     * @return iterable<User>
      */
-    public function getUsers(): array;
+    public function getUsers(): iterable;
 
 }

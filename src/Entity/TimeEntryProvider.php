@@ -44,7 +44,7 @@ interface TimeEntryProvider extends ClientProvider, ProjectProvider, TaskProvide
      * @param DateTime|null $to
      * @param bool|null $billable
      * @param bool|null $billed
-     * @return TimeEntry[]
+     * @return iterable<TimeEntry>
      */
     public function getTimeEntries(
         $user          = null,
@@ -54,6 +54,6 @@ interface TimeEntryProvider extends ClientProvider, ProjectProvider, TaskProvide
         DateTime $to   = null,
         bool $billable = null,
         bool $billed   = null
-    ): array;
+    ): iterable;
 
 }

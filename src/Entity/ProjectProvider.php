@@ -17,8 +17,8 @@ interface ProjectProvider extends \Lkrms\Sync\Provider\ISyncProvider
     public function getProject($id): Project;
 
     /**
-     * @return Project[]
+     * @return iterable<Project>
      */
-    public function getProjects(): array;
+    public function getProjects(): iterable;
 
 }

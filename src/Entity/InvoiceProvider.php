@@ -23,8 +23,8 @@ interface InvoiceProvider extends ClientProvider
     public function getInvoice($id): Invoice;
 
     /**
-     * @return Invoice[]
+     * @return iterable<Invoice>
      */
-    public function getInvoices(): array;
+    public function getInvoices(): iterable;
 
 }

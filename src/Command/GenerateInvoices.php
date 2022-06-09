@@ -3,18 +3,28 @@
 namespace Lkrms\Time\Command;
 
 use DateTime;
+use Lkrms\App\AppContainer;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOptionType;
 use Lkrms\Console\Console;
+use Lkrms\Container\DI;
+use Lkrms\Time\Entity\Invoice;
+use Lkrms\Time\Entity\InvoiceLineItem;
 use Lkrms\Time\Entity\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Entity\TimeEntryProvider;
 use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Util\Convert;
 use Lkrms\Util\Env;
+use Lkrms\Util\File;
 
 class GenerateInvoices extends CliCommand
 {
+    /**
+     * @var AppContainer
+     */
+    private $App;
+
     /**
      * @var TimeEntryProvider
      */
@@ -36,9 +46,11 @@ class GenerateInvoices extends CliCommand
     private $InvoiceProviderName;
 
     public function __construct(
+        AppContainer $app,
         TimeEntryProvider $timeEntryProvider,
         InvoiceProvider $invoiceProvider
     ) {
+        $this->App = $app;
         list (
             $this->TimeEntryProviderName,
             $this->InvoiceProviderName
@@ -126,12 +138,12 @@ class GenerateInvoices extends CliCommand
         }
 
         Console::info("Retrieving clients from", $this->InvoiceProviderName);
-        $invProviderClients = Convert::listToMap(
-            $this->InvoiceProvider->getClients(["name" => array_values($clientNames)]),
+        $invClients = Convert::listToMap(
+            iterator_to_array($this->InvoiceProvider->getClients(["name" => $clientNames])),
             "Name"
         );
 
-        Console::info("Preparing " . Convert::numberToNoun(count($clientTimes), "client invoice", null, true)
+        Console::log("Preparing " . Convert::numberToNoun(count($clientTimes), "client invoice", null, true)
             . " for " . Convert::numberToNoun($timeEntryCount, "time entry", "time entries", true));
 
         $showMap = [
@@ -148,17 +160,46 @@ class GenerateInvoices extends CliCommand
             TimeEntry::ALL
         );
 
+        $next = null;
+
+        if ($prefix = Env::get("invoice_number_prefix", null))
+        {
+            $next = (int)Env::get("invoice_number_next", "1");
+
+            $invoices = $this->InvoiceProvider->getInvoices([
+                "number"   => "{$prefix}*",
+                '$orderby' => "date desc"
+            ]);
+
+            $seen = 0;
+            foreach ($invoices as $invoice)
+            {
+                $next = max((int)substr($invoice->Number, strlen($prefix)) + 1, $next, 1);
+                if ($seen++ == 99)
+                {
+                    break;
+                }
+            }
+
+            unset($invoices);
+        }
+
+        File::maybeCreateDirectory($tempDir = implode("/", [
+            $this->App->TempPath,
+            Convert::classToBasename(self::class),
+            $this->InvoiceProviderName . "-" . $this->InvoiceProvider->getBackendHash()
+        ]));
         foreach ($clientTimes as $clientId => $entries)
         {
             $name    = $clientNames[$clientId];
             $summary = sprintf("$%.2f (%.2f hours)", $entries->BillableAmount, $entries->BillableHours);
 
-            if (!($invProviderClient = $invProviderClients[$name] ?? null))
+            if (!($invClient = $invClients[$name] ?? null))
             {
                 Console::error("Skipping $name (not found in {$this->InvoiceProviderName}):", $summary);
                 continue;
             }
-            Console::log("$name:", $summary);
+            Console::info("Invoicing $name:", $summary);
 
             $entries = $entries->groupBy(
                 $show,
@@ -178,11 +219,39 @@ class GenerateInvoices extends CliCommand
                 }
                 continue;
             }
-        }
 
-        if (Env::dryRun())
-        {
-            return;
+            /** @var Invoice */
+            $invoice            = DI::get(Invoice::class);
+            $invoice->Number    = $next ? $prefix . ($next++) : null;
+            $invoice->Date      = new DateTime("today");
+            $invoice->DueDate   = new DateTime("today +7 days");
+            $invoice->Client    = $invClient;
+            $invoice->LineItems = [];
+
+            foreach ($entries as $entry)
+            {
+                /** @var InvoiceLineItem */
+                $item = $invoice->LineItems[] = DI::get(InvoiceLineItem::class);
+                $item->Description = $entry->Description;
+                $item->Quantity    = $entry->getBillableHours();
+                $item->UnitAmount  = $entry->BillableRate;
+                $item->ItemCode    = Env::get("invoice_item_code", "") ?: null;
+                $item->AccountCode = Env::get("invoice_account_code", "") ?: null;
+            }
+
+            $invoice = $this->InvoiceProvider->createInvoice($invoice);
+            Console::log("Invoice created in {$this->InvoiceProviderName}:",
+                sprintf(
+                    "%s for %s (%.2f + %.2f tax = %s %.2f)",
+                    $invoice->Number,
+                    $invoice->Client->Name,
+                    $invoice->SubTotal,
+                    $invoice->TotalTax,
+                    $invoice->Currency,
+                    $invoice->Total
+                ));
+
+            file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));
         }
     }
 }

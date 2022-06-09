@@ -17,8 +17,8 @@ interface ClientProvider extends \Lkrms\Sync\Provider\ISyncProvider
     public function getClient($id): Client;
 
     /**
-     * @return Client[]
+     * @return iterable<Client>
      */
-    public function getClients(): array;
+    public function getClients(): iterable;
 
 }
