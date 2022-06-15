@@ -2,6 +2,7 @@
 
 namespace Lkrms\Time\Command;
 
+use Lkrms\App\AppContainer;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Console\Console;
 use Lkrms\Time\Entity\TimeEntryProvider;
@@ -9,6 +10,11 @@ use Lkrms\Util\Convert;
 
 class ListClients extends CliCommand
 {
+    /**
+     * @var AppContainer
+     */
+    private $App;
+
     /**
      * @var TimeEntryProvider
      */
@@ -19,8 +25,12 @@ class ListClients extends CliCommand
      */
     private $TimeEntryProviderName;
 
-    public function __construct(TimeEntryProvider $timeEntryProvider)
-    {
+    public function __construct(
+        AppContainer $app,
+        TimeEntryProvider $timeEntryProvider
+    ) {
+        parent::__construct($app);
+        $this->App = $app;
         $this->TimeEntryProvider     = $timeEntryProvider;
         $this->TimeEntryProviderName = preg_replace(
             "/Provider$/", "", Convert::classToBasename(get_class($timeEntryProvider))

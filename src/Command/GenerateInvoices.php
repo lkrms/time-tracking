@@ -50,6 +50,7 @@ class GenerateInvoices extends CliCommand
         TimeEntryProvider $timeEntryProvider,
         InvoiceProvider $invoiceProvider
     ) {
+        parent::__construct($app);
         $this->App = $app;
         list (
             $this->TimeEntryProviderName,
@@ -199,7 +200,7 @@ class GenerateInvoices extends CliCommand
         foreach ($clientTimes as $clientId => $entries)
         {
             $name    = $clientNames[$clientId];
-            $summary = sprintf("$%.2f (%.2f hours)", $entries->BillableAmount, $entries->BillableHours);
+            $summary = sprintf("\$%.2f (%.2f hours)", $entries->BillableAmount, $entries->BillableHours);
 
             if (!($invClient = $invClients[$name] ?? null))
             {

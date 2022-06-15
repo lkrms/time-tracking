@@ -56,11 +56,6 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
     ];
 
     /**
-     * @var Container
-     */
-    private $Container;
-
-    /**
      * @var HttpServer
      */
     private $OAuth2Listener;
@@ -90,14 +85,14 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
      */
     private $Connections;
 
-    protected function bindCustom(): void
+    public static function bindConcrete(Container $container)
     {
-        $this->Container->bind(Invoice::class, \Lkrms\Time\Entity\Xero\Invoice::class);
+        $container->bind(Invoice::class, \Lkrms\Time\Entity\Xero\Invoice::class);
     }
 
     public function __construct(Container $container)
     {
-        $this->Container = $container;
+        parent::__construct($container);
 
         $host = Env::get("app_host", "localhost");
         $port = (int)Env::get("app_port", "27755");

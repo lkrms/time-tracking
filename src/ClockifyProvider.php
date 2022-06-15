@@ -29,21 +29,11 @@ use RuntimeException;
 
 class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, UserProvider, TimeEntryProvider
 {
-    /**
-     * @var Container
-     */
-    private $Container;
-
-    public function __construct(Container $container)
+    public static function bindConcrete(Container $container)
     {
-        $this->Container = $container;
-    }
-
-    protected function bindCustom(): void
-    {
-        $this->Container->bind(TimeEntry::class, \Lkrms\Time\Entity\Clockify\TimeEntry::class);
-        $this->Container->bind(Project::class, \Lkrms\Time\Entity\Clockify\Project::class);
-        $this->Container->bind(Task::class, \Lkrms\Time\Entity\Clockify\Task::class);
+        $container->bind(TimeEntry::class, \Lkrms\Time\Entity\Clockify\TimeEntry::class);
+        $container->bind(Project::class, \Lkrms\Time\Entity\Clockify\Project::class);
+        $container->bind(Task::class, \Lkrms\Time\Entity\Clockify\Task::class);
     }
 
     protected function getBackendIdentifier(): array
