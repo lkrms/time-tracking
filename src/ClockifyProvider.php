@@ -98,7 +98,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
      */
     public function getWorkspaces(): iterable
     {
-        return Workspace::listFromArrays($this, $this->getCurler("/workspaces")->getJson());
+        return Workspace::listFromProvider($this, $this->getCurler("/workspaces")->getJson());
     }
 
     /**
@@ -120,7 +120,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     public function getUsers(): iterable
     {
         $workspaceId = $this->getWorkspaceId();
-        return User::listFromArrays($this, $this->getCurler("/workspaces/$workspaceId/users")->getJson());
+        return User::listFromProvider($this, $this->getCurler("/workspaces/$workspaceId/users")->getJson());
     }
 
     /**
@@ -137,7 +137,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
         }
         else
         {
-            return User::fromArray($this, $this->getCurler("/user")->getJson());
+            return User::fromProvider($this, $this->getCurler("/user")->getJson());
         }
     }
 
@@ -149,7 +149,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     public function getClients(): iterable
     {
         $workspaceId = $this->getWorkspaceId();
-        return Client::listFromArrays($this, $this->getCurler("/workspaces/$workspaceId/clients")->getJson());
+        return Client::listFromProvider($this, $this->getCurler("/workspaces/$workspaceId/clients")->getJson());
     }
 
     /**
@@ -161,7 +161,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     public function getClient($id): Client
     {
         $workspaceId = $this->getWorkspaceId();
-        return Client::fromArray($this, $this->getCurler("/workspaces/$workspaceId/clients/$id")->getJson());
+        return Client::fromProvider($this, $this->getCurler("/workspaces/$workspaceId/clients/$id")->getJson());
     }
 
     /**
@@ -173,7 +173,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     {
         $workspaceId = $this->getWorkspaceId();
         $query       = ["hydrated" => true];
-        return Project::listFromArrays($this, $this->getCurler("/workspaces/$workspaceId/projects")->getJson($query));
+        return Project::listFromProvider($this, $this->getCurler("/workspaces/$workspaceId/projects")->getJson($query));
     }
 
     /**
@@ -186,7 +186,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     {
         $workspaceId = $this->getWorkspaceId();
         $query       = ["hydrated" => true];
-        return Project::fromArray($this, $this->getCurler("/workspaces/$workspaceId/projects/$id")->getJson($query));
+        return Project::fromProvider($this, $this->getCurler("/workspaces/$workspaceId/projects/$id")->getJson($query));
     }
 
     /**
@@ -202,7 +202,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
             return [];
         }
         $workspaceId = $this->getWorkspaceId();
-        return Task::listFromArrays($this, $this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks")->getJson());
+        return Task::listFromProvider($this, $this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks")->getJson());
     }
 
     /**
@@ -219,7 +219,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
             throw new RuntimeException("Invalid projectId");
         }
         $workspaceId = $this->getWorkspaceId();
-        return Task::fromArray($this, $this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks/$id")->getJson());
+        return Task::fromProvider($this, $this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks/$id")->getJson());
     }
 
     /**
@@ -287,7 +287,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
             $query["invoicingState"] = $billed ? "INVOICED" : "UNINVOICED";
         }
 
-        return TimeEntry::listFromArraysVia($this, $this->getPostCachingCurler(
+        return TimeEntry::listFromProvider($this, $this->getPostCachingCurler(
             "/workspaces/$workspaceId/reports/detailed"
         )->postJson($query)["timeentries"], function (array $entry)
         {
@@ -328,7 +328,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
         $workspaceId = $this->getWorkspaceId();
         $query       = ["hydrated" => true];
 
-        return TimeEntry::fromArray(
+        return TimeEntry::fromProvider(
             $this,
             $this->getCurler("/workspaces/$workspaceId/time-entries/$id")->getJson($query)
         );

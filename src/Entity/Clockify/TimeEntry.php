@@ -16,7 +16,7 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         if ($value)
         {
-            $this->User = User::fromArray($this->getProvider(), $value);
+            $this->User = User::fromProvider($this->getProvider(), $value);
         }
     }
 
@@ -24,7 +24,7 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         if ($value)
         {
-            $this->Project = Project::fromArray($this->getProvider(), $value);
+            $this->Project = Project::fromProvider($this->getProvider(), $value);
         }
     }
 
@@ -32,7 +32,7 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         if ($value)
         {
-            $this->Task = Task::fromArray($this->getProvider(), $value);
+            $this->Task = Task::fromProvider($this->getProvider(), $value);
         }
     }
 

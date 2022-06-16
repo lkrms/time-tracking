@@ -11,7 +11,6 @@ use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Lkrms\Console\Console;
 use Lkrms\Container\Container;
-use Lkrms\Core\Support\ClosureBuilder;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Exception\SyncOperationNotImplementedException;
 use Lkrms\Store\Cache;
@@ -439,12 +438,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 
     public function getClient($id): Client
     {
-        return Client::fromMappedArray(
+        return Client::fromProvider(
             $this,
             $this->getCurler("/api.xro/2.0/Contacts/$id")->getJson()["Contacts"],
-            self::SYNC_ENTITY_MAPS[Client::class],
-            false,
-            ClosureBuilder::SKIP_MISSING
+            null,
+            self::SYNC_ENTITY_MAPS[Client::class]
         );
     }
 
@@ -454,12 +452,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
             "name"  => "Name",
             "email" => "EmailAddress"
         ]);
-        return Client::listFromMappedArrays(
+        return Client::listFromProvider(
             $this,
             $this->getCurler("/api.xro/2.0/Contacts")->getAllByPage($query, "Contacts"),
-            self::SYNC_ENTITY_MAPS[Client::class],
-            false,
-            ClosureBuilder::SKIP_MISSING
+            null,
+            self::SYNC_ENTITY_MAPS[Client::class]
         );
     }
 
@@ -504,12 +501,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
             $data["LineItems"][] = $line;
         }
 
-        return Invoice::fromMappedArray(
+        return Invoice::fromProvider(
             $this,
             $this->getCurler("/api.xro/2.0/Invoices")->putJson($data)["Invoices"][0],
-            self::SYNC_ENTITY_MAPS[Invoice::class],
-            false,
-            ClosureBuilder::SKIP_MISSING
+            null,
+            self::SYNC_ENTITY_MAPS[Invoice::class]
         );
     }
 
@@ -526,12 +522,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
             "date"      => "Date",
             "due_date"  => "DueDate",
         ]);
-        return Invoice::listFromMappedArrays(
+        return Invoice::listFromProvider(
             $this,
             $this->filterInvoices($this->getCurler("/api.xro/2.0/Invoices")->getAllByPage($query, "Invoices")),
-            self::SYNC_ENTITY_MAPS[Invoice::class],
-            false,
-            ClosureBuilder::SKIP_MISSING
+            null,
+            self::SYNC_ENTITY_MAPS[Invoice::class]
         );
     }
 }

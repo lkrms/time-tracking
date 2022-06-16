@@ -10,7 +10,7 @@ class Project extends \Lkrms\Time\Entity\Project
 {
     protected function _setClient($value)
     {
-        $this->Client = Client::fromArray($this->getProvider(), $value);
+        $this->Client = Client::fromProvider($this->getProvider(), $value);
     }
 
 }

@@ -108,7 +108,7 @@ class TimeEntryCollection extends TypedCollection
             $time->Description = Convert::sparseToString("\n", [
                 $groupSummary[$groupBy],
                 ($show & TimeEntry::DESCRIPTION
-                    ? Convert::mergeLists($time->Description)
+                    ? Convert::linesToLists($time->Description)
                     : null),
             ]);
             $grouped[] = $time;
