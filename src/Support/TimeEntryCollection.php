@@ -2,8 +2,8 @@
 
 namespace Lkrms\Time\Support;
 
-use Lkrms\Container\DI;
-use Lkrms\Core\TypedCollection;
+use Lkrms\Concept\TypedCollection;
+use Lkrms\Concern\TBound;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Util\Convert;
 use Lkrms\Util\Env;
@@ -19,6 +19,8 @@ use UnexpectedValueException;
  */
 class TimeEntryCollection extends TypedCollection
 {
+    use TBound;
+
     protected function getItemClass(): string
     {
         return TimeEntry::class;
@@ -102,7 +104,7 @@ class TimeEntryCollection extends TypedCollection
         }
 
         /** @var TimeEntryCollection */
-        $grouped = DI::get(static::class);
+        $grouped = $this->container()->get(static::class);
         foreach ($groupTime as $groupBy => $time)
         {
             $time->Description = Convert::sparseToString("\n", [

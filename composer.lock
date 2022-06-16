@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "75f0f35107ec73ece11988d7c893f844",
+    "content-hash": "57d4f27bccf891e6bf785e95ae7e1d08",
     "packages": [
         {
             "name": "filp/whoops",
@@ -577,29 +577,31 @@
         },
         {
             "name": "lkrms/util",
-            "version": "v0.15.2",
+            "version": "v0.15.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lkrms/util-php.git",
-                "reference": "03ca681e03f0221dd5492800e26c7a5e92a48431"
+                "reference": "d0321e696e642e2f7c6e1f07274895ba60cacb4a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/util-php/zipball/03ca681e03f0221dd5492800e26c7a5e92a48431",
-                "reference": "03ca681e03f0221dd5492800e26c7a5e92a48431",
+                "url": "https://api.github.com/repos/lkrms/util-php/zipball/d0321e696e642e2f7c6e1f07274895ba60cacb4a",
+                "reference": "d0321e696e642e2f7c6e1f07274895ba60cacb4a",
                 "shasum": ""
             },
             "require": {
                 "composer-runtime-api": "^2.2",
                 "filp/whoops": "^2",
                 "lkrms/dice": "^4.0.3.1",
-                "php": ">=7.4",
+                "php": ">=7.4,<8.2",
                 "psr/container": "^2",
                 "psr/log": "^1"
             },
             "require-dev": {
                 "analog/analog": "^1",
+                "phpstan/extension-installer": "^1",
                 "phpstan/phpstan": "^1",
+                "phpstan/phpstan-deprecation-rules": "^1",
                 "phpunit/phpunit": "^9"
             },
             "suggest": {
@@ -621,9 +623,9 @@
             "description": "A PHP toolkit with opinionated defaults and a small footprint",
             "support": {
                 "issues": "https://github.com/lkrms/util-php/issues",
-                "source": "https://github.com/lkrms/util-php/tree/v0.15.2"
+                "source": "https://github.com/lkrms/util-php/tree/v0.15.4"
             },
-            "time": "2022-06-15T14:15:50+00:00"
+            "time": "2022-06-16T16:54:33+00:00"
         },
         {
             "name": "paragonie/random_compat",

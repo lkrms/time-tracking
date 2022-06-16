@@ -13,7 +13,7 @@ use Lkrms\Console\Console;
 use Lkrms\Container\Container;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Exception\SyncOperationNotImplementedException;
-use Lkrms\Store\Cache;
+use Lkrms\Facade\Cache;
 use Lkrms\Support\HttpRequest;
 use Lkrms\Support\HttpResponse;
 use Lkrms\Support\HttpServer;

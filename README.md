@@ -1,4 +1,4 @@
-# time-tracking
+# lkrms/time-tracking
 
 Time entry automation.
 

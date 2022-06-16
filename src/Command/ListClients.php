@@ -2,9 +2,9 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\App\AppContainer;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Console\Console;
+use Lkrms\Container\AppContainer;
 use Lkrms\Time\Entity\TimeEntryProvider;
 use Lkrms\Util\Convert;
 

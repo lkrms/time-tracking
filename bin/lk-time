@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
 
-use Lkrms\App\App;
 use Lkrms\Cli\Cli;
+use Lkrms\Facade\App;
 use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;

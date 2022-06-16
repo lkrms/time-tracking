@@ -3,11 +3,10 @@
 namespace Lkrms\Time\Command;
 
 use DateTime;
-use Lkrms\App\AppContainer;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOptionType;
 use Lkrms\Console\Console;
-use Lkrms\Container\DI;
+use Lkrms\Container\AppContainer;
 use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\InvoiceLineItem;
 use Lkrms\Time\Entity\InvoiceProvider;
@@ -132,7 +131,7 @@ class GenerateInvoices extends CliCommand
         foreach ($times as $time)
         {
             $clientId  = $time->Project->Client->Id;
-            $entries   = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = new TimeEntryCollection());
+            $entries   = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->App->get(TimeEntryCollection::class));
             $entries[] = $time;
             $clientNames[$clientId] = $time->Project->Client->Name;
             $timeEntryCount++;
@@ -231,7 +230,7 @@ class GenerateInvoices extends CliCommand
             $markInvoiced = [];
 
             /** @var Invoice */
-            $invoice            = DI::get(Invoice::class);
+            $invoice            = $this->App->get(Invoice::class);
             $invoice->Number    = $next ? $prefix . ($next++) : null;
             $invoice->Date      = new DateTime("today");
             $invoice->DueDate   = new DateTime("today +7 days");
@@ -241,7 +240,7 @@ class GenerateInvoices extends CliCommand
             foreach ($entries as $entry)
             {
                 /** @var InvoiceLineItem */
-                $item = $invoice->LineItems[] = DI::get(InvoiceLineItem::class);
+                $item = $invoice->LineItems[] = $this->App->get(InvoiceLineItem::class);
                 $item->Description = $entry->Description;
                 $item->Quantity    = $entry->getBillableHours();
                 $item->UnitAmount  = $entry->BillableRate;
