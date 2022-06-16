@@ -1,12 +1,12 @@
-/vendor/
 composer.phar
-
-/.env
-/var/
-*.generated.*
-*.log
+/vendor/
 
 phpstan.neon
 
 phpunit.xml
 .phpunit.*
+
+.env
+*.generated.php
+*.log
+/var/
