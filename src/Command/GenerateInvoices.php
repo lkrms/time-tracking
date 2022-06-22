@@ -3,67 +3,19 @@
 namespace Lkrms\Time\Command;
 
 use DateTime;
-use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOptionType;
 use Lkrms\Console\Console;
-use Lkrms\Container\AppContainer;
+use Lkrms\Time\Concept\Command;
 use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\InvoiceLineItem;
-use Lkrms\Time\Entity\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
-use Lkrms\Time\Entity\TimeEntryProvider;
 use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Util\Convert;
 use Lkrms\Util\Env;
 use Lkrms\Util\File;
 
-class GenerateInvoices extends CliCommand
+class GenerateInvoices extends Command
 {
-    /**
-     * @var AppContainer
-     */
-    private $App;
-
-    /**
-     * @var TimeEntryProvider
-     */
-    private $TimeEntryProvider;
-
-    /**
-     * @var InvoiceProvider
-     */
-    private $InvoiceProvider;
-
-    /**
-     * @var string
-     */
-    private $TimeEntryProviderName;
-
-    /**
-     * @var string
-     */
-    private $InvoiceProviderName;
-
-    public function __construct(
-        AppContainer $app,
-        TimeEntryProvider $timeEntryProvider,
-        InvoiceProvider $invoiceProvider
-    ) {
-        parent::__construct($app);
-        $this->App = $app;
-        list (
-            $this->TimeEntryProviderName,
-            $this->InvoiceProviderName
-        ) = array_map(
-            fn($provider) => preg_replace(
-                "/Provider$/", "", Convert::classToBasename(get_class($provider))
-            ), [
-                $this->TimeEntryProvider = $timeEntryProvider,
-                $this->InvoiceProvider   = $invoiceProvider,
-            ]
-        );
-    }
-
     protected function _getDescription(): string
     {
         return "Create invoices for unbilled time entries";
@@ -71,57 +23,19 @@ class GenerateInvoices extends CliCommand
 
     protected function _getOptions(): array
     {
-        return [
-            [
-                "long"        => "client",
-                "short"       => "c",
-                "valueName"   => "client_id",
-                "description" => "Create an invoice for a particular client",
-                "optionType"  => CliOptionType::VALUE,
-            ],
-            [
-                "long"        => "project",
-                "short"       => "p",
-                "valueName"   => "project_id",
-                "description" => "Create an invoice for a particular project",
-                "optionType"  => CliOptionType::VALUE,
-            ],
-            [
-                "long"            => "hide",
-                "short"           => "h",
-                "valueName"       => "value",
-                "description"     => "Exclude the given value from the invoice (may be used more than once)",
-                "optionType"      => CliOptionType::ONE_OF,
-                "allowedValues"   => ["date", "time", "project", "task", "user", "description"],
-                "multipleAllowed" => true,
-                "defaultValue"    => ["time", "user"],
-            ],
-            [
-                "long"        => "dry-run",
-                "short"       => "n",
-                "description" => "Print line items and exit",
-            ],
-        ];
+        return $this->getTimeEntryOptions("Create an invoice", false, true, true);
     }
 
     protected function _run(string ...$params)
     {
-        if ($this->getOptionValue("dry-run"))
+        if (!$this->getOptionValue("force"))
         {
             Env::dryRun(true);
         }
 
         Console::info("Retrieving unbilled time from", $this->TimeEntryProviderName);
 
-        $times = $this->TimeEntryProvider->getTimeEntries(
-            null,
-            $this->getOptionValue("client"),
-            $this->getOptionValue("project"),
-            new DateTime("1 jan last year"),
-            new DateTime("today"),
-            true,
-            false
-        );
+        $times = $this->getTimeEntries(true, false);
 
         /** @var TimeEntryCollection[] */
         $clientTimes    = [];
@@ -199,7 +113,7 @@ class GenerateInvoices extends CliCommand
         foreach ($clientTimes as $clientId => $entries)
         {
             $name    = $clientNames[$clientId];
-            $summary = sprintf("\$%.2f (%.2f hours)", $entries->BillableAmount, $entries->BillableHours);
+            $summary = $this->getBillableSummary($entries->BillableAmount, $entries->BillableHours);
 
             if (!($invClient = $invClients[$name] ?? null))
             {

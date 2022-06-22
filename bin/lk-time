@@ -6,6 +6,7 @@ use Lkrms\Facade\App;
 use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
+use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
 use Lkrms\Time\XeroProvider;
 
@@ -22,6 +23,7 @@ ClockifyProvider::bind($app);
 ClockifyProvider::bindServices($app);
 
 ListClients::register($app, ["client", "list"]);
+ListTimeEntries::register($app, ["entry", "list"]);
 GenerateInvoices::register($app, ["invoice", "generate"]);
 MarkTimeEntriesInvoiced::register($app, ["entry", "mark-invoiced"]);
 

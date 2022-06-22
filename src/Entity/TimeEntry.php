@@ -75,6 +75,11 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
     /**
      * @var bool|null
      */
+    public $IsInvoiced;
+
+    /**
+     * @var bool|null
+     */
     public $IsLocked;
 
     /**

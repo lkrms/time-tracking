@@ -71,4 +71,9 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
         $this->_setRate($value);
     }
 
+    protected function _setInvoicingInfo($value)
+    {
+        $this->IsInvoiced = !empty($value);
+    }
+
 }
