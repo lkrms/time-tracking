@@ -110,6 +110,23 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
     }
 
     /**
+     * @param string $string
+     * @param string|string[] $element
+     * @return string
+     */
+    private function enclose(string $string, $element): string
+    {
+        if (is_array($element))
+        {
+            return $element[0] . $string . $element[1];
+        }
+        else
+        {
+            return trim($element . $string . $element);
+        }
+    }
+
+    /**
      * Get a report-friendly summary of the time entry
      *
      * The format of the summary is as follows. Suppressed values and empty
@@ -128,9 +145,18 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
     public function getSummary(
         int $show          = TimeEntry::ALL,
         string $dateFormat = "d/m/Y",
-        string $timeFormat = "g.ia"
+        string $timeFormat = "g.ia",
+        bool $markdown     = false
     ): string
     {
+        $escape = $markdown ? "\\" : "";
+        $format = [
+            "project" => $markdown ? "**" : "",
+            "task"    => $markdown ? "" : "",
+            "user"    => $markdown ? "*" : "",
+            "line1"   => $markdown ? ["### ", ""] : "",
+        ];
+
         $parts1 = [];
         $parts2 = [];
 
@@ -145,18 +171,18 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
         }
         if ($parts1)
         {
-            $parts2[] = "[" . implode(" ", $parts1) . "]";
+            $parts2[] = "{$escape}[" . implode(" ", $parts1) . "{$escape}]";
             $parts1   = [];
         }
 
         // "<project> - <task>" => $parts2
         if (($show & self::PROJECT) && ($this->Project->Name ?? null))
         {
-            $parts1[] = $this->Project->Name;
+            $parts1[] = $this->enclose($this->Project->Name, $format["project"]);
         }
         if (($show & self::TASK) && ($this->Task->Name ?? null))
         {
-            $parts1[] = $this->Task->Name;
+            $parts1[] = $this->enclose($this->Task->Name, $format["task"]);
         }
         if ($parts1)
         {
@@ -167,13 +193,13 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
         // "(<user>)" => $parts2
         if (($show & self::USER) && ($this->User->Name ?? null))
         {
-            $parts2[] = "({$this->User->Name})";
+            $parts2[] = $this->enclose("({$this->User->Name})", $format["user"]);
         }
 
         // "[<date> <start> - <end>] <project> - <task> (<user>)" => $parts1
         if ($parts2)
         {
-            $parts1[] = implode(" ", $parts2);
+            $parts1[] = $this->enclose(implode(" ", $parts2), $format["line1"]);
         }
 
         if (($show & self::DESCRIPTION) && ($this->Description))
@@ -181,7 +207,7 @@ class TimeEntry extends \Lkrms\Sync\SyncEntity
             $parts1[] = $this->Description;
         }
 
-        return implode("\n", $parts1);
+        return implode($markdown ? "\n\n" : "\n", $parts1);
     }
 
     final public function mergeWith(TimeEntry $entry, string $delimiter = "\n\n"): TimeEntry

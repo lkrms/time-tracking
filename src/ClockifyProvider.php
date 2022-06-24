@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lkrms\Time;
 
 use DateTime;
+use Lkrms\Console\Console;
 use Lkrms\Container\Container;
 use Lkrms\Curler\CachingCurler;
 use Lkrms\Curler\Curler;
@@ -61,7 +62,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
 
     protected function getCacheExpiry(): ?int
     {
-        return 600;
+        return Env::getInt("clockify_cache_expiry", 600);
     }
 
     /**
@@ -84,6 +85,25 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
             );
         }
         $curler->DateFormatter = self::$DateFormatter;
+    }
+
+    public function checkHeartbeat(int $ttl = 300): void
+    {
+        $this->setTemporaryCacheExpiry($ttl ?: null);
+        try
+        {
+            $user = $this->getUser();
+        }
+        finally
+        {
+            $this->clearTemporaryCacheExpiry();
+        }
+        Console::debugOnce(
+            sprintf("Connected to Clockify workspace '%s' as %s ('%s')",
+                $user->ActiveWorkspace,
+                $user->Name,
+                $user->Id)
+        );
     }
 
     protected function getWorkspaceId(): string

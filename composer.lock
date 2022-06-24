@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6fd816dde32198d8c72748b099bdfa2f",
+    "content-hash": "e5bc0b1e07ae46fd5dce3ebedc1a10eb",
     "packages": [
         {
             "name": "adodb/adodb-php",
@@ -638,16 +638,16 @@
         },
         {
             "name": "lkrms/util",
-            "version": "v0.15.10",
+            "version": "v0.15.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lkrms/util-php.git",
-                "reference": "529993a2e2e5ef04aab60cbd6a59cfaff0113b4c"
+                "reference": "0696dd1a53dfacf683972ab262d7a2a73bb9c106"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/util-php/zipball/529993a2e2e5ef04aab60cbd6a59cfaff0113b4c",
-                "reference": "529993a2e2e5ef04aab60cbd6a59cfaff0113b4c",
+                "url": "https://api.github.com/repos/lkrms/util-php/zipball/0696dd1a53dfacf683972ab262d7a2a73bb9c106",
+                "reference": "0696dd1a53dfacf683972ab262d7a2a73bb9c106",
                 "shasum": ""
             },
             "require": {
@@ -685,9 +685,9 @@
             "description": "A PHP toolkit with opinionated defaults and a small footprint",
             "support": {
                 "issues": "https://github.com/lkrms/util-php/issues",
-                "source": "https://github.com/lkrms/util-php/tree/v0.15.10"
+                "source": "https://github.com/lkrms/util-php/tree/v0.15.12"
             },
-            "time": "2022-06-22T04:19:24+00:00"
+            "time": "2022-06-24T01:57:30+00:00"
         },
         {
             "name": "paragonie/random_compat",

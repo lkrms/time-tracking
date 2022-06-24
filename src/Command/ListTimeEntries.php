@@ -39,7 +39,7 @@ class ListTimeEntries extends Command
                 $billableHours  += $entry->getBillableHours();
             }
         }
-        $times = $times->groupBy($this->getTimeEntryMask());
+        $times = $times->groupBy($this->getTimeEntryMask(), null, true);
 
         /** @var TimeEntry $entry */
         foreach ($times as $entry)

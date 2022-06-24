@@ -70,7 +70,8 @@ class TimeEntryCollection extends TypedCollection
      */
     public function groupBy(
         $show = TimeEntry::ALL,
-        callable $callback = null
+        callable $callback = null,
+        bool $markdown     = false
     ): TimeEntryCollection
     {
         $dateFormat = Env::get("time_entry_date_format", "d/m/Y");
@@ -86,7 +87,8 @@ class TimeEntryCollection extends TypedCollection
             $summary = $t->getSummary(
                 $show & ~TimeEntry::DESCRIPTION,
                 $dateFormat,
-                $timeFormat
+                $timeFormat,
+                $markdown
             );
 
             $groupBy   = !is_null($callback) ? $callback($t) : [];
@@ -105,12 +107,13 @@ class TimeEntryCollection extends TypedCollection
 
         /** @var TimeEntryCollection */
         $grouped = $this->container()->get(static::class);
+        list ($separator, $marker) = $markdown ? ["\n\n", "*"] : ["\n", null];
         foreach ($groupTime as $groupBy => $time)
         {
-            $time->Description = Convert::sparseToString("\n", [
+            $time->Description = Convert::sparseToString($separator, [
                 $groupSummary[$groupBy],
                 ($show & TimeEntry::DESCRIPTION
-                    ? Convert::linesToLists($time->Description)
+                    ? Convert::linesToLists($time->Description, $separator, $marker)
                     : null),
             ]);
             $grouped[] = $time;
