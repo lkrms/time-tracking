@@ -4,14 +4,14 @@ namespace Lkrms\Time\Command;
 
 use DateTime;
 use Lkrms\Console\Console;
+use Lkrms\Facade\Convert;
+use Lkrms\Facade\Env;
+use Lkrms\Facade\File;
 use Lkrms\Time\Concept\Command;
 use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\InvoiceLineItem;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Support\TimeEntryCollection;
-use Lkrms\Util\Convert;
-use Lkrms\Util\Env;
-use Lkrms\Util\File;
 
 class GenerateInvoices extends Command
 {
@@ -25,7 +25,7 @@ class GenerateInvoices extends Command
         return $this->getTimeEntryOptions("Create an invoice", false, true, true);
     }
 
-    protected function _run(string ...$params)
+    protected function run(string ...$params)
     {
         if (!$this->getOptionValue("force"))
         {
@@ -44,7 +44,7 @@ class GenerateInvoices extends Command
         foreach ($times as $time)
         {
             $clientId  = $time->Project->Client->Id;
-            $entries   = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->App->get(TimeEntryCollection::class));
+            $entries   = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->app()->get(TimeEntryCollection::class));
             $entries[] = $time;
             $clientNames[$clientId] = $time->Project->Client->Name;
             $timeEntryCount++;
@@ -104,7 +104,7 @@ class GenerateInvoices extends Command
         }
 
         File::maybeCreateDirectory($tempDir = implode("/", [
-            $this->App->TempPath,
+            $this->app()->TempPath,
             Convert::classToBasename(self::class),
             $this->InvoiceProviderName . "-" . $this->InvoiceProvider->getBackendHash()
         ]));
@@ -143,7 +143,7 @@ class GenerateInvoices extends Command
             $markInvoiced = [];
 
             /** @var Invoice */
-            $invoice            = $this->App->get(Invoice::class);
+            $invoice            = $this->app()->get(Invoice::class);
             $invoice->Number    = $next ? $prefix . ($next++) : null;
             $invoice->Date      = new DateTime("today");
             $invoice->DueDate   = new DateTime("today +7 days");
@@ -153,7 +153,7 @@ class GenerateInvoices extends Command
             foreach ($entries as $entry)
             {
                 /** @var InvoiceLineItem */
-                $item = $invoice->LineItems[] = $this->App->get(InvoiceLineItem::class);
+                $item = $invoice->LineItems[] = $this->app()->get(InvoiceLineItem::class);
                 $item->Description = $entry->Description;
                 $item->Quantity    = $entry->getBillableHours();
                 $item->UnitAmount  = $entry->BillableRate;

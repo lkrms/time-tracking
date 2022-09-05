@@ -3,9 +3,9 @@
 namespace Lkrms\Time\Command;
 
 use Lkrms\Console\Console;
+use Lkrms\Facade\Convert;
+use Lkrms\Facade\Env;
 use Lkrms\Time\Concept\Command;
-use Lkrms\Util\Convert;
-use Lkrms\Util\Env;
 
 class MarkTimeEntriesInvoiced extends Command
 {
@@ -19,7 +19,7 @@ class MarkTimeEntriesInvoiced extends Command
         return $this->getTimeEntryOptions($this->_getDescription());
     }
 
-    protected function _run(string ...$params)
+    protected function run(string ...$params)
     {
         if (!$this->getOptionValue("force"))
         {

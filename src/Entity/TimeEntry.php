@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Lkrms\Time\Entity;
 
 use DateTime;
-use Lkrms\Util\Convert;
+use Lkrms\Facade\Convert;
 
 class TimeEntry extends \Lkrms\Sync\SyncEntity
 {

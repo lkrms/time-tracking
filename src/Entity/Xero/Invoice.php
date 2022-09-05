@@ -11,12 +11,12 @@ class Invoice extends \Lkrms\Time\Entity\Invoice
 {
     protected function _setClient($value)
     {
-        $this->Client = Client::fromProvider($this->getProvider(), $value);
+        $this->Client = Client::fromProvider($this->provider(), $value);
     }
 
     protected function _setLineItems($value)
     {
-        $this->LineItems = iterator_to_array(InvoiceLineItem::listFromProvider($this->getProvider(), $value));
+        $this->LineItems = iterator_to_array(InvoiceLineItem::listFromProvider($this->provider(), $value));
     }
 
 }

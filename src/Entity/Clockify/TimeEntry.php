@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Lkrms\Time\Entity\Clockify;
 
 use DateTime;
+use Lkrms\Facade\Convert;
 use Lkrms\Time\Entity\Project;
 use Lkrms\Time\Entity\Task;
 use Lkrms\Time\Entity\User;
-use Lkrms\Util\Convert;
 
 class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
 {
@@ -16,7 +16,7 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         if ($value)
         {
-            $this->User = User::fromProvider($this->getProvider(), $value);
+            $this->User = User::fromProvider($this->provider(), $value);
         }
     }
 
@@ -24,7 +24,7 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         if ($value)
         {
-            $this->Project = Project::fromProvider($this->getProvider(), $value);
+            $this->Project = Project::fromProvider($this->provider(), $value);
         }
     }
 
@@ -32,7 +32,7 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         if ($value)
         {
-            $this->Task = Task::fromProvider($this->getProvider(), $value);
+            $this->Task = Task::fromProvider($this->provider(), $value);
         }
     }
 

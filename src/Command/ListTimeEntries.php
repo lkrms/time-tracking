@@ -3,10 +3,10 @@
 namespace Lkrms\Time\Command;
 
 use Lkrms\Console\Console;
+use Lkrms\Facade\Convert;
 use Lkrms\Time\Concept\Command;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Support\TimeEntryCollection;
-use Lkrms\Util\Convert;
 
 class ListTimeEntries extends Command
 {
@@ -20,12 +20,12 @@ class ListTimeEntries extends Command
         return $this->getTimeEntryOptions("List time entries", true, false, true);
     }
 
-    protected function _run(string ...$params)
+    protected function run(string ...$params)
     {
         Console::info("Retrieving time entries from", $this->TimeEntryProviderName);
 
         /** @var TimeEntryCollection */
-        $times          = $this->App->get(TimeEntryCollection::class);
+        $times          = $this->app()->get(TimeEntryCollection::class);
         $billableCount  = 0;
         $billableAmount = 0;
         $billableHours  = 0;

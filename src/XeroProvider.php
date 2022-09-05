@@ -14,6 +14,9 @@ use Lkrms\Container\Container;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Exception\SyncOperationNotImplementedException;
 use Lkrms\Facade\Cache;
+use Lkrms\Facade\Convert;
+use Lkrms\Facade\Env;
+use Lkrms\Support\DateFormatter;
 use Lkrms\Support\HttpRequest;
 use Lkrms\Support\HttpResponse;
 use Lkrms\Support\HttpServer;
@@ -22,8 +25,6 @@ use Lkrms\Sync\SyncOperation;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\InvoiceProvider;
-use Lkrms\Util\Convert;
-use Lkrms\Util\Env;
 use RuntimeException;
 use Throwable;
 use UnexpectedValueException;
@@ -84,9 +85,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
      */
     private $Connections;
 
-    public static function bindConcrete(Container $container)
+    public static function getBindings(): array
     {
-        $container->bind(Invoice::class, \Lkrms\Time\Entity\Xero\Invoice::class);
+        return [
+            Invoice::class => \Lkrms\Time\Entity\Xero\Invoice::class
+        ];
     }
 
     public function __construct(Container $container)
@@ -114,6 +117,11 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
     protected function getBackendIdentifier(): array
     {
         return [$this->requireTenantId()];
+    }
+
+    protected function _getDateFormatter(): DateFormatter
+    {
+        return new DateFormatter();
     }
 
     protected function getBaseUrl(string $path = null): string

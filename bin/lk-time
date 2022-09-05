@@ -1,8 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-use Lkrms\Cli\Cli;
-use Lkrms\Facade\App;
+use Lkrms\Facade\Cli;
 use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
@@ -10,22 +9,14 @@ use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
 use Lkrms\Time\XeroProvider;
 
-require (__DIR__ . "/../vendor/autoload.php");
+require (dirname(__DIR__) . "/vendor/autoload.php");
 
-ini_set("memory_limit", "-1");
-
-$app = App::load(dirname(__DIR__));
-$app->enableCache();
-
-XeroProvider::bind($app);
-XeroProvider::bindServices($app);
-ClockifyProvider::bind($app);
-ClockifyProvider::bindServices($app);
-
-ListClients::register($app, ["client", "list"]);
-ListTimeEntries::register($app, ["entry", "list"]);
-GenerateInvoices::register($app, ["invoice", "generate"]);
-MarkTimeEntriesInvoiced::register($app, ["entry", "mark-invoiced"]);
-
-$status = Cli::run();
-exit ($status);
+(Cli::load(dirname(__DIR__))
+    ->enableCache()
+    ->service(XeroProvider::class)
+    ->service(ClockifyProvider::class)
+    ->command(["client", "list"], ListClients::class)
+    ->command(["entry", "list"], ListTimeEntries::class)
+    ->command(["invoice", "generate"], GenerateInvoices::class)
+    ->command(["entry", "mark-invoiced"], MarkTimeEntriesInvoiced::class)
+    ->runAndExit());

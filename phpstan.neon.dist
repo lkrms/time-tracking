@@ -9,5 +9,3 @@ parameters:
     - tests
   bootstrapFiles:
     - tests/bootstrap.php
-  ignoreErrors:
-    - "#^Property Lkrms\\\\Time\\\\Command\\\\[^\\s]+\\:\\:\\$App is never read, only written\\.$#"

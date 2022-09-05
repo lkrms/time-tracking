@@ -22,5 +22,5 @@ To use it anyway (at your own risk, of course):
 Then, run `./bin/lk-time help` for next steps.
 
 [clockify]: https://clockify.me
-[lkrms/util]: https://github.com/lkrms/util-php
+[lkrms/util]: https://github.com/lkrms/php-util
 [xero]: https://www.xero.com

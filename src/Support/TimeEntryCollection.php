@@ -3,12 +3,12 @@
 namespace Lkrms\Time\Support;
 
 use Lkrms\Concept\TypedCollection;
-use Lkrms\Concern\TBound;
+use Lkrms\Concern\HasContainer;
+use Lkrms\Facade\Compute;
+use Lkrms\Facade\Convert;
+use Lkrms\Facade\Env;
+use Lkrms\Facade\Test;
 use Lkrms\Time\Entity\TimeEntry;
-use Lkrms\Util\Convert;
-use Lkrms\Util\Env;
-use Lkrms\Util\Generate;
-use Lkrms\Util\Test;
 use UnexpectedValueException;
 
 /**
@@ -19,7 +19,7 @@ use UnexpectedValueException;
  */
 class TimeEntryCollection extends TypedCollection
 {
-    use TBound;
+    use HasContainer;
 
     protected function getItemClass(): string
     {
@@ -93,7 +93,7 @@ class TimeEntryCollection extends TypedCollection
 
             $groupBy   = !is_null($callback) ? $callback($t) : [];
             $groupBy[] = $summary;
-            $groupBy   = Generate::hash(...$groupBy);
+            $groupBy   = Compute::hash(...$groupBy);
 
             if (!array_key_exists($groupBy, $groupTime))
             {
@@ -106,7 +106,7 @@ class TimeEntryCollection extends TypedCollection
         }
 
         /** @var TimeEntryCollection */
-        $grouped = $this->container()->get(static::class);
+        $grouped = $this->app()->get(static::class);
         list ($separator, $marker) = $markdown ? ["\n\n", "*"] : ["\n", null];
         foreach ($groupTime as $groupBy => $time)
         {

@@ -6,11 +6,12 @@ namespace Lkrms\Time;
 
 use DateTime;
 use Lkrms\Console\Console;
-use Lkrms\Container\Container;
 use Lkrms\Curler\CachingCurler;
 use Lkrms\Curler\Curler;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Exception\SyncOperationNotImplementedException;
+use Lkrms\Facade\Convert;
+use Lkrms\Facade\Env;
 use Lkrms\Support\DateFormatter;
 use Lkrms\Sync\Provider\HttpSyncProvider;
 use Lkrms\Sync\SyncEntity;
@@ -24,22 +25,27 @@ use Lkrms\Time\Entity\User;
 use Lkrms\Time\Entity\UserProvider;
 use Lkrms\Time\Entity\Workspace;
 use Lkrms\Time\Entity\WorkspaceProvider;
-use Lkrms\Util\Convert;
-use Lkrms\Util\Env;
 use RuntimeException;
 
 class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, UserProvider, TimeEntryProvider
 {
-    public static function bindConcrete(Container $container)
+    public static function getBindings(): array
     {
-        $container->bind(TimeEntry::class, \Lkrms\Time\Entity\Clockify\TimeEntry::class);
-        $container->bind(Project::class, \Lkrms\Time\Entity\Clockify\Project::class);
-        $container->bind(Task::class, \Lkrms\Time\Entity\Clockify\Task::class);
+        return [
+            TimeEntry::class => \Lkrms\Time\Entity\Clockify\TimeEntry::class,
+            Project::class   => \Lkrms\Time\Entity\Clockify\Project::class,
+            Task::class      => \Lkrms\Time\Entity\Clockify\Task::class,
+        ];
     }
 
     protected function getBackendIdentifier(): array
     {
         return [$this->getBaseUrl(), $this->getWorkspaceId()];
+    }
+
+    protected function _getDateFormatter(): DateFormatter
+    {
+        return new DateFormatter();
     }
 
     protected function getBaseUrl(string $path = null): string

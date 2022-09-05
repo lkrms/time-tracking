@@ -5,19 +5,14 @@ namespace Lkrms\Time\Concept;
 use DateTime;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOptionType;
-use Lkrms\Container\AppContainer;
+use Lkrms\Container\CliAppContainer;
+use Lkrms\Facade\Convert;
 use Lkrms\Time\Entity\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Entity\TimeEntryProvider;
-use Lkrms\Util\Convert;
 
 abstract class Command extends CliCommand
 {
-    /**
-     * @var AppContainer
-     */
-    protected $App;
-
     /**
      * @var TimeEntryProvider
      */
@@ -38,22 +33,13 @@ abstract class Command extends CliCommand
      */
     protected $InvoiceProviderName;
 
-    public function __construct(
-        AppContainer $app,
-        TimeEntryProvider $timeEntryProvider,
-        InvoiceProvider $invoiceProvider
-    ) {
-        parent::__construct($app);
-        $this->App = $app;
+    public function __construct(CliAppContainer $container, TimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
+    {
+        parent::__construct($container);
         $this->TimeEntryProvider     = $timeEntryProvider;
         $this->InvoiceProvider       = $invoiceProvider;
         $this->TimeEntryProviderName = Convert::classToBasename(get_class($timeEntryProvider), "Provider");
         $this->InvoiceProviderName   = Convert::classToBasename(get_class($invoiceProvider), "Provider");
-    }
-
-    final public function app(): AppContainer
-    {
-        return $this->App;
     }
 
     protected function getTimeEntryOptions(
