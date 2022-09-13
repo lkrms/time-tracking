@@ -8,7 +8,7 @@ namespace Lkrms\Time\Entity;
  * Synchronises Project objects with a backend
  *
  */
-interface ProjectProvider extends \Lkrms\Sync\Provider\ISyncProvider
+interface ProjectProvider extends \Lkrms\Sync\Contract\ISyncProvider
 {
     /**
      * @param int|string $id

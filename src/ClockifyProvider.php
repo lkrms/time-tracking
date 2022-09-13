@@ -29,6 +29,11 @@ use RuntimeException;
 
 class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, UserProvider, TimeEntryProvider
 {
+    /**
+     * @var int|null
+     */
+    private $CacheExpiry;
+
     public static function getBindings(): array
     {
         return [
@@ -68,7 +73,9 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
 
     protected function getCacheExpiry(): ?int
     {
-        return Env::getInt("clockify_cache_expiry", 600);
+        return !is_null($this->CacheExpiry)
+            ? $this->CacheExpiry
+            : Env::getInt("clockify_cache_expiry", 600);
     }
 
     /**
@@ -95,14 +102,14 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
 
     public function checkHeartbeat(int $ttl = 300): void
     {
-        $this->setTemporaryCacheExpiry($ttl ?: null);
+        $this->CacheExpiry = $ttl ?: null;
         try
         {
             $user = $this->getUser();
         }
         finally
         {
-            $this->clearTemporaryCacheExpiry();
+            $this->CacheExpiry = null;
         }
         Console::debugOnce(
             sprintf("Connected to Clockify workspace '%s' as %s ('%s')",

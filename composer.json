@@ -6,7 +6,7 @@
         "php": ">=7.4,<8.2",
         "firebase/php-jwt": "^6.2",
         "league/oauth2-client": "^2.6",
-        "lkrms/util": "^0.17.2"
+        "lkrms/util": "^0.17.4"
     },
     "autoload": {
         "psr-4": {

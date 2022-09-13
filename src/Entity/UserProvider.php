@@ -8,7 +8,7 @@ namespace Lkrms\Time\Entity;
  * Synchronises User objects with a backend
  *
  */
-interface UserProvider extends \Lkrms\Sync\Provider\ISyncProvider
+interface UserProvider extends \Lkrms\Sync\Contract\ISyncProvider
 {
     /**
      * @param int|string|null $id

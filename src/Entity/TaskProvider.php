@@ -8,7 +8,7 @@ namespace Lkrms\Time\Entity;
  * Synchronises Task objects with a backend
  *
  */
-interface TaskProvider extends \Lkrms\Sync\Provider\ISyncProvider
+interface TaskProvider extends \Lkrms\Sync\Contract\ISyncProvider
 {
     /**
      * @param int|string $id

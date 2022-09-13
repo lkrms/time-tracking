@@ -8,7 +8,7 @@ namespace Lkrms\Time\Entity;
  * Synchronises Workspace objects with a backend
  *
  */
-interface WorkspaceProvider extends \Lkrms\Sync\Provider\ISyncProvider
+interface WorkspaceProvider extends \Lkrms\Sync\Contract\ISyncProvider
 {
     /**
      * @param int|string $id
