@@ -11,6 +11,11 @@ parameters:
 			path: src/Command/GenerateInvoices.php
 
 		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\InvoiceProvider\\:\\:getInvoices\\(\\) invoked with 1 parameter, 0 required\\.$#"
+			count: 1
+			path: src/Command/ListInvoices.php
+
+		-
 			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:getIdClaims\\(\\) is unused\\.$#"
 			count: 1
 			path: src/XeroProvider.php

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Lkrms\Time\Concept;
 
 use DateTime;
@@ -7,6 +9,7 @@ use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOptionType;
 use Lkrms\Container\CliAppContainer;
 use Lkrms\Facade\Convert;
+use Lkrms\Sync\Contract\ISyncProvider;
 use Lkrms\Time\Entity\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Entity\TimeEntryProvider;
@@ -24,6 +27,11 @@ abstract class Command extends CliCommand
     protected $InvoiceProvider;
 
     /**
+     * @var ISyncProvider[]
+     */
+    protected $UniqueProviders;
+
+    /**
      * @var string
      */
     protected $TimeEntryProviderName;
@@ -33,13 +41,20 @@ abstract class Command extends CliCommand
      */
     protected $InvoiceProviderName;
 
+    /**
+     * @var string[]
+     */
+    protected $UniqueProviderNames;
+
     public function __construct(CliAppContainer $container, TimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
     {
         parent::__construct($container);
         $this->TimeEntryProvider     = $timeEntryProvider;
         $this->InvoiceProvider       = $invoiceProvider;
+        $this->UniqueProviders       = Convert::toUniqueList([$this->TimeEntryProvider, $this->InvoiceProvider]);
         $this->TimeEntryProviderName = Convert::classToBasename(get_class($timeEntryProvider), "Provider");
         $this->InvoiceProviderName   = Convert::classToBasename(get_class($invoiceProvider), "Provider");
+        $this->UniqueProviderNames   = Convert::stringsToUniqueList([$this->TimeEntryProviderName, $this->InvoiceProviderName]);
     }
 
     protected function getTimeEntryOptions(

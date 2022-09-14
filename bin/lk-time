@@ -3,8 +3,10 @@
 
 use Lkrms\Facade\Cli;
 use Lkrms\Time\ClockifyProvider;
+use Lkrms\Time\Command\CheckHeartbeat;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
+use Lkrms\Time\Command\ListInvoices;
 use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
 use Lkrms\Time\XeroProvider;
@@ -17,6 +19,8 @@ require (dirname(__DIR__) . "/vendor/autoload.php");
     ->service(ClockifyProvider::class)
     ->command(["client", "list"], ListClients::class)
     ->command(["entry", "list"], ListTimeEntries::class)
+    ->command(["invoice", "list"], ListInvoices::class)
     ->command(["invoice", "generate"], GenerateInvoices::class)
     ->command(["entry", "mark-invoiced"], MarkTimeEntriesInvoiced::class)
+    ->command(["heartbeat"], CheckHeartbeat::class)
     ->runAndExit());

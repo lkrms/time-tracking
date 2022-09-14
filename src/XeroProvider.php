@@ -80,11 +80,6 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
      */
     private $TenantIdKey;
 
-    /**
-     * @var array|null
-     */
-    private $Connections;
-
     public static function getBindings(): array
     {
         return [
@@ -131,40 +126,73 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 
     protected function getHeaders(?string $path): ?CurlerHeaders
     {
-        $headers = new CurlerHeaders();
-        $headers->setHeader("Accept", "application/json");
-        $headers->setHeader("Authorization", "Bearer " . $this->getAccessToken());
-
-        if ($path != "/connections")
+        if ($path == "/connections")
+        {
+            $tenantId    = null;
+            $accessToken = $this->getAccessToken();
+        }
+        else
         {
             if (!($tenantId = $this->getTenantId()))
             {
                 Console::warn(
-                    "Set environment variable 'xero_tenant_id' to one of the following GUIDs:",
-                    implode("\n", array_map(
-                        fn($conn) => sprintf("- %s ~~(%s)~~", $conn["tenantId"], $conn["tenantName"]),
-                        $this->Connections
-                    ))
+                    "Environment variable 'xero_tenant_id' should be set to one of the following GUIDs:",
+                    $this->getTenantList($this->getConnections())
                 );
                 throw new RuntimeException("No tenant ID");
             }
+            $accessToken = $this->getAccessToken();
+        }
+
+        $headers = new CurlerHeaders();
+        $headers->setHeader("Accept", "application/json");
+        $headers->setHeader("Authorization", "Bearer " . $accessToken);
+        if ($tenantId)
+        {
             $headers->setHeader("Xero-Tenant-Id", $tenantId);
         }
 
         return $headers;
     }
 
+    public function checkHeartbeat(int $ttl = 300): void
+    {
+        $connections = $this->getConnections();
+        Console::debug("Connected to Xero with " . Convert::numberToNoun(
+            count($connections), "tenant connection", null, true
+        ) . ":", $this->getTenantList($connections));
+    }
+
+    private function getConnections(int $ttl = 300): array
+    {
+        // See https://developer.xero.com/documentation/guides/oauth2/tenants
+        return $this->getCurler("/connections", $ttl)->getJson();
+    }
+
+    private function getTenantList(array $connections): string
+    {
+        return implode("\n", array_map(
+            fn($conn) => sprintf("- %s ~~(%s)~~", $conn["tenantId"], $conn["tenantName"]),
+            $connections
+        ));
+    }
+
+    /**
+     * @todo Move to library
+     */
     private function getJwks(): array
     {
+        $url = "https://identity.xero.com/.well-known/openid-configuration/jwks";
         return Cache::maybeGet(
-            "jwks/" . $this->getBaseUrl(),
-            fn() => json_decode(file_get_contents(
-                "https://identity.xero.com/.well-known/openid-configuration/jwks"
-            ), true),
+            "jwks/" . $url,
+            fn() => json_decode(file_get_contents($url), true),
             24 * 3600
         );
     }
 
+    /**
+     * @todo Move to library
+     */
     private function getVerifiedJwt(string $token): array
     {
         return (array)JWT::decode($token, JWK::parseKeySet($this->getJwks()));
@@ -190,18 +218,6 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         return $token;
     }
 
-    private function getIdToken(): ?string
-    {
-        return Cache::get("{$this->TokenKey}/id") ?: null;
-    }
-
-    private function getIdClaims(): ?array
-    {
-        return ($jwt = $this->getIdToken())
-            ? $this->getVerifiedJwt($jwt)
-            : null;
-    }
-
     private function requireTenantId(): string
     {
         if ($tenantId = $this->getTenantId())
@@ -213,16 +229,49 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 
     private function getTenantId(): ?string
     {
-        while (!($tenantId = Env::get("xero_tenant_id", null) ?: Cache::get($this->TenantIdKey)))
+        // Flush the token cache to trigger [re-]authorization if a cached or
+        // configured tenant ID isn't in the connections list
+        $this->checkTenantAccess();
+
+        if ($tenantId = Env::get("xero_tenant_id", null))
         {
-            if ($i ?? 0)
-            {
-                return null;
-            }
-            $this->authorize(false, true);
-            $i = 1;
+            return $tenantId;
         }
+
+        // If no tenant ID is configured, try to get one from the cache or via
+        // authorization (e.g. if only one tenant is authorized)
+        $i = 0;
+        do
+        {
+            if ($tenantId = Cache::get($this->TenantIdKey) ?: null)
+            {
+                break;
+            }
+            $this->authorize();
+        }
+        while (!$i++);
+
         return $tenantId;
+    }
+
+    private function checkTenantAccess(bool $flush = true, bool $throw = false)
+    {
+        $tenantId = Env::get("xero_tenant_id", null) ?: Cache::get($this->TenantIdKey);
+        if ($tenantId && empty(array_filter(
+            $connections = $this->getConnections(),
+            fn($conn) => !strcasecmp($conn["tenantId"], $tenantId)
+        )))
+        {
+            Console::warn("Not connected to Xero tenant '$tenantId'; tenant connections:", $this->getTenantList($connections));
+            if ($flush)
+            {
+                $this->flushToken();
+            }
+            if ($throw)
+            {
+                throw new RuntimeException("Invalid tenant ID: $tenantId");
+            }
+        }
     }
 
     public function authorize(bool $refresh = false, bool $reauthorize = false): void
@@ -331,7 +380,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         }
 
         $authEventId = $this->getVerifiedJwt($token->getToken())["authentication_event_id"];
-        $connections = $this->Connections = $this->getCurler("/connections")->getJson();
+        $connections = $this->getConnections();
 
         // If a connection was "newly authorized in the current auth flow", or
         // only one connection exists, we can safely use its tenantId in lieu of
@@ -339,8 +388,13 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         if (($connection = array_filter($connections, fn($conn) => $conn["authEventId"] == $authEventId)) ||
             ($connection = count($connections) == 1 ? $connections : []))
         {
-            Cache::set($this->TenantIdKey, $connection[0]["tenantId"]);
+            Cache::set($this->TenantIdKey, reset($connection)["tenantId"]);
         }
+        else
+        {
+            Cache::delete($this->TenantIdKey);
+        }
+        $this->checkTenantAccess(false, true);
     }
 
     private function refreshToken(): bool
@@ -358,8 +412,21 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         return false;
     }
 
+    private function getIdToken(): ?string
+    {
+        return Cache::get("{$this->TokenKey}/id") ?: null;
+    }
+
+    private function getIdClaims(): ?array
+    {
+        return ($jwt = $this->getIdToken())
+            ? $this->getVerifiedJwt($jwt)
+            : null;
+    }
+
     private function flushToken()
     {
+        Console::debug("Flushing OAuth token");
         Cache::delete($this->TokenKey);
         Cache::delete("{$this->TokenKey}/id");
         Cache::delete("{$this->TokenKey}/refresh");
