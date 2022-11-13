@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time;
 
-use DateTime;
+use DateTimeInterface;
 use Lkrms\Curler\CachingCurler;
 use Lkrms\Curler\Curler;
 use Lkrms\Curler\CurlerHeaders;
@@ -251,16 +251,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
     /**
      * @return iterable<TimeEntry>
      */
-    public function getTimeEntries(
-        Context $ctx,
-        $user          = null,
-        $client        = null,
-        $project       = null,
-        DateTime $from = null,
-        DateTime $to   = null,
-        bool $billable = null,
-        bool $billed   = null
-    ): iterable
+    public function getTimeEntries(Context $ctx, $user = null, $client = null, $project = null, DateTimeInterface $from = null, DateTimeInterface $to = null, bool $billable = null, bool $billed = null): iterable
     {
         $workspaceId = $this->getWorkspaceId();
 

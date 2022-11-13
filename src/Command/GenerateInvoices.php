@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
-use DateTime;
+use DateTimeImmutable;
 use Lkrms\Facade\Console;
 use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
@@ -147,8 +147,8 @@ class GenerateInvoices extends Command
             /** @var Invoice */
             $invoice            = $this->app()->get(Invoice::class);
             $invoice->Number    = $next ? $prefix . ($next++) : null;
-            $invoice->Date      = new DateTime("today");
-            $invoice->DueDate   = new DateTime("today +7 days");
+            $invoice->Date      = new DateTimeImmutable("today");
+            $invoice->DueDate   = new DateTimeImmutable("today +7 days");
             $invoice->Client    = $invClient;
             $invoice->LineItems = [];
 

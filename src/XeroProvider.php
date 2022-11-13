@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lkrms\Time;
 
 use Closure;
+use DateTimeInterface;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 use League\OAuth2\Client\Provider\GenericProvider;
@@ -17,6 +18,7 @@ use Lkrms\Facade\Console;
 use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
 use Lkrms\Support\DateFormatter;
+use Lkrms\Support\DateParser\RegexDateParser;
 use Lkrms\Support\HttpHeader;
 use Lkrms\Support\HttpRequest;
 use Lkrms\Support\HttpResponse;
@@ -64,6 +66,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
             "reference" => "Reference",
             "date"      => "Date",
             "due_date"  => "DueDate",
+            "status"    => "Status",
         ],
     ];
 
@@ -146,7 +149,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 
     protected function createDateFormatter(): DateFormatter
     {
-        return new DateFormatter();
+        return new DateFormatter(DateTimeInterface::ATOM, null, RegexDateParser::dotNet());
     }
 
     protected function getBaseUrl(?string $path = null): string
@@ -461,52 +464,66 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         Cache::delete($this->TenantIdKey);
     }
 
-    private function buildQuery(Context $ctx, array $fieldMap, array $where = [], string $groupGlue = " AND ", string $fieldGlue = " OR "): array
+    private function buildQuery(Context $ctx, array $fieldMap): array
     {
+        $query = [
+            "page" => 1
+        ];
+
+        $where = [];
         foreach ($fieldMap as $filterField => $field)
         {
-            if (!is_null($values = $ctx->claimFilterValue($filterField)))
+            if (is_null($values = $ctx->claimFilterValue($_filterField = $filterField)) &&
+                is_null($values = $ctx->claimFilterValue($_filterField = "!$filterField")))
             {
-                // Don't replace values passed in by provider code
-                if (array_key_exists($field, $where))
-                {
-                    continue;
-                }
-                // TODO: escape each $value
-                $where[$field] = array_map(function ($value) use ($field)
+                continue;
+            }
+
+            [$prefix, $eq, $glue] = ($_filterField === $filterField
+                ? ["", "==", " OR "]
+                : ["NOT ", "!=", " AND "]);
+
+            // TODO: escape each $value
+            $where[$field] = array_map(
+                function ($value) use ($field, $prefix, $eq)
                 {
                     $expr = preg_replace(
                         ['/^\*([^*]*)\*$/', '/^([^*]*)\*$/', '/^\*([^*]*)$/'],
                         [
-                            "{$field}.Contains(\"\$1\")",
-                            "{$field}.StartsWith(\"\$1\")",
-                            "{$field}.EndsWith(\"\$1\")",
+                            "{$prefix}{$field}.Contains(\"\$1\")",
+                            "{$prefix}{$field}.StartsWith(\"\$1\")",
+                            "{$prefix}{$field}.EndsWith(\"\$1\")",
                         ],
                         $value
                     );
-                    if ($expr == $value)
+                    if ($expr === $value)
                     {
-                        return "{$field}=\"$value\"";
+                        return "{$field}{$eq}\"$value\"";
                     }
+
                     return $expr;
-                }, Convert::toArray($values));
-            }
+                },
+                Convert::toArray($values)
+            );
+            $where[$field]["__glue"] = $glue;
         }
-        $query = ["page" => 1];
         if ($where)
         {
             $parts = [];
             foreach ($where as $group)
             {
-                $expr = implode($fieldGlue, $group);
+                $glue = $group["__glue"];
+                unset($group["__glue"]);
+                $expr = implode($glue, $group);
                 if (count($where) > 1 && count($group) > 1)
                 {
                     $expr = "($expr)";
                 }
                 $parts[] = $expr;
             }
-            $query["where"] = implode($groupGlue, $parts);
+            $query["where"] = implode(" AND ", $parts);
         }
+
         if ($orderby = $ctx->claimFilterValue('$orderby'))
         {
             $parts = [];
@@ -528,6 +545,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
                 $query["order"] = implode(",", $parts);
             }
         }
+
         return $query;
     }
 
@@ -565,33 +583,37 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 
     protected function getHttpDefinition(string $entity, HttpSyncDefinitionBuilder $define)
     {
+        $plural = $entity::plural();
+        $define = ($define->path("/api.xro/2.0/" . $plural)
+            ->query(
+                fn(int $op, Context $ctx) => ($op == OP::READ_LIST
+                    ? $this->buildQuery($ctx, self::QUERY_FIELD_MAPS[$entity])
+                    : null)
+            )->pagerCallback(
+                fn() => new QueryPager(null, $plural)
+            ));
+        $pipeline = (Pipeline::create()
+            ->throughKeyMap(self::SYNC_ENTITY_KEY_MAPS[$entity]));
+
         switch ($entity)
         {
             case Invoice::class:
                 return $define->operations([OP::READ, OP::READ_LIST, OP::CREATE])
-                    ->path("/api.xro/2.0/Invoices")
-                    ->query(fn(int $op, Context $ctx) => $op == OP::READ_LIST
-                        ? $this->buildQuery($ctx, self::QUERY_FIELD_MAPS[$entity])
-                        : null)
-                    ->pagerCallback(fn() => new QueryPager(null, "Invoices"))
-                    ->dataToEntityPipeline(Pipeline::create()
-                        ->throughKeyMap(self::SYNC_ENTITY_KEY_MAPS[$entity])
-                        ->through(fn(array $payload, Closure $next) => $payload["Type"] != "ACCREC" ? null : $next($payload))
-                        ->unless(fn($result) => !is_null($result)))
-                    ->entityToDataPipeline(Pipeline::create()
-                        ->through(fn(Invoice $invoice, Closure $next) => $next($this->generateInvoice($invoice))));
+                    ->dataToEntityPipeline(
+                        $pipeline->through(
+                            fn(array $payload, Closure $next) => ($payload["Type"] != "ACCREC"
+                                ? null
+                                : $next($payload))
+                        )->unless(
+                            fn($result) => !is_null($result)
+                        )
+                    )->entityToDataPipeline(Pipeline::create()->through(
+                        fn(Invoice $invoice, Closure $next) => $next($this->generateInvoice($invoice))
+                    ));
 
             case Client::class:
                 return $define->operations([OP::READ, OP::READ_LIST])
-                    ->path("/api.xro/2.0/Contacts")
-                    ->query(fn(int $op, Context $ctx) => $op == OP::READ_LIST
-                        ? $this->buildQuery($ctx, self::QUERY_FIELD_MAPS[$entity])
-                        : null)
-                    ->pagerCallback(fn() => new QueryPager(null, "Contacts"))
-                    ->dataToEntityPipeline(
-                        (Pipeline::create()
-                            ->throughKeyMap(self::SYNC_ENTITY_KEY_MAPS[Client::class]))
-                    );
+                    ->dataToEntityPipeline($pipeline);
         }
 
         return null;

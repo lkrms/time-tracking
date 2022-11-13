@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity\Clockify;
 
-use DateTime;
+use DateTimeImmutable;
 use Lkrms\Facade\Convert;
 use Lkrms\Time\Entity\Project;
 use Lkrms\Time\Entity\Task;
@@ -40,12 +40,12 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         if ($value["start"] ?? null)
         {
-            $this->Start = new DateTime($value["start"]);
+            $this->Start = new DateTimeImmutable($value["start"]);
         }
 
         if ($value["end"] ?? null)
         {
-            $this->End = new DateTime($value["end"]);
+            $this->End = new DateTimeImmutable($value["end"]);
         }
 
         if (is_int($value["duration"] ?? null))

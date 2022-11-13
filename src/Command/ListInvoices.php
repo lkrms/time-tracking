@@ -6,6 +6,7 @@ namespace Lkrms\Time\Command;
 
 use Lkrms\Facade\Console;
 use Lkrms\Facade\Env;
+use Lkrms\Facade\Format;
 use Lkrms\Time\Concept\Command;
 use Lkrms\Time\Entity\Invoice;
 
@@ -27,6 +28,7 @@ class ListInvoices extends Command
 
         $query = [
             '$orderby' => "date desc",
+            "!status"  => "DELETED",
         ];
         if ($prefix = Env::get("invoice_number_prefix", null))
         {
@@ -41,7 +43,7 @@ class ListInvoices extends Command
                 "==> %s for \$%.2f\n  date: %s\n  client: %s\n\n",
                 $invoice->Number,
                 $invoice->Total,
-                $invoice->Date,
+                Format::date($invoice->Date),
                 $invoice->Client->Name,
             );
         }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
-use DateTime;
+use DateTimeInterface;
 use Lkrms\Facade\Convert;
 
 class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
@@ -48,12 +48,12 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
     public $Project;
 
     /**
-     * @var DateTime|null
+     * @var DateTimeInterface|null
      */
     public $Start;
 
     /**
-     * @var DateTime|null
+     * @var DateTimeInterface|null
      */
     public $End;
 
@@ -86,6 +86,14 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
      * @var TimeEntry[]|null
      */
     private $Merged;
+
+    public static function getDateProperties(): array
+    {
+        return [
+            'Start',
+            'End',
+        ];
+    }
 
     /**
      * @return TimeEntry[]|null

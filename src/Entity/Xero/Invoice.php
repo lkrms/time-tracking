@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity\Xero;
 
-use Lkrms\Support\ArrayKeyConformity;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\InvoiceLineItem;
 

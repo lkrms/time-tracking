@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Concept;
 
-use DateTime;
+use DateTimeImmutable;
 use Lkrms\Cli\CliAppContainer;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionType;
@@ -135,8 +135,8 @@ abstract class Command extends CliCommand
             null,
             $this->getOptionValue("client"),
             $this->getOptionValue("project"),
-            new DateTime($this->getOptionValue("from")),
-            new DateTime($this->getOptionValue("to")),
+            new DateTimeImmutable($this->getOptionValue("from")),
+            new DateTimeImmutable($this->getOptionValue("to")),
             $billable,
             $billed
         );

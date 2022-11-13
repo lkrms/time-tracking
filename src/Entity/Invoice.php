@@ -22,12 +22,12 @@ class Invoice extends \Lkrms\Sync\Concept\SyncEntity
     public $Reference;
 
     /**
-     * @var \DateTime|null
+     * @var \DateTimeInterface|null
      */
     public $Date;
 
     /**
-     * @var \DateTime|null
+     * @var \DateTimeInterface|null
      */
     public $DueDate;
 
@@ -70,5 +70,13 @@ class Invoice extends \Lkrms\Sync\Concept\SyncEntity
      * @var float|null
      */
     public $Total;
+
+    public static function getDateProperties(): array
+    {
+        return [
+            'Date',
+            'DueDate',
+        ];
+    }
 
 }
