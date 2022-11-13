@@ -20,15 +20,15 @@ use Lkrms\Sync\Concept\SyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder;
 use Lkrms\Sync\Support\SyncContext as Context;
 use Lkrms\Sync\Support\SyncOperation as OP;
-use Lkrms\Time\Entity\BillableTimeEntryProvider;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Project;
+use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
+use Lkrms\Time\Entity\Provider\UserProvider;
+use Lkrms\Time\Entity\Provider\WorkspaceProvider;
 use Lkrms\Time\Entity\Task;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Entity\User;
-use Lkrms\Time\Entity\UserProvider;
 use Lkrms\Time\Entity\Workspace;
-use Lkrms\Time\Entity\WorkspaceProvider;
 use RuntimeException;
 
 /**

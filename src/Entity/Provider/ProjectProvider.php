@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Lkrms\Time\Entity;
+namespace Lkrms\Time\Entity\Provider;
 
 use Lkrms\Sync\Contract\ISyncProvider;
 use Lkrms\Sync\Support\SyncContext;
+use Lkrms\Time\Entity\Project;
 
 /**
  * Syncs Project objects with a backend

@@ -29,7 +29,7 @@ use Lkrms\Sync\Support\SyncOperation as OP;
 use Lkrms\Sync\Support\SyncStore;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Invoice;
-use Lkrms\Time\Entity\InvoiceProvider;
+use Lkrms\Time\Entity\Provider\InvoiceProvider;
 use RuntimeException;
 use Throwable;
 use UnexpectedValueException;

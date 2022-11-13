@@ -11,8 +11,8 @@ use Lkrms\Cli\CliOptionType;
 use Lkrms\Cli\Concept\CliCommand;
 use Lkrms\Facade\Convert;
 use Lkrms\Sync\Contract\ISyncProvider;
-use Lkrms\Time\Entity\BillableTimeEntryProvider;
-use Lkrms\Time\Entity\InvoiceProvider;
+use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
+use Lkrms\Time\Entity\Provider\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
 
 abstract class Command extends CliCommand
