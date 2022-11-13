@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Console\Console;
+use Lkrms\Facade\Console;
 use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
 use Lkrms\Time\Concept\Command;
 
 class MarkTimeEntriesInvoiced extends Command
 {
-    protected function _getDescription(): string
+    public function getDescription(): string
     {
         return "Mark time entries as invoiced";
     }
 
-    protected function _getOptions(): array
+    protected function getOptionList(): array
     {
-        return $this->getTimeEntryOptions($this->_getDescription());
+        return $this->getTimeEntryOptions($this->getDescription());
     }
 
     protected function run(string ...$params)
@@ -40,7 +40,7 @@ class MarkTimeEntriesInvoiced extends Command
             $totalHours    += $entry->getBillableHours();
         }
 
-        $count = Convert::numberToNoun(count($markInvoiced), "time entry", "time entries", true);
+        $count = Convert::plural(count($markInvoiced), "time entry", "time entries", true);
         $total = $this->getBillableSummary($totalAmount, $totalHours);
 
         if (Env::dryRun())

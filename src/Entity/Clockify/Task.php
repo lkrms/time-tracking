@@ -10,7 +10,7 @@ class Task extends \Lkrms\Time\Entity\Task
 {
     protected function _setProject($value)
     {
-        $this->Project = Project::fromProvider($this->provider(), $value);
+        $this->Project = Project::provide($value, $this->provider(), $this->requireContext()->push($this));
     }
 
 }

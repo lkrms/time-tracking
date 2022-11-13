@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Console\Console;
+use Lkrms\Facade\Console;
 use Lkrms\Facade\Env;
 use Lkrms\Time\Concept\Command;
+use Lkrms\Time\Entity\Invoice;
 
 class ListInvoices extends Command
 {
-    protected function _getDescription(): string
+    public function getDescription(): string
     {
         return "List invoices in " . $this->InvoiceProviderName;
     }
 
-    protected function _getOptions(): array
+    protected function getOptionList(): array
     {
         return [];
     }
@@ -31,8 +32,9 @@ class ListInvoices extends Command
         {
             $query["number"] = "{$prefix}*";
         }
-        $invoices = $this->InvoiceProvider->getInvoices($query);
+        $invoices = $this->InvoiceProvider->with(Invoice::class)->getList($query);
 
+        /** @var Invoice $invoice */
         foreach ($invoices as $invoice)
         {
             printf(

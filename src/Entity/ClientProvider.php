@@ -4,21 +4,17 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
+use Lkrms\Sync\Contract\ISyncProvider;
+use Lkrms\Sync\Support\SyncContext;
+
 /**
- * Synchronises Client objects with a backend
+ * Syncs Client objects with a backend
  *
+ * @method Client getClient(SyncContext $ctx, int|string|null $id)
+ * @method iterable<Client> getClients(SyncContext $ctx)
+ *
+ * @lkrms-generate-command lk-util generate sync provider --class='Lkrms\Time\Entity\Client' --magic --op='get,get-list'
  */
-interface ClientProvider extends \Lkrms\Sync\Contract\ISyncProvider
+interface ClientProvider extends ISyncProvider
 {
-    /**
-     * @param int|string $id
-     * @return Client
-     */
-    public function getClient($id): Client;
-
-    /**
-     * @return iterable<Client>
-     */
-    public function getClients(): iterable;
-
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Lkrms\Time\Command;
 
 use DateTime;
-use Lkrms\Console\Console;
+use Lkrms\Facade\Console;
 use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
 use Lkrms\Facade\File;
@@ -17,12 +17,12 @@ use Lkrms\Time\Support\TimeEntryCollection;
 
 class GenerateInvoices extends Command
 {
-    protected function _getDescription(): string
+    public function getDescription(): string
     {
         return "Create invoices for unbilled time entries";
     }
 
-    protected function _getOptions(): array
+    protected function getOptionList(): array
     {
         return $this->getTimeEntryOptions("Create an invoice", false, true, true);
     }
@@ -64,8 +64,8 @@ class GenerateInvoices extends Command
             "Name"
         );
 
-        Console::log("Preparing " . Convert::numberToNoun(count($clientTimes), "client invoice", null, true)
-            . " for " . Convert::numberToNoun($timeEntryCount, "time entry", "time entries", true));
+        Console::log("Preparing " . Convert::plural(count($clientTimes), "client invoice", null, true)
+            . " for " . Convert::plural($timeEntryCount, "time entry", "time entries", true));
 
         $showMap = [
             "date"        => TimeEntry::DATE,
@@ -108,7 +108,7 @@ class GenerateInvoices extends Command
         File::maybeCreateDirectory($tempDir = implode("/", [
             $this->app()->TempPath,
             Convert::classToBasename(self::class),
-            $this->InvoiceProviderName . "-" . $this->InvoiceProvider->getBackendHash()
+            $this->InvoiceProviderName . "-" . $this->InvoiceProvider->getProviderHash()
         ]));
 
         foreach ($clientTimes as $clientId => $entries)
@@ -165,7 +165,8 @@ class GenerateInvoices extends Command
                 array_push($markInvoiced, ...($entry->getMerged() ?: [$entry]));
             }
 
-            $invoice = $this->InvoiceProvider->createInvoice($invoice);
+            /** @var Invoice $invoice */
+            $invoice = $this->InvoiceProvider->with(Invoice::class)->create($invoice);
             Console::log("Invoice created in {$this->InvoiceProviderName}:",
                 sprintf(
                     "%s for %s (%.2f + %.2f tax = %s %.2f)",
@@ -181,7 +182,7 @@ class GenerateInvoices extends Command
             file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));
             file_put_contents($tempDir . "/{$invoice->Number}-timeEntries.json", json_encode($markInvoiced));
 
-            Console::info("Marking " . Convert::numberToNoun(
+            Console::info("Marking " . Convert::plural(
                 count($markInvoiced), "time entry", "time entries", true
             ) . " as invoiced in", $this->TimeEntryProviderName);
             $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced);

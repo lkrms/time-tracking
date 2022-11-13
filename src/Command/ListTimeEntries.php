@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Console\Console;
+use Lkrms\Facade\Console;
 use Lkrms\Facade\Convert;
 use Lkrms\Time\Concept\Command;
 use Lkrms\Time\Entity\TimeEntry;
@@ -12,12 +12,12 @@ use Lkrms\Time\Support\TimeEntryCollection;
 
 class ListTimeEntries extends Command
 {
-    protected function _getDescription(): string
+    public function getDescription(): string
     {
         return "Summarise time entries in " . $this->TimeEntryProviderName;
     }
 
-    protected function _getOptions(): array
+    protected function getOptionList(): array
     {
         return $this->getTimeEntryOptions("List time entries", true, false, true);
     }
@@ -49,7 +49,7 @@ class ListTimeEntries extends Command
             printf("%s\n\n", $entry->Description);
         }
 
-        $count = Convert::numberToNoun($billableCount, "time entry is", "time entries are", true);
+        $count = Convert::plural($billableCount, "time entry is", "time entries are", true);
         $total = $this->getBillableSummary($billableAmount, $billableHours);
         Console::info("$count uninvoiced:", $total);
     }

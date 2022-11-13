@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace Lkrms\Time\Concept;
 
 use DateTime;
-use Lkrms\Cli\CliCommand;
+use Lkrms\Cli\CliAppContainer;
+use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionType;
-use Lkrms\Container\CliAppContainer;
+use Lkrms\Cli\Concept\CliCommand;
 use Lkrms\Facade\Convert;
 use Lkrms\Sync\Contract\ISyncProvider;
+use Lkrms\Time\Entity\BillableTimeEntryProvider;
 use Lkrms\Time\Entity\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
-use Lkrms\Time\Entity\TimeEntryProvider;
 
 abstract class Command extends CliCommand
 {
     /**
-     * @var TimeEntryProvider
+     * @var BillableTimeEntryProvider
      */
     protected $TimeEntryProvider;
 
@@ -46,7 +47,7 @@ abstract class Command extends CliCommand
      */
     protected $UniqueProviderNames;
 
-    public function __construct(CliAppContainer $container, TimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
+    public function __construct(CliAppContainer $container, BillableTimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
     {
         parent::__construct($container);
         $this->TimeEntryProvider     = $timeEntryProvider;
@@ -65,59 +66,59 @@ abstract class Command extends CliCommand
     ): array
     {
         $options = [
-            [
-                "long"         => "from",
-                "short"        => "s",
-                "valueName"    => "start_date",
-                "description"  => "$action from <start_date>",
-                "optionType"   => CliOptionType::VALUE,
-                "required"     => $requireDates,
-                "defaultValue" => $requireDates ? null : "1 jan last year",
-            ],
-            [
-                "long"         => "to",
-                "short"        => "e",
-                "valueName"    => "end_date",
-                "description"  => "$action to <end_date>",
-                "optionType"   => CliOptionType::VALUE,
-                "required"     => $requireDates,
-                "defaultValue" => $requireDates ? null : "today",
-            ],
-            [
-                "long"        => "client",
-                "short"       => "c",
-                "valueName"   => "client_id",
-                "description" => "$action for a particular client",
-                "optionType"  => CliOptionType::VALUE,
-            ],
-            [
-                "long"        => "project",
-                "short"       => "p",
-                "valueName"   => "project_id",
-                "description" => "$action for a particular project",
-                "optionType"  => CliOptionType::VALUE,
-            ],
+            (CliOption::build()
+                ->long("from")
+                ->short("s")
+                ->valueName("start_date")
+                ->description("$action from <start_date>")
+                ->optionType(CliOptionType::VALUE)
+                ->required($requireDates)
+                ->defaultValue($requireDates ? null : "1 jan last year")
+                ->go()),
+            (CliOption::build()
+                ->long("to")
+                ->short("e")
+                ->valueName("end_date")
+                ->description("$action to <end_date>")
+                ->optionType(CliOptionType::VALUE)
+                ->required($requireDates)
+                ->defaultValue($requireDates ? null : "today")
+                ->go()),
+            (CliOption::build()
+                ->long("client")
+                ->short("c")
+                ->valueName("client_id")
+                ->description("$action for a particular client")
+                ->optionType(CliOptionType::VALUE)
+                ->go()),
+            (CliOption::build()
+                ->long("project")
+                ->short("p")
+                ->valueName("project_id")
+                ->description("$action for a particular project")
+                ->optionType(CliOptionType::VALUE)
+                ->go()),
         ];
         if ($addHideOption)
         {
-            $options[] = [
-                "long"            => "hide",
-                "short"           => "h",
-                "valueName"       => "value",
-                "description"     => "Exclude the given value (may be used more than once)",
-                "optionType"      => CliOptionType::ONE_OF,
-                "allowedValues"   => ["date", "time", "project", "task", "user", "description"],
-                "multipleAllowed" => true,
-                "defaultValue"    => ["time", "user"],
-            ];
+            $options[] = (CliOption::build()
+                ->long("hide")
+                ->short("h")
+                ->valueName("value")
+                ->description("Exclude the given value (may be used more than once)")
+                ->optionType(CliOptionType::ONE_OF)
+                ->allowedValues(["date", "time", "project", "task", "user", "description"])
+                ->multipleAllowed(true)
+                ->defaultValue(["time", "user"])
+                ->go());
         }
         if ($addForceOption)
         {
-            $options[] = [
-                "long"        => "force",
-                "short"       => "f",
-                "description" => "Disable dry-run mode",
-            ];
+            $options[] = (CliOption::build()
+                ->long("force")
+                ->short("f")
+                ->description("Disable dry-run mode")
+                ->go());
         }
         return $options;
     }

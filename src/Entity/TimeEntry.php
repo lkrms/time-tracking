@@ -7,7 +7,7 @@ namespace Lkrms\Time\Entity;
 use DateTime;
 use Lkrms\Facade\Convert;
 
-class TimeEntry extends \Lkrms\Sync\SyncEntity
+class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
 {
     public const DATE        = 1 << 0;
     public const TIME        = 1 << 1;

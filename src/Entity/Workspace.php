@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
-class Workspace extends \Lkrms\Sync\SyncEntity
+class Workspace extends \Lkrms\Sync\Concept\SyncEntity
 {
     /**
      * @var int|string|null

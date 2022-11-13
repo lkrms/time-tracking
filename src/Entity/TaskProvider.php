@@ -4,23 +4,17 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
+use Lkrms\Sync\Contract\ISyncProvider;
+use Lkrms\Sync\Support\SyncContext;
+
 /**
- * Synchronises Task objects with a backend
+ * Syncs Task objects with a backend
  *
+ * @method Task getTask(SyncContext $ctx, int|string|null $id)
+ * @method iterable<Task> getTasks(SyncContext $ctx)
+ *
+ * @lkrms-generate-command lk-util generate sync provider --class='Lkrms\Time\Entity\Task' --magic --op='get,get-list'
  */
-interface TaskProvider extends \Lkrms\Sync\Contract\ISyncProvider
+interface TaskProvider extends ISyncProvider
 {
-    /**
-     * @param int|string $id
-     * @param int|string|null $projectId
-     * @return Task
-     */
-    public function getTask($id, $projectId): Task;
-
-    /**
-     * @param int|string|null $projectId
-     * @return iterable<Task>
-     */
-    public function getTasks($projectId): iterable;
-
 }

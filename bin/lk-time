@@ -14,7 +14,8 @@ use Lkrms\Time\XeroProvider;
 require (dirname(__DIR__) . "/vendor/autoload.php");
 
 (Cli::load(dirname(__DIR__))
-    ->enableCache()
+    ->loadCache()
+    ->loadSync()
     ->service(XeroProvider::class)
     ->service(ClockifyProvider::class)
     ->command(["client", "list"], ListClients::class)

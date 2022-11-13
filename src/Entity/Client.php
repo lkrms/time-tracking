@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
-class Client extends \Lkrms\Sync\SyncEntity
+class Client extends \Lkrms\Sync\Concept\SyncEntity
 {
     /**
      * @var int|string|null

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
-class Invoice extends \Lkrms\Sync\SyncEntity
+class Invoice extends \Lkrms\Sync\Concept\SyncEntity
 {
     /**
      * @var int|string|null

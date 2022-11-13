@@ -10,15 +10,15 @@ use Lkrms\Time\Concept\Command;
 
 class CheckHeartbeat extends Command
 {
-    protected function _getDescription(): string
+    public function getDescription(): string
     {
         return "Send a heartbeat request to " . implode(" and ", $this->UniqueProviderNames);
     }
 
-    protected function _getOptions(): array
+    protected function getOptionList(): array
     {
         return [
-            CliOption::getBuilder()
+            CliOption::build()
             ->long("ttl")
             ->short("t")
             ->valueName("SECONDS")

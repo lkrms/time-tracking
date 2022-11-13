@@ -9,19 +9,24 @@ use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
-use Lkrms\Console\Console;
 use Lkrms\Container\Container;
 use Lkrms\Curler\CurlerHeaders;
-use Lkrms\Exception\SyncOperationNotImplementedException;
+use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Facade\Cache;
+use Lkrms\Facade\Console;
 use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
 use Lkrms\Support\DateFormatter;
+use Lkrms\Support\HttpHeader;
 use Lkrms\Support\HttpRequest;
 use Lkrms\Support\HttpResponse;
 use Lkrms\Support\HttpServer;
-use Lkrms\Sync\Provider\HttpSyncProvider;
-use Lkrms\Sync\SyncOperation;
+use Lkrms\Support\PipelineImmutable as Pipeline;
+use Lkrms\Sync\Concept\HttpSyncProvider;
+use Lkrms\Sync\Support\HttpSyncDefinitionBuilder;
+use Lkrms\Sync\Support\SyncContext as Context;
+use Lkrms\Sync\Support\SyncOperation as OP;
+use Lkrms\Sync\Support\SyncStore;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\InvoiceProvider;
@@ -29,9 +34,16 @@ use RuntimeException;
 use Throwable;
 use UnexpectedValueException;
 
+/**
+ * @method Invoice createInvoice(SyncContext $ctx, Invoice $invoice)
+ * @method Invoice getInvoice(SyncContext $ctx, int|string|null $id)
+ * @method iterable<Invoice> getInvoices(SyncContext $ctx)
+ * @method Client getClient(SyncContext $ctx, int|string|null $id)
+ * @method iterable<Client> getClients(SyncContext $ctx)
+ */
 class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 {
-    private const SYNC_ENTITY_MAPS = [
+    private const SYNC_ENTITY_KEY_MAPS = [
         Client::class      => [
             "ContactID"    => "Id",
             "EmailAddress" => "Email",
@@ -39,6 +51,19 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         Invoice::class     => [
             "Contact"      => "Client",
             "CurrencyCode" => "Currency",
+        ],
+    ];
+
+    private const QUERY_FIELD_MAPS = [
+        Client::class => [
+            "name"    => "Name",
+            "email"   => "EmailAddress"
+        ],
+        Invoice::class  => [
+            "number"    => "InvoiceNumber",
+            "reference" => "Reference",
+            "date"      => "Date",
+            "due_date"  => "DueDate",
         ],
     ];
 
@@ -87,44 +112,49 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         ];
     }
 
-    public function __construct(Container $container)
+    public function __construct(Container $container, SyncStore $store)
     {
-        parent::__construct($container);
-
         $host = Env::get("app_host", "localhost");
         $port = (int)Env::get("app_port", "27755");
 
+        $this->OAuth2Listener = new HttpServer($host, $port);
+
         $this->OAuth2Provider = new GenericProvider([
-            "clientId"                => Env::get("xero_app_client_id"),
-            "clientSecret"            => Env::get("xero_app_client_secret"),
-            "redirectUri"             => "http://$host:$port/oauth2/callback",
-            "urlAuthorize"            => "https://login.xero.com/identity/connect/authorize",
-            "urlAccessToken"          => "https://identity.xero.com/connect/token",
+            "clientId"       => Env::get("xero_app_client_id"),
+            "clientSecret"   => Env::get("xero_app_client_secret"),
+            "redirectUri"    => "http://$host:$port/oauth2/callback",
+            "urlAuthorize"   => "https://login.xero.com/identity/connect/authorize",
+            "urlAccessToken" => "https://identity.xero.com/connect/token",
             "urlResourceOwnerDetails" => null,
         ]);
 
-        $this->OAuth2Listener = new HttpServer($host, $port);
-
         $this->TokenKey    = "token/" . $this->getBaseUrl();
         $this->TenantIdKey = "uuid/" . $this->getBaseUrl() . "/tenant";
+
+        // Don't call parent::__construct() until $TokenKey is set, otherwise
+        // the entity store will request our backend ID, one thing will lead to
+        // another, and getAccessToken() will fail because $TokenKey is null
+        parent::__construct($container, $store);
     }
 
-    protected function getBackendIdentifier(): array
+    public function getBackendIdentifier(): array
     {
-        return [$this->requireTenantId()];
+        return [
+            $this->requireTenantId(),
+        ];
     }
 
-    protected function _getDateFormatter(): DateFormatter
+    protected function createDateFormatter(): DateFormatter
     {
         return new DateFormatter();
     }
 
-    protected function getBaseUrl(string $path = null): string
+    protected function getBaseUrl(?string $path = null): string
     {
         return "https://api.xero.com";
     }
 
-    protected function getHeaders(?string $path): ?CurlerHeaders
+    protected function getCurlerHeaders(?string $path): ?CurlerHeaders
     {
         if ($path == "/connections")
         {
@@ -145,8 +175,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         }
 
         $headers = new CurlerHeaders();
-        $headers->setHeader("Accept", "application/json");
-        $headers->setHeader("Authorization", "Bearer " . $accessToken);
+        $headers->setHeader(HttpHeader::AUTHORIZATION, "Bearer " . $accessToken);
         if ($tenantId)
         {
             $headers->setHeader("Xero-Tenant-Id", $tenantId);
@@ -155,18 +184,23 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         return $headers;
     }
 
-    public function checkHeartbeat(int $ttl = 300): void
+    public function checkHeartbeat(int $ttl = 300)
     {
-        $connections = $this->getConnections();
-        Console::debug("Connected to Xero with " . Convert::numberToNoun(
-            count($connections), "tenant connection", null, true
-        ) . ":", $this->getTenantList($connections));
+        $connections = $this->getConnections($ttl);
+
+        Console::debug(
+            sprintf("Connected to Xero with %s:",
+                Convert::plural(count($connections), "tenant connection", null, true)),
+            $this->getTenantList($connections)
+        );
+
+        return $this;
     }
 
     private function getConnections(int $ttl = 300): array
     {
         // See https://developer.xero.com/documentation/guides/oauth2/tenants
-        return $this->getCurler("/connections", $ttl)->getJson();
+        return $this->getCurler("/connections", $ttl)->get();
     }
 
     private function getTenantList(array $connections): string
@@ -177,9 +211,6 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         ));
     }
 
-    /**
-     * @todo Move to library
-     */
     private function getJwks(): array
     {
         $url = "https://identity.xero.com/.well-known/openid-configuration/jwks";
@@ -190,9 +221,6 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         );
     }
 
-    /**
-     * @todo Move to library
-     */
     private function getVerifiedJwt(string $token): array
     {
         return (array)JWT::decode($token, JWK::parseKeySet($this->getJwks()));
@@ -200,11 +228,13 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 
     private function getAccessToken(): string
     {
-        while (!($token = Cache::get($this->TokenKey)) || array_diff(
-            self::OAUTH2_SCOPES,
-            $this->getVerifiedJwt($token)["scope"]
-        ))
-        {
+        while (
+            !($token = Cache::get($this->TokenKey)) ||
+            array_diff(
+                self::OAUTH2_SCOPES,
+                $this->getVerifiedJwt($token)["scope"]
+            )
+        ) {
             // If scopes have been added since the token was issued, reauthorize
             // interactively
             if ($token)
@@ -224,6 +254,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         {
             return $tenantId;
         }
+
         throw new RuntimeException("No tenant ID");
     }
 
@@ -247,6 +278,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
             {
                 break;
             }
+
             $this->authorize();
         }
         while (!$i++);
@@ -337,11 +369,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         );
     }
 
-    private function authorizeCallback(
-        HttpRequest $request,
-        bool & $continue,
-        &$return
-    ): HttpResponse
+    private function authorizeCallback(HttpRequest $request, bool & $continue, &$return): HttpResponse
     {
         if ($request->Method == "GET" &&
             ($url = parse_url($request->Target)) !== false &&
@@ -433,20 +461,12 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         Cache::delete($this->TenantIdKey);
     }
 
-    private function buildQuery(
-        array $args,
-        array $fieldMap,
-        array $where      = [],
-        string $groupGlue = " AND ",
-        string $fieldGlue = " OR "
-    ): array
+    private function buildQuery(Context $ctx, array $fieldMap, array $where = [], string $groupGlue = " AND ", string $fieldGlue = " OR "): array
     {
-        $filter = $this->getListFilter($args);
         foreach ($fieldMap as $filterField => $field)
         {
-            if ($values = $filter[$filterField] ?? null)
+            if (!is_null($values = $ctx->claimFilterValue($filterField)))
             {
-                unset($filter[$filterField]);
                 // Don't replace values passed in by provider code
                 if (array_key_exists($field, $where))
                 {
@@ -487,16 +507,16 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
             }
             $query["where"] = implode($groupGlue, $parts);
         }
-        if ($filter['$orderby'] ?? null)
+        if ($orderby = $ctx->claimFilterValue('$orderby'))
         {
             $parts = [];
-            // Format: "<field-name>[ (ASC|DESC)][,...]"
-            foreach (explode(",", $filter['$orderby']) as $expr)
+            // Format: "<field_name>[ (ASC|DESC)][,...]"
+            foreach (explode(",", $orderby) as $expr)
             {
                 $expr = preg_split('/\h+/', trim($expr));
                 if (count($expr) > 2)
                 {
-                    throw new UnexpectedValueException("Invalid \$orderby value '{$filter['$orderby']}'");
+                    throw new UnexpectedValueException("Invalid \$orderby value '{$orderby}'");
                 }
                 if ($field = $fieldMap[$expr[0]] ?? null)
                 {
@@ -511,43 +531,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
         return $query;
     }
 
-    public function getClient($id): Client
-    {
-        return Client::fromProvider(
-            $this,
-            $this->getCurler("/api.xro/2.0/Contacts/$id")->getJson()["Contacts"],
-            null,
-            self::SYNC_ENTITY_MAPS[Client::class]
-        );
-    }
-
-    public function getClients(): iterable
-    {
-        $query = $this->buildQuery(func_get_args(), [
-            "name"  => "Name",
-            "email" => "EmailAddress"
-        ]);
-        return Client::listFromProvider(
-            $this,
-            $this->getCurler("/api.xro/2.0/Contacts")->getAllByPage($query, "Contacts"),
-            null,
-            self::SYNC_ENTITY_MAPS[Client::class]
-        );
-    }
-
-    private function filterInvoices(iterable $invoices): iterable
-    {
-        foreach ($invoices as $invoice)
-        {
-            if ($invoice["Type"] != "ACCREC")
-            {
-                continue;
-            }
-            yield $invoice;
-        }
-    }
-
-    public function createInvoice(Invoice $invoice): Invoice
+    private function generateInvoice(Invoice $invoice): array
     {
         $data                  = [];
         $data["Type"]          = "ACCREC";
@@ -576,32 +560,41 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
             $data["LineItems"][] = $line;
         }
 
-        return Invoice::fromProvider(
-            $this,
-            $this->getCurler("/api.xro/2.0/Invoices")->putJson($data)["Invoices"][0],
-            null,
-            self::SYNC_ENTITY_MAPS[Invoice::class]
-        );
+        return $data;
     }
 
-    public function getInvoice($id): Invoice
+    protected function getHttpDefinition(string $entity, HttpSyncDefinitionBuilder $define)
     {
-        throw new SyncOperationNotImplementedException(static::class, Invoice::class, SyncOperation::READ);
+        switch ($entity)
+        {
+            case Invoice::class:
+                return $define->operations([OP::READ, OP::READ_LIST, OP::CREATE])
+                    ->path("/api.xro/2.0/Invoices")
+                    ->query(fn(int $op, Context $ctx) => $op == OP::READ_LIST
+                        ? $this->buildQuery($ctx, self::QUERY_FIELD_MAPS[$entity])
+                        : null)
+                    ->pagerCallback(fn() => new QueryPager(null, "Invoices"))
+                    ->dataToEntityPipeline(Pipeline::create()
+                        ->throughKeyMap(self::SYNC_ENTITY_KEY_MAPS[$entity])
+                        ->through(fn(array $payload, Closure $next) => $payload["Type"] != "ACCREC" ? null : $next($payload))
+                        ->unless(fn($result) => !is_null($result)))
+                    ->entityToDataPipeline(Pipeline::create()
+                        ->through(fn(Invoice $invoice, Closure $next) => $next($this->generateInvoice($invoice))));
+
+            case Client::class:
+                return $define->operations([OP::READ, OP::READ_LIST])
+                    ->path("/api.xro/2.0/Contacts")
+                    ->query(fn(int $op, Context $ctx) => $op == OP::READ_LIST
+                        ? $this->buildQuery($ctx, self::QUERY_FIELD_MAPS[$entity])
+                        : null)
+                    ->pagerCallback(fn() => new QueryPager(null, "Contacts"))
+                    ->dataToEntityPipeline(
+                        (Pipeline::create()
+                            ->throughKeyMap(self::SYNC_ENTITY_KEY_MAPS[Client::class]))
+                    );
+        }
+
+        return null;
     }
 
-    public function getInvoices(): iterable
-    {
-        $query = $this->buildQuery(func_get_args(), [
-            "number"    => "InvoiceNumber",
-            "reference" => "Reference",
-            "date"      => "Date",
-            "due_date"  => "DueDate",
-        ]);
-        return Invoice::listFromProvider(
-            $this,
-            $this->filterInvoices($this->getCurler("/api.xro/2.0/Invoices")->getAllByPage($query, "Invoices")),
-            null,
-            self::SYNC_ENTITY_MAPS[Invoice::class]
-        );
-    }
 }
