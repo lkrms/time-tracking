@@ -51,7 +51,7 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
      */
     private $CacheExpiry;
 
-    public static function getBindings(): array
+    public static function getContextualBindings(): array
     {
         return [
             TimeEntry::class => \Lkrms\Time\Entity\Clockify\TimeEntry::class,

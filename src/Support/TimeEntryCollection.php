@@ -33,7 +33,7 @@ class TimeEntryCollection extends TypedCollection
      * @param TimeEntry $b
      * @return int
      */
-    protected function compareItems($a, $b): int
+    protected function compareItems($a, $b, bool $strict = false): int
     {
         // Sort entries by start time if possible
         if ($a->Start && $b->Start)

@@ -108,7 +108,7 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
      */
     private $TenantIdKey;
 
-    public static function getBindings(): array
+    public static function getContextualBindings(): array
     {
         return [
             Invoice::class => \Lkrms\Time\Entity\Xero\Invoice::class
