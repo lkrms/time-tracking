@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Lkrms\Time\Support;
 
 use Lkrms\Concept\TypedCollection;
-use Lkrms\Concern\HasContainer;
+use Lkrms\Contract\IContainer;
+use Lkrms\Contract\ReturnsContainer;
 use Lkrms\Facade\Compute;
 use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
@@ -19,9 +20,29 @@ use UnexpectedValueException;
  * @method TimeEntry[] toArray()
  * @method TimeEntryCollection sort()
  */
-class TimeEntryCollection extends TypedCollection
+final class TimeEntryCollection extends TypedCollection implements ReturnsContainer
 {
-    use HasContainer;
+    /**
+     * @var IContainer
+     */
+    private $Container;
+
+    public function __construct(IContainer $container)
+    {
+        parent::__construct();
+
+        $this->Container = $container;
+    }
+
+    public function app(): IContainer
+    {
+        return $this->Container;
+    }
+
+    public function container(): IContainer
+    {
+        return $this->Container;
+    }
 
     protected function getItemClass(): string
     {

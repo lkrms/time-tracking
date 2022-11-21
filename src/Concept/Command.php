@@ -11,6 +11,7 @@ use Lkrms\Cli\CliOptionType;
 use Lkrms\Cli\Concept\CliCommand;
 use Lkrms\Facade\Convert;
 use Lkrms\Sync\Contract\ISyncProvider;
+use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
 use Lkrms\Time\Entity\Provider\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
@@ -132,6 +133,7 @@ abstract class Command extends CliCommand
     ): iterable
     {
         return $this->TimeEntryProvider->getTimeEntries(
+            new SyncContext($this->app()),
             null,
             $this->getOptionValue("client"),
             $this->getOptionValue("project"),
@@ -162,5 +164,10 @@ abstract class Command extends CliCommand
     protected function getBillableSummary($amount, $hours): string
     {
         return sprintf("\$%.2f (%.2f hours)", $amount, $hours);
+    }
+
+    protected function getContextWithListArrays(): SyncContext
+    {
+        return (new SyncContext($this->app()))->withListArrays();
     }
 }

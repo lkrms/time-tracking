@@ -11,6 +11,7 @@ use Firebase\JWT\JWT;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Lkrms\Container\Container;
+use Lkrms\Contract\IServiceShared;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Facade\Cache;
@@ -43,7 +44,7 @@ use UnexpectedValueException;
  * @method Client getClient(SyncContext $ctx, int|string|null $id)
  * @method iterable<Client> getClients(SyncContext $ctx)
  */
-class XeroProvider extends HttpSyncProvider implements InvoiceProvider
+class XeroProvider extends HttpSyncProvider implements IServiceShared, InvoiceProvider
 {
     private const SYNC_ENTITY_KEY_MAPS = [
         Client::class      => [
@@ -583,7 +584,15 @@ class XeroProvider extends HttpSyncProvider implements InvoiceProvider
 
     protected function getHttpDefinition(string $entity, HttpSyncDefinitionBuilder $define)
     {
-        $plural = $entity::plural();
+        switch ($entity)
+        {
+            case Client::class:
+                $plural = "Contacts";
+                break;
+            default:
+                $plural = $entity::plural();
+                break;
+        }
         $define = ($define->path("/api.xro/2.0/" . $plural)
             ->query(
                 fn(int $op, Context $ctx) => ($op == OP::READ_LIST

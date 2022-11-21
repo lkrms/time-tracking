@@ -10,6 +10,7 @@ use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
 use Lkrms\Facade\File;
 use Lkrms\Time\Concept\Command;
+use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\InvoiceLineItem;
 use Lkrms\Time\Entity\TimeEntry;
@@ -60,7 +61,7 @@ class GenerateInvoices extends Command
 
         Console::info("Retrieving clients from", $this->InvoiceProviderName);
         $invClients = Convert::listToMap(
-            iterator_to_array($this->InvoiceProvider->getClients(["name" => $clientNames])),
+            $this->InvoiceProvider->with(Client::class, $this->getContextWithListArrays())->getList(["name" => $clientNames]),
             "Name"
         );
 
@@ -87,7 +88,8 @@ class GenerateInvoices extends Command
         {
             $next = (int)Env::get("invoice_number_next", "1");
 
-            $invoices = $this->InvoiceProvider->getInvoices([
+            /** @var iterable<Invoice> $invoices */
+            $invoices = $this->InvoiceProvider->with(Invoice::class)->getList([
                 "number"   => "{$prefix}*",
                 '$orderby' => "date desc"
             ]);

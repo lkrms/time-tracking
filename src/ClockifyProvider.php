@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Lkrms\Time;
 
 use DateTimeInterface;
+use Lkrms\Contract\IServiceShared;
 use Lkrms\Curler\CachingCurler;
 use Lkrms\Curler\Curler;
 use Lkrms\Curler\CurlerHeaders;
@@ -44,7 +45,7 @@ use RuntimeException;
  * @method TimeEntry updateTimeEntry(SyncContext $ctx, TimeEntry $timeEntry)
  * @method TimeEntry deleteTimeEntry(SyncContext $ctx, TimeEntry $timeEntry)
  */
-class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, UserProvider, BillableTimeEntryProvider
+class ClockifyProvider extends HttpSyncProvider implements IServiceShared, WorkspaceProvider, UserProvider, BillableTimeEntryProvider
 {
     /**
      * @var int|null
@@ -285,23 +286,24 @@ class ClockifyProvider extends HttpSyncProvider implements WorkspaceProvider, Us
         $pipeline = PipelineImmutable::create($this->container())
             ->throughCallback(static function (array $entry): array
             {
+                $client = !($entry["clientId"] ?? null) ? null : [
+                    "id"   => $entry["clientId"],
+                    "name" => $entry["clientName"],
+                ];
                 $entry = (Arr::with($entry)->merge([
-                    "user"      => [
+                    "user"      => !($entry["userId"] ?? null) ? null : [
                         "id"    => $entry["userId"],
                         "name"  => $entry["userName"],
                         "email" => $entry["userEmail"],
                     ],
-                    "client"   => [
-                        "id"   => $entry["clientId"],
-                        "name" => $entry["clientName"],
-                    ],
-                    "project"    => [
+                    "client"     => $client,
+                    "project"    => !($entry["projectId"] ?? null) ? null : [
                         "id"     => $entry["projectId"],
                         "name"   => $entry["projectName"],
                         "color"  => $entry["projectColor"],
-                        "client" => $entry["client"],
+                        "client" => $client,
                     ],
-                    "task"     => [
+                    "task"     => !($entry["taskId"] ?? null) ? null : [
                         "id"   => $entry["taskId"],
                         "name" => $entry["taskName"],
                     ],
