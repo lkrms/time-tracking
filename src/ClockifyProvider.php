@@ -15,7 +15,7 @@ use Lkrms\Facade\Env;
 use Lkrms\Support\Arr;
 use Lkrms\Support\ArrayKeyConformity;
 use Lkrms\Support\DateFormatter;
-use Lkrms\Support\PipelineImmutable;
+use Lkrms\Support\Pipeline;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Concept\SyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder;
@@ -66,7 +66,7 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
         return [$this->getBaseUrl(), $this->getWorkspaceId()];
     }
 
-    protected function createDateFormatter(): DateFormatter
+    protected function getDateFormatter(): DateFormatter
     {
         return new DateFormatter();
     }
@@ -283,7 +283,7 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
             $query["invoicingState"] = $billed ? "INVOICED" : "UNINVOICED";
         }
 
-        $pipeline = PipelineImmutable::create($this->container())
+        $pipeline = Pipeline::create($this->container())
             ->throughCallback(static function (array $entry): array
             {
                 $client = !($entry["clientId"] ?? null) ? null : [

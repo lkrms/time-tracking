@@ -24,7 +24,7 @@ use Lkrms\Support\HttpHeader;
 use Lkrms\Support\HttpRequest;
 use Lkrms\Support\HttpResponse;
 use Lkrms\Support\HttpServer;
-use Lkrms\Support\PipelineImmutable as Pipeline;
+use Lkrms\Support\Pipeline;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder;
 use Lkrms\Sync\Support\SyncContext as Context;
@@ -148,7 +148,7 @@ class XeroProvider extends HttpSyncProvider implements IServiceShared, InvoicePr
         ];
     }
 
-    protected function createDateFormatter(): DateFormatter
+    protected function getDateFormatter(): DateFormatter
     {
         return new DateFormatter(DateTimeInterface::ATOM, null, RegexDateParser::dotNet());
     }

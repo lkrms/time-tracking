@@ -59,6 +59,16 @@ abstract class Command extends CliCommand
         $this->UniqueProviderNames   = Convert::stringsToUniqueList([$this->TimeEntryProviderName, $this->InvoiceProviderName]);
     }
 
+    public function getLongDescription(): ?string
+    {
+        return null;
+    }
+
+    public function getUsageSections(): ?array
+    {
+        return null;
+    }
+
     protected function getTimeEntryOptions(
         string $action       = "List time entries",
         bool $requireDates   = true,

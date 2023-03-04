@@ -10,7 +10,7 @@ use Lkrms\Time\Concept\Command;
 
 class CheckHeartbeat extends Command
 {
-    public function getDescription(): string
+    public function getShortDescription(): string
     {
         return "Send a heartbeat request to " . implode(" and ", $this->UniqueProviderNames);
     }

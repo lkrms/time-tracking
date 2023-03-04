@@ -17,8 +17,7 @@ use UnexpectedValueException;
 /**
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
- * @method TimeEntry[] toArray()
- * @method TimeEntryCollection sort()
+ * @extends TypedCollection<TimeEntry>
  */
 final class TimeEntryCollection extends TypedCollection implements ReturnsContainer
 {

@@ -10,7 +10,7 @@ use Lkrms\Time\Entity\Client;
 
 class ListClients extends Command
 {
-    public function getDescription(): string
+    public function getShortDescription(): string
     {
         return "List clients in " . $this->TimeEntryProviderName;
     }

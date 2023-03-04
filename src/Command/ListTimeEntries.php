@@ -12,7 +12,7 @@ use Lkrms\Time\Support\TimeEntryCollection;
 
 class ListTimeEntries extends Command
 {
-    public function getDescription(): string
+    public function getShortDescription(): string
     {
         return "Summarise time entries in " . $this->TimeEntryProviderName;
     }

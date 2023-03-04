@@ -18,7 +18,7 @@ use Lkrms\Time\Support\TimeEntryCollection;
 
 class GenerateInvoices extends Command
 {
-    public function getDescription(): string
+    public function getShortDescription(): string
     {
         return "Create invoices for unbilled time entries";
     }
@@ -108,7 +108,7 @@ class GenerateInvoices extends Command
         }
 
         File::maybeCreateDirectory($tempDir = implode("/", [
-            $this->app()->TempPath,
+            $this->app()->getTempPath(),
             Convert::classToBasename(self::class),
             $this->InvoiceProviderName . "-" . $this->InvoiceProvider->getProviderHash()
         ]));
