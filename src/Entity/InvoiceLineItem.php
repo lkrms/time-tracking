@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
@@ -43,7 +41,6 @@ class InvoiceLineItem extends \Lkrms\Sync\Concept\SyncEntity
 
     protected static function getRemovablePrefixes(): ?array
     {
-        return ["LineItem", "InvoiceLineItem"];
+        return ['LineItem', 'InvoiceLineItem'];
     }
-
 }

@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Entity\Xero;
 
@@ -18,5 +16,4 @@ class Invoice extends \Lkrms\Time\Entity\Invoice
     {
         $this->LineItems = InvoiceLineItem::provideList($value, $this->provider(), $this->requireContext()->getConformity(), $this->requireContext()->push($this));
     }
-
 }

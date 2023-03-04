@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
@@ -12,7 +10,7 @@ class ListClients extends Command
 {
     public function getShortDescription(): string
     {
-        return "List clients in " . $this->TimeEntryProviderName;
+        return 'List clients in ' . $this->TimeEntryProviderName;
     }
 
     protected function getOptionList(): array
@@ -22,13 +20,12 @@ class ListClients extends Command
 
     protected function run(string ...$params)
     {
-        Console::info("Retrieving clients from", $this->TimeEntryProviderName);
+        Console::info('Retrieving clients from', $this->TimeEntryProviderName);
 
         $clients = $this->TimeEntryProvider->with(Client::class)->getList();
 
         /** @var Client $client */
-        foreach ($clients as $client)
-        {
+        foreach ($clients as $client) {
             printf(
                 "==> %s\n  client_id: %s\n\n",
                 $client->Name,

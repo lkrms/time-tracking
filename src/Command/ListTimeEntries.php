@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
@@ -14,28 +12,26 @@ class ListTimeEntries extends Command
 {
     public function getShortDescription(): string
     {
-        return "Summarise time entries in " . $this->TimeEntryProviderName;
+        return 'Summarise time entries in ' . $this->TimeEntryProviderName;
     }
 
     protected function getOptionList(): array
     {
-        return $this->getTimeEntryOptions("List time entries", true, false, true);
+        return $this->getTimeEntryOptions('List time entries', true, false, true);
     }
 
     protected function run(string ...$params)
     {
-        Console::info("Retrieving time entries from", $this->TimeEntryProviderName);
+        Console::info('Retrieving time entries from', $this->TimeEntryProviderName);
 
         /** @var TimeEntryCollection */
         $times          = $this->app()->get(TimeEntryCollection::class);
         $billableCount  = 0;
         $billableAmount = 0;
         $billableHours  = 0;
-        foreach ($this->getTimeEntries() as $entry)
-        {
+        foreach ($this->getTimeEntries() as $entry) {
             $times[] = $entry;
-            if (!$entry->IsInvoiced)
-            {
+            if (!$entry->IsInvoiced) {
                 $billableCount++;
                 $billableAmount += $entry->getBillableAmount();
                 $billableHours  += $entry->getBillableHours();
@@ -44,12 +40,11 @@ class ListTimeEntries extends Command
         $times = $times->groupBy($this->getTimeEntryMask(), null, true);
 
         /** @var TimeEntry $entry */
-        foreach ($times as $entry)
-        {
+        foreach ($times as $entry) {
             printf("%s\n\n", $entry->Description);
         }
 
-        $count = Convert::plural($billableCount, "time entry is", "time entries are", true);
+        $count = Convert::plural($billableCount, 'time entry is', 'time entries are', true);
         $total = $this->getBillableSummary($billableAmount, $billableHours);
         Console::info("$count uninvoiced:", $total);
     }

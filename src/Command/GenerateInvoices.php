@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
@@ -20,22 +18,21 @@ class GenerateInvoices extends Command
 {
     public function getShortDescription(): string
     {
-        return "Create invoices for unbilled time entries";
+        return 'Create invoices for unbilled time entries';
     }
 
     protected function getOptionList(): array
     {
-        return $this->getTimeEntryOptions("Create an invoice", false, true, true);
+        return $this->getTimeEntryOptions('Create an invoice', false, true, true);
     }
 
     protected function run(string ...$params)
     {
-        if (!$this->getOptionValue("force"))
-        {
+        if (!$this->getOptionValue('force')) {
             Env::dryRun(true);
         }
 
-        Console::info("Retrieving unbilled time from", $this->TimeEntryProviderName);
+        Console::info('Retrieving unbilled time from', $this->TimeEntryProviderName);
 
         $times = $this->getTimeEntries(true, false);
 
@@ -44,62 +41,58 @@ class GenerateInvoices extends Command
         $clientNames    = [];
         $timeEntryCount = 0;
 
-        foreach ($times as $time)
-        {
-            $clientId  = $time->Project->Client->Id;
-            $entries   = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->app()->get(TimeEntryCollection::class));
-            $entries[] = $time;
+        foreach ($times as $time) {
+            $clientId               = $time->Project->Client->Id;
+            $entries                = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->app()->get(TimeEntryCollection::class));
+            $entries[]              = $time;
             $clientNames[$clientId] = $time->Project->Client->Name;
             $timeEntryCount++;
         }
 
-        if (!$timeEntryCount)
-        {
-            Console::info("No uninvoiced time entries");
+        if (!$timeEntryCount) {
+            Console::info('No uninvoiced time entries');
+
             return;
         }
 
-        Console::info("Retrieving clients from", $this->InvoiceProviderName);
+        Console::info('Retrieving clients from', $this->InvoiceProviderName);
         $invClients = Convert::listToMap(
-            $this->InvoiceProvider->with(Client::class, $this->getContextWithListArrays())->getList(["name" => $clientNames]),
-            "Name"
+            $this->InvoiceProvider->with(Client::class, $this->getContextWithListArrays())->getList(['name' => $clientNames]),
+            'Name'
         );
 
-        Console::log("Preparing " . Convert::plural(count($clientTimes), "client invoice", null, true)
-            . " for " . Convert::plural($timeEntryCount, "time entry", "time entries", true));
+        Console::log('Preparing ' . Convert::plural(count($clientTimes), 'client invoice', null, true)
+                         . ' for ' . Convert::plural($timeEntryCount, 'time entry', 'time entries', true));
 
         $showMap = [
-            "date"        => TimeEntry::DATE,
-            "time"        => TimeEntry::TIME,
-            "project"     => TimeEntry::PROJECT,
-            "task"        => TimeEntry::TASK,
-            "user"        => TimeEntry::USER,
-            "description" => TimeEntry::DESCRIPTION,
+            'date'        => TimeEntry::DATE,
+            'time'        => TimeEntry::TIME,
+            'project'     => TimeEntry::PROJECT,
+            'task'        => TimeEntry::TASK,
+            'user'        => TimeEntry::USER,
+            'description' => TimeEntry::DESCRIPTION,
         ];
         $show = array_reduce(
-            $this->getOptionValue("hide"),
+            $this->getOptionValue('hide'),
             fn($prev, $value) => $prev & ~$showMap[$value],
             TimeEntry::ALL
         );
 
         $next = null;
 
-        if ($prefix = Env::get("invoice_number_prefix", null))
-        {
-            $next = (int)Env::get("invoice_number_next", "1");
+        if ($prefix = Env::get('invoice_number_prefix', null)) {
+            $next = (int) Env::get('invoice_number_next', '1');
 
             /** @var iterable<Invoice> $invoices */
             $invoices = $this->InvoiceProvider->with(Invoice::class)->getList([
-                "number"   => "{$prefix}*",
-                '$orderby' => "date desc"
+                'number'   => "{$prefix}*",
+                '$orderby' => 'date desc'
             ]);
 
             $seen = 0;
-            foreach ($invoices as $invoice)
-            {
-                $next = max((int)substr($invoice->Number, strlen($prefix)) + 1, $next, 1);
-                if ($seen++ == 99)
-                {
+            foreach ($invoices as $invoice) {
+                $next = max((int) substr($invoice->Number, strlen($prefix)) + 1, $next, 1);
+                if ($seen++ == 99) {
                     break;
                 }
             }
@@ -107,19 +100,17 @@ class GenerateInvoices extends Command
             unset($invoices);
         }
 
-        File::maybeCreateDirectory($tempDir = implode("/", [
+        File::maybeCreateDirectory($tempDir = implode('/', [
             $this->app()->getTempPath(),
             Convert::classToBasename(self::class),
-            $this->InvoiceProviderName . "-" . $this->InvoiceProvider->getProviderHash()
+            $this->InvoiceProviderName . '-' . $this->InvoiceProvider->getProviderHash()
         ]));
 
-        foreach ($clientTimes as $clientId => $entries)
-        {
+        foreach ($clientTimes as $clientId => $entries) {
             $name    = $clientNames[$clientId];
             $summary = $this->getBillableSummary($entries->BillableAmount, $entries->BillableHours);
 
-            if (!($invClient = $invClients[$name] ?? null))
-            {
+            if (!($invClient = $invClients[$name] ?? null)) {
                 Console::error("Skipping $name (not found in {$this->InvoiceProviderName}):", $summary);
                 continue;
             }
@@ -132,14 +123,12 @@ class GenerateInvoices extends Command
                 fn(TimeEntry $t) => [$t->Project->Id ?? null, $t->BillableRate]
             );
 
-            if (Env::dryRun())
-            {
-                foreach ($entries as $entry)
-                {
+            if (Env::dryRun()) {
+                foreach ($entries as $entry) {
                     printf("==> \$%.2f (%.2f hours):\n  %s\n\n",
-                        $entry->getBillableAmount(),
-                        $entry->getBillableHours(),
-                        str_replace("\n", "\n  ", $entry->Description));
+                           $entry->getBillableAmount(),
+                           $entry->getBillableHours(),
+                           str_replace("\n", "\n  ", $entry->Description));
                 }
                 continue;
             }
@@ -149,20 +138,19 @@ class GenerateInvoices extends Command
             /** @var Invoice */
             $invoice            = $this->app()->get(Invoice::class);
             $invoice->Number    = $next ? $prefix . ($next++) : null;
-            $invoice->Date      = new DateTimeImmutable("today");
-            $invoice->DueDate   = new DateTimeImmutable("today +7 days");
+            $invoice->Date      = new DateTimeImmutable('today');
+            $invoice->DueDate   = new DateTimeImmutable('today +7 days');
             $invoice->Client    = $invClient;
             $invoice->LineItems = [];
 
-            foreach ($entries as $entry)
-            {
+            foreach ($entries as $entry) {
                 /** @var InvoiceLineItem */
-                $item = $invoice->LineItems[] = $this->app()->get(InvoiceLineItem::class);
+                $item              = $invoice->LineItems[] = $this->app()->get(InvoiceLineItem::class);
                 $item->Description = $entry->Description;
                 $item->Quantity    = $entry->getBillableHours();
                 $item->UnitAmount  = $entry->BillableRate;
-                $item->ItemCode    = Env::get("invoice_item_code", "") ?: null;
-                $item->AccountCode = Env::get("invoice_account_code", "") ?: null;
+                $item->ItemCode    = Env::get('invoice_item_code', '') ?: null;
+                $item->AccountCode = Env::get('invoice_account_code', '') ?: null;
 
                 array_push($markInvoiced, ...($entry->getMerged() ?: [$entry]));
             }
@@ -170,23 +158,23 @@ class GenerateInvoices extends Command
             /** @var Invoice $invoice */
             $invoice = $this->InvoiceProvider->with(Invoice::class)->create($invoice);
             Console::log("Invoice created in {$this->InvoiceProviderName}:",
-                sprintf(
-                    "%s for %s (%.2f + %.2f tax = %s %.2f)",
-                    $invoice->Number,
-                    $invoice->Client->Name,
-                    $invoice->SubTotal,
-                    $invoice->TotalTax,
-                    $invoice->Currency,
-                    $invoice->Total
-                ));
+                         sprintf(
+                             '%s for %s (%.2f + %.2f tax = %s %.2f)',
+                             $invoice->Number,
+                             $invoice->Client->Name,
+                             $invoice->SubTotal,
+                             $invoice->TotalTax,
+                             $invoice->Currency,
+                             $invoice->Total
+                         ));
 
             // TODO: something better with this data
             file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));
             file_put_contents($tempDir . "/{$invoice->Number}-timeEntries.json", json_encode($markInvoiced));
 
-            Console::info("Marking " . Convert::plural(
-                count($markInvoiced), "time entry", "time entries", true
-            ) . " as invoiced in", $this->TimeEntryProviderName);
+            Console::info('Marking ' . Convert::plural(
+                count($markInvoiced), 'time entry', 'time entries', true
+            ) . ' as invoiced in', $this->TimeEntryProviderName);
             $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced);
         }
     }

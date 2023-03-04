@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Entity\Clockify;
 
@@ -14,54 +12,45 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
 {
     protected function _setUser($value)
     {
-        if ($value)
-        {
+        if ($value) {
             $this->User = User::provide($value, $this->provider(), $this->requireContext()->push($this));
         }
     }
 
     protected function _setProject($value)
     {
-        if ($value)
-        {
+        if ($value) {
             $this->Project = Project::provide($value, $this->provider(), $this->requireContext()->push($this));
         }
     }
 
     protected function _setTask($value)
     {
-        if ($value)
-        {
+        if ($value) {
             $this->Task = Task::provide($value, $this->provider(), $this->requireContext()->push($this));
         }
     }
 
     protected function _setTimeInterval($value)
     {
-        if ($value["start"] ?? null)
-        {
-            $this->Start = new DateTimeImmutable($value["start"]);
+        if ($value['start'] ?? null) {
+            $this->Start = new DateTimeImmutable($value['start']);
         }
 
-        if ($value["end"] ?? null)
-        {
-            $this->End = new DateTimeImmutable($value["end"]);
+        if ($value['end'] ?? null) {
+            $this->End = new DateTimeImmutable($value['end']);
         }
 
-        if (is_int($value["duration"] ?? null))
-        {
-            $this->Seconds = $value["duration"];
-        }
-        elseif ($value["duration"] ?? null)
-        {
-            $this->Seconds = Convert::intervalToSeconds($value["duration"]);
+        if (is_int($value['duration'] ?? null)) {
+            $this->Seconds = $value['duration'];
+        } elseif ($value['duration'] ?? null) {
+            $this->Seconds = Convert::intervalToSeconds($value['duration']);
         }
     }
 
     protected function _setRate($value)
     {
-        if (!is_null($value))
-        {
+        if (!is_null($value)) {
             $this->BillableRate = $value / 100;
         }
     }
@@ -75,5 +64,4 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
     {
         $this->IsInvoiced = !empty($value);
     }
-
 }

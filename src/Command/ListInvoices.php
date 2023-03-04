@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Command;
 
@@ -14,7 +12,7 @@ class ListInvoices extends Command
 {
     public function getShortDescription(): string
     {
-        return "List invoices in " . $this->InvoiceProviderName;
+        return 'List invoices in ' . $this->InvoiceProviderName;
     }
 
     protected function getOptionList(): array
@@ -24,21 +22,19 @@ class ListInvoices extends Command
 
     protected function run(string ...$params)
     {
-        Console::info("Retrieving invoices from", $this->InvoiceProviderName);
+        Console::info('Retrieving invoices from', $this->InvoiceProviderName);
 
         $query = [
-            '$orderby' => "date desc",
-            "!status"  => "DELETED",
+            '$orderby' => 'date desc',
+            '!status'  => 'DELETED',
         ];
-        if ($prefix = Env::get("invoice_number_prefix", null))
-        {
-            $query["number"] = "{$prefix}*";
+        if ($prefix = Env::get('invoice_number_prefix', null)) {
+            $query['number'] = "{$prefix}*";
         }
         $invoices = $this->InvoiceProvider->with(Invoice::class)->getList($query);
 
         /** @var Invoice $invoice */
-        foreach ($invoices as $invoice)
-        {
+        foreach ($invoices as $invoice) {
             printf(
                 "==> %s for \$%.2f\n  date: %s\n  client: %s\n\n",
                 $invoice->Number,

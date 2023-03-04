@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Entity\Clockify;
 
@@ -12,5 +10,4 @@ class Task extends \Lkrms\Time\Entity\Task
     {
         $this->Project = Project::provide($value, $this->provider(), $this->requireContext()->push($this));
     }
-
 }
