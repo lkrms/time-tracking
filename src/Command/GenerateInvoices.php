@@ -57,7 +57,7 @@ class GenerateInvoices extends Command
 
         Console::info('Retrieving clients from', $this->InvoiceProviderName);
         $invClients = Convert::listToMap(
-            $this->InvoiceProvider->with(Client::class, $this->getContextWithListArrays())->getList(['name' => $clientNames]),
+            $this->InvoiceProvider->with(Client::class)->getListA(['name' => $clientNames]),
             'Name'
         );
 

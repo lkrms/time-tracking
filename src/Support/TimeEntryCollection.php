@@ -16,6 +16,7 @@ use UnexpectedValueException;
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
  * @extends TypedCollection<TimeEntry>
+ * @implements ReturnsContainer<IContainer>
  */
 final class TimeEntryCollection extends TypedCollection implements ReturnsContainer
 {

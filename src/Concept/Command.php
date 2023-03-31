@@ -171,9 +171,4 @@ abstract class Command extends CliCommand
     {
         return sprintf('$%.2f (%.2f hours)', $amount, $hours);
     }
-
-    protected function getContextWithListArrays(): SyncContext
-    {
-        return (new SyncContext($this->app()))->withListArrays();
-    }
 }

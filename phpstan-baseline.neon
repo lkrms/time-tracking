@@ -1,6 +1,211 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:getIdClaims\\(\\) is unused\\.$#"
+			message: "#^Method Lkrms\\\\Time\\\\ClockifyProvider\\:\\:getPostCachingCurler\\(\\) has parameter \\$args with no type specified\\.$#"
+			count: 1
+			path: src/ClockifyProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\ClockifyProvider\\:\\:getReportFilter\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/ClockifyProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\ClockifyProvider\\:\\:getTimeEntries\\(\\) has parameter \\$client with no type specified\\.$#"
+			count: 1
+			path: src/ClockifyProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\ClockifyProvider\\:\\:getTimeEntries\\(\\) has parameter \\$project with no type specified\\.$#"
+			count: 1
+			path: src/ClockifyProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\ClockifyProvider\\:\\:getTimeEntries\\(\\) has parameter \\$user with no type specified\\.$#"
+			count: 1
+			path: src/ClockifyProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Concept\\\\Command\\:\\:getBillableSummary\\(\\) has parameter \\$amount with no type specified\\.$#"
+			count: 1
+			path: src/Concept/Command.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Concept\\\\Command\\:\\:getBillableSummary\\(\\) has parameter \\$hours with no type specified\\.$#"
+			count: 1
+			path: src/Concept/Command.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Concept\\\\Command\\:\\:getTimeEntryOptions\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Concept/Command.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\Project\\:\\:_setClient\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/Project.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\Project\\:\\:_setClient\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/Project.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\Task\\:\\:_setProject\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/Task.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\Task\\:\\:_setProject\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/Task.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setHourlyRate\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setHourlyRate\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setInvoicingInfo\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setInvoicingInfo\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setProject\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setProject\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setRate\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setRate\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setTask\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setTask\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setTimeInterval\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setTimeInterval\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setUser\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Clockify\\\\TimeEntry\\:\\:_setUser\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Clockify/TimeEntry.php
+
+		-
+			message: "#^Property Lkrms\\\\Time\\\\Entity\\\\InvoiceLineItem\\:\\:\\$Tracking type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/InvoiceLineItem.php
+
+		-
+			message: "#^Property Lkrms\\\\Time\\\\Entity\\\\Project\\:\\:\\$HourlyRate type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Project.php
+
+		-
+			message: "#^Property Lkrms\\\\Time\\\\Entity\\\\User\\:\\:\\$Memberships type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property Lkrms\\\\Time\\\\Entity\\\\User\\:\\:\\$Settings type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/User.php
+
+		-
+			message: "#^Property Lkrms\\\\Time\\\\Entity\\\\Workspace\\:\\:\\$HourlyRate type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Workspace.php
+
+		-
+			message: "#^Property Lkrms\\\\Time\\\\Entity\\\\Workspace\\:\\:\\$Memberships type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Workspace.php
+
+		-
+			message: "#^Property Lkrms\\\\Time\\\\Entity\\\\Workspace\\:\\:\\$WorkspaceSettings type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/Entity/Workspace.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Xero\\\\Invoice\\:\\:_setClient\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Xero/Invoice.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Xero\\\\Invoice\\:\\:_setClient\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Xero/Invoice.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Xero\\\\Invoice\\:\\:_setLineItems\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Entity/Xero/Invoice.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Entity\\\\Xero\\\\Invoice\\:\\:_setLineItems\\(\\) has parameter \\$value with no type specified\\.$#"
+			count: 1
+			path: src/Entity/Xero/Invoice.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\Support\\\\TimeEntryCollection\\:\\:__get\\(\\) has no return type specified\\.$#"
+			count: 1
+			path: src/Support/TimeEntryCollection.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:buildQuery\\(\\) has parameter \\$fieldMap with no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/XeroProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:buildQuery\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/XeroProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:generateInvoice\\(\\) return type has no value type specified in iterable type array\\.$#"
+			count: 1
+			path: src/XeroProvider.php
+
+		-
+			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:getConnections\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/XeroProvider.php

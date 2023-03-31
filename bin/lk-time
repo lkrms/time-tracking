@@ -2,8 +2,9 @@
 <?php
 
 use Lkrms\Facade\Cli;
+use Lkrms\Sync\Command\CheckSyncProviderHeartbeat;
+use Lkrms\Sync\Command\GetSyncEntities;
 use Lkrms\Time\ClockifyProvider;
-use Lkrms\Time\Command\CheckHeartbeat;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\Command\ListInvoices;
@@ -23,5 +24,6 @@ Cli::load(dirname(__DIR__))
     ->command(['invoice', 'list'], ListInvoices::class)
     ->command(['invoice', 'generate'], GenerateInvoices::class)
     ->command(['entry', 'mark-invoiced'], MarkTimeEntriesInvoiced::class)
-    ->command(['heartbeat'], CheckHeartbeat::class)
+    ->command(['heartbeat'], CheckSyncProviderHeartbeat::class)
+    ->command(['get'], GetSyncEntities::class)
     ->runAndExit();
