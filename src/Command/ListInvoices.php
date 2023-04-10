@@ -33,7 +33,7 @@ class ListInvoices extends Command
         }
         $invoices = $this->InvoiceProvider->with(Invoice::class)->getList($query);
 
-        /** @var Invoice $invoice */
+        $count = 0;
         foreach ($invoices as $invoice) {
             printf(
                 "==> %s for \$%.2f\n  date: %s\n  client: %s\n\n",
@@ -42,6 +42,9 @@ class ListInvoices extends Command
                 Format::date($invoice->Date),
                 $invoice->Client->Name,
             );
+            $count++;
         }
+
+        Console::info('Invoices retrieved:', (string) $count);
     }
 }

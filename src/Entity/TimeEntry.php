@@ -203,6 +203,11 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
         return implode($markdown ? "\n\n" : "\n", $parts1);
     }
 
+    public function getDescription(string $separator = "\n", ?string $marker = null): string
+    {
+        return Convert::linesToLists($this->Description, $separator, $marker, '/^\h*[-*]\h+/', true);
+    }
+
     final public function mergeWith(TimeEntry $entry, string $delimiter = "\n\n"): TimeEntry
     {
         if (is_null($this->Merged)) {

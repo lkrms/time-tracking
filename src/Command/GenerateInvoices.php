@@ -28,7 +28,7 @@ class GenerateInvoices extends Command
 
     protected function run(string ...$params)
     {
-        if (!$this->getOptionValue('force')) {
+        if (!$this->Force) {
             Env::dryRun(true);
         }
 
@@ -73,7 +73,7 @@ class GenerateInvoices extends Command
             'description' => TimeEntry::DESCRIPTION,
         ];
         $show = array_reduce(
-            $this->getOptionValue('hide'),
+            $this->Hide,
             fn($prev, $value) => $prev & ~$showMap[$value],
             TimeEntry::ALL
         );
@@ -86,7 +86,8 @@ class GenerateInvoices extends Command
             /** @var iterable<Invoice> $invoices */
             $invoices = $this->InvoiceProvider->with(Invoice::class)->getList([
                 'number'   => "{$prefix}*",
-                '$orderby' => 'date desc'
+                '$orderby' => 'date desc',
+                '!status'  => 'DELETED',
             ]);
 
             $seen = 0;

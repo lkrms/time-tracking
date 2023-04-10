@@ -11,6 +11,7 @@ use Lkrms\Auth\Concern\GetsOAuth2AccessToken;
 use Lkrms\Contract\IReadable;
 use Lkrms\Contract\IServiceShared;
 use Lkrms\Curler\Contract\ICurlerHeaders;
+use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Facade\Cache;
@@ -195,12 +196,17 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
         return $this;
     }
 
+    protected function buildCurler(CurlerBuilder $curlerB): CurlerBuilder
+    {
+        return $curlerB->alwaysPaginate();
+    }
+
     protected function getHttpDefinition(string $entity, DefinitionBuilder $defB): DefinitionBuilder
     {
         $defB = $defB
             ->path(sprintf('/api.xro/2.0/%s', self::ENTITY_PATH_MAP[$entity] ?? $entity::plural()))
             ->callback(fn(Definition $def, int $op, Context $ctx): Definition =>
-                           $def->withPager(new QueryPager(null, self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::plural()))
+                           $def->withPager(new QueryPager('page', self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::plural(), 100))
                                ->if($op === OP::READ_LIST, fn(Definition $def) => $def->withQuery($this->buildQuery($ctx, self::ENTITY_QUERY_MAPS[$entity]))));
 
         switch ($entity) {

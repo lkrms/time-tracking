@@ -1,11 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Method Lkrms\\\\Time\\\\ClockifyProvider\\:\\:getPostCachingCurler\\(\\) has parameter \\$args with no type specified\\.$#"
-			count: 1
-			path: src/ClockifyProvider.php
-
-		-
 			message: "#^Method Lkrms\\\\Time\\\\ClockifyProvider\\:\\:getReportFilter\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/ClockifyProvider.php
@@ -32,11 +27,6 @@ parameters:
 
 		-
 			message: "#^Method Lkrms\\\\Time\\\\Concept\\\\Command\\:\\:getBillableSummary\\(\\) has parameter \\$hours with no type specified\\.$#"
-			count: 1
-			path: src/Concept/Command.php
-
-		-
-			message: "#^Method Lkrms\\\\Time\\\\Concept\\\\Command\\:\\:getTimeEntryOptions\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
 			path: src/Concept/Command.php
 

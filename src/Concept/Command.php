@@ -5,8 +5,10 @@ namespace Lkrms\Time\Concept;
 use DateTimeImmutable;
 use Lkrms\Cli\CliAppContainer;
 use Lkrms\Cli\CliOption;
+use Lkrms\Cli\CliOptionBuilder;
 use Lkrms\Cli\CliOptionType;
 use Lkrms\Cli\Concept\CliCommand;
+use Lkrms\Cli\Enumeration\CliOptionValueType;
 use Lkrms\Facade\Convert;
 use Lkrms\Sync\Contract\ISyncProvider;
 use Lkrms\Sync\Support\SyncContext;
@@ -46,6 +48,36 @@ abstract class Command extends CliCommand
      */
     protected $UniqueProviderNames;
 
+    /**
+     * @var DateTimeImmutable|null
+     */
+    protected $StartDate;
+
+    /**
+     * @var DateTimeImmutable|null
+     */
+    protected $EndDate;
+
+    /**
+     * @var string|null
+     */
+    protected $ClientId;
+
+    /**
+     * @var string|null
+     */
+    protected $ProjectId;
+
+    /**
+     * @var string[]|null
+     */
+    protected $Hide;
+
+    /**
+     * @var bool|null
+     */
+    protected $Force;
+
     public function __construct(CliAppContainer $container, BillableTimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
     {
         parent::__construct($container);
@@ -67,11 +99,18 @@ abstract class Command extends CliCommand
         return null;
     }
 
+    /**
+     * Get standard options for TimeEntry-related commands
+     *
+     * @param CliOption|CliOptionBuilder ...$otherOptions
+     * @return array<CliOption|CliOptionBuilder>
+     */
     protected function getTimeEntryOptions(
         string $action       = 'List time entries',
         bool $requireDates   = true,
         bool $addForceOption = true,
-        bool $addHideOption  = false
+        bool $addHideOption  = false,
+        ...$otherOptions
     ): array {
         $options = [
             CliOption::build()
@@ -79,52 +118,58 @@ abstract class Command extends CliCommand
                 ->short('s')
                 ->valueName('start_date')
                 ->description("$action from <start_date>")
-                ->optionType(CliOptionType::VALUE)
+                ->optionType($requireDates ? CliOptionType::VALUE_POSITIONAL : CliOptionType::VALUE)
+                ->valueType(CliOptionValueType::DATE)
                 ->required($requireDates)
                 ->defaultValue($requireDates ? null : '1 jan last year')
-                ->go(),
+                ->bindTo($this->StartDate),
             CliOption::build()
                 ->long('to')
                 ->short('e')
                 ->valueName('end_date')
                 ->description("$action to <end_date>")
-                ->optionType(CliOptionType::VALUE)
+                ->optionType($requireDates ? CliOptionType::VALUE_POSITIONAL : CliOptionType::VALUE)
+                ->valueType(CliOptionValueType::DATE)
                 ->required($requireDates)
                 ->defaultValue($requireDates ? null : 'today')
-                ->go(),
+                ->bindTo($this->EndDate),
             CliOption::build()
                 ->long('client')
                 ->short('c')
                 ->valueName('client_id')
                 ->description("$action for a particular client")
                 ->optionType(CliOptionType::VALUE)
-                ->go(),
+                ->bindTo($this->ClientId),
             CliOption::build()
                 ->long('project')
                 ->short('p')
                 ->valueName('project_id')
                 ->description("$action for a particular project")
                 ->optionType(CliOptionType::VALUE)
-                ->go(),
+                ->bindTo($this->ProjectId),
         ];
         if ($addHideOption) {
             $options[] = CliOption::build()
                 ->long('hide')
                 ->short('h')
                 ->valueName('value')
-                ->description('Exclude the given value (may be used more than once)')
+                ->description('Exclude a value from time entry descriptions')
                 ->optionType(CliOptionType::ONE_OF)
                 ->allowedValues(['date', 'time', 'project', 'task', 'user', 'description'])
                 ->multipleAllowed(true)
                 ->defaultValue(['time', 'user'])
-                ->go();
+                ->bindTo($this->Hide);
+        }
+        if ($otherOptions) {
+            $options = [...$options,
+                        ...$otherOptions];
         }
         if ($addForceOption) {
             $options[] = CliOption::build()
                 ->long('force')
                 ->short('f')
                 ->description('Disable dry-run mode')
-                ->go();
+                ->bindTo($this->Force);
         }
 
         return $options;
@@ -140,10 +185,10 @@ abstract class Command extends CliCommand
         return $this->TimeEntryProvider->getTimeEntries(
             new SyncContext($this->app()),
             null,
-            $this->getOptionValue('client'),
-            $this->getOptionValue('project'),
-            new DateTimeImmutable($this->getOptionValue('from')),
-            new DateTimeImmutable($this->getOptionValue('to')),
+            $this->ClientId,
+            $this->ProjectId,
+            $this->StartDate,
+            $this->EndDate,
             $billable,
             $billed
         );
@@ -161,8 +206,8 @@ abstract class Command extends CliCommand
         ];
 
         return array_reduce(
-            $this->getOptionValue('hide'),
-            fn($prev, $value) => $prev & ~$showMap[$value],
+            $this->Hide,
+            fn(int $prev, string $value) => $prev & ~$showMap[$value],
             TimeEntry::ALL
         );
     }

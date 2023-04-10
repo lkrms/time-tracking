@@ -14,6 +14,11 @@ class Invoice extends \Lkrms\Time\Entity\Invoice
 
     protected function _setLineItems($value)
     {
-        $this->LineItems = InvoiceLineItem::provideList($value, $this->provider(), $this->requireContext()->getConformity(), $this->requireContext()->push($this));
+        $this->LineItems = InvoiceLineItem::provideList(
+            $value,
+            $this->provider(),
+            $this->requireContext()->getConformity(),
+            $this->requireContext()->push($this)
+        )->toArray();
     }
 }

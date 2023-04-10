@@ -210,7 +210,7 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
         }
         $workspaceId = $this->getWorkspaceId();
 
-        return Task::provideList($this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks")->get(), $this, ArrayKeyConformity::PARTIAL, $ctx);
+        return Task::provideList($this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks")->get(), $this, ArrayKeyConformity::NONE, $ctx);
     }
 
     /**
@@ -243,12 +243,13 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
         ];
     }
 
-    private function getPostCachingCurler(...$args): Curler
+    /**
+     * @param mixed ...$args
+     */
+    private function getCurlerWithPostCache(...$args): Curler
     {
-        $curler = $this->getCurler(...$args);
-        if ($curler->CacheResponse) {
-            $curler->CachePostResponse = true;
-        }
+        $curler                    = $this->getCurler(...$args);
+        $curler->CachePostResponse = true;
 
         return $curler;
     }
@@ -331,8 +332,8 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
             });
 
         return TimeEntry::provideList($pipeline->stream(
-            $this->getPostCachingCurler("/workspaces/$workspaceId/reports/detailed")->post($query)['timeentries']
-        )->start(), $this, ArrayKeyConformity::PARTIAL, $ctx);
+            $this->getCurlerWithPostCache("/workspaces/$workspaceId/reports/detailed")->post($query)['timeentries']
+        )->start(), $this, ArrayKeyConformity::NONE, $ctx);
     }
 
     /**

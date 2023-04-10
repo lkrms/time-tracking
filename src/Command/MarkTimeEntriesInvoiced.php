@@ -21,7 +21,7 @@ class MarkTimeEntriesInvoiced extends Command
 
     protected function run(string ...$params)
     {
-        if (!$this->getOptionValue('force')) {
+        if (!$this->Force) {
             Env::dryRun(true);
         }
 

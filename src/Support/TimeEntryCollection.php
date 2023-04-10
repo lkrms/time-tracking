@@ -131,7 +131,7 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
             $time->Description = Convert::sparseToString($separator, [
                 $groupSummary[$groupBy],
                 $show & TimeEntry::DESCRIPTION
-                    ? Convert::linesToLists($time->Description, $separator, $marker)
+                    ? $time->getDescription($separator, $marker)
                     : null,
             ]);
             $grouped[] = $time;
