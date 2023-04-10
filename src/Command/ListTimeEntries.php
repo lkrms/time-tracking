@@ -25,16 +25,16 @@ class ListTimeEntries extends Command
         Console::info('Retrieving time entries from', $this->TimeEntryProviderName);
 
         /** @var TimeEntryCollection */
-        $times          = $this->app()->get(TimeEntryCollection::class);
-        $billableCount  = 0;
+        $times = $this->app()->get(TimeEntryCollection::class);
+        $billableCount = 0;
         $billableAmount = 0;
-        $billableHours  = 0;
+        $billableHours = 0;
         foreach ($this->getTimeEntries() as $entry) {
             $times[] = $entry;
             if (!$entry->IsInvoiced) {
                 $billableCount++;
                 $billableAmount += $entry->getBillableAmount();
-                $billableHours  += $entry->getBillableHours();
+                $billableHours += $entry->getBillableHours();
             }
         }
         $times = $times->groupBy($this->getTimeEntryMask(), null, true);

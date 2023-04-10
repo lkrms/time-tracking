@@ -37,14 +37,14 @@ class GenerateInvoices extends Command
         $times = $this->getTimeEntries(true, false);
 
         /** @var TimeEntryCollection[] */
-        $clientTimes    = [];
-        $clientNames    = [];
+        $clientTimes = [];
+        $clientNames = [];
         $timeEntryCount = 0;
 
         foreach ($times as $time) {
-            $clientId               = $time->Project->Client->Id;
-            $entries                = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->app()->get(TimeEntryCollection::class));
-            $entries[]              = $time;
+            $clientId = $time->Project->Client->Id;
+            $entries = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->app()->get(TimeEntryCollection::class));
+            $entries[] = $time;
             $clientNames[$clientId] = $time->Project->Client->Name;
             $timeEntryCount++;
         }
@@ -62,14 +62,14 @@ class GenerateInvoices extends Command
         );
 
         Console::log('Preparing ' . Convert::plural(count($clientTimes), 'client invoice', null, true)
-                         . ' for ' . Convert::plural($timeEntryCount, 'time entry', 'time entries', true));
+            . ' for ' . Convert::plural($timeEntryCount, 'time entry', 'time entries', true));
 
         $showMap = [
-            'date'        => TimeEntry::DATE,
-            'time'        => TimeEntry::TIME,
-            'project'     => TimeEntry::PROJECT,
-            'task'        => TimeEntry::TASK,
-            'user'        => TimeEntry::USER,
+            'date' => TimeEntry::DATE,
+            'time' => TimeEntry::TIME,
+            'project' => TimeEntry::PROJECT,
+            'task' => TimeEntry::TASK,
+            'user' => TimeEntry::USER,
             'description' => TimeEntry::DESCRIPTION,
         ];
         $show = array_reduce(
@@ -85,9 +85,9 @@ class GenerateInvoices extends Command
 
             /** @var iterable<Invoice> $invoices */
             $invoices = $this->InvoiceProvider->with(Invoice::class)->getList([
-                'number'   => "{$prefix}*",
+                'number' => "{$prefix}*",
                 '$orderby' => 'date desc',
-                '!status'  => 'DELETED',
+                '!status' => 'DELETED',
             ]);
 
             $seen = 0;
@@ -108,7 +108,7 @@ class GenerateInvoices extends Command
         ]));
 
         foreach ($clientTimes as $clientId => $entries) {
-            $name    = $clientNames[$clientId];
+            $name = $clientNames[$clientId];
             $summary = $this->getBillableSummary($entries->BillableAmount, $entries->BillableHours);
 
             if (!($invClient = $invClients[$name] ?? null)) {
@@ -126,10 +126,12 @@ class GenerateInvoices extends Command
 
             if (Env::dryRun()) {
                 foreach ($entries as $entry) {
-                    printf("==> \$%.2f (%.2f hours):\n  %s\n\n",
-                           $entry->getBillableAmount(),
-                           $entry->getBillableHours(),
-                           str_replace("\n", "\n  ", $entry->Description));
+                    printf(
+                        "==> \$%.2f (%.2f hours):\n  %s\n\n",
+                        $entry->getBillableAmount(),
+                        $entry->getBillableHours(),
+                        str_replace("\n", "\n  ", $entry->Description)
+                    );
                 }
                 continue;
             }
@@ -137,20 +139,20 @@ class GenerateInvoices extends Command
             $markInvoiced = [];
 
             /** @var Invoice */
-            $invoice            = $this->app()->get(Invoice::class);
-            $invoice->Number    = $next ? $prefix . ($next++) : null;
-            $invoice->Date      = new DateTimeImmutable('today');
-            $invoice->DueDate   = new DateTimeImmutable('today +7 days');
-            $invoice->Client    = $invClient;
+            $invoice = $this->app()->get(Invoice::class);
+            $invoice->Number = $next ? $prefix . ($next++) : null;
+            $invoice->Date = new DateTimeImmutable('today');
+            $invoice->DueDate = new DateTimeImmutable('today +7 days');
+            $invoice->Client = $invClient;
             $invoice->LineItems = [];
 
             foreach ($entries as $entry) {
                 /** @var InvoiceLineItem */
-                $item              = $invoice->LineItems[] = $this->app()->get(InvoiceLineItem::class);
+                $item = $invoice->LineItems[] = $this->app()->get(InvoiceLineItem::class);
                 $item->Description = $entry->Description;
-                $item->Quantity    = $entry->getBillableHours();
-                $item->UnitAmount  = $entry->BillableRate;
-                $item->ItemCode    = Env::get('invoice_item_code', '') ?: null;
+                $item->Quantity = $entry->getBillableHours();
+                $item->UnitAmount = $entry->BillableRate;
+                $item->ItemCode = Env::get('invoice_item_code', '') ?: null;
                 $item->AccountCode = Env::get('invoice_account_code', '') ?: null;
 
                 array_push($markInvoiced, ...($entry->getMerged() ?: [$entry]));
@@ -158,16 +160,18 @@ class GenerateInvoices extends Command
 
             /** @var Invoice $invoice */
             $invoice = $this->InvoiceProvider->with(Invoice::class)->create($invoice);
-            Console::log("Invoice created in {$this->InvoiceProviderName}:",
-                         sprintf(
-                             '%s for %s (%.2f + %.2f tax = %s %.2f)',
-                             $invoice->Number,
-                             $invoice->Client->Name,
-                             $invoice->SubTotal,
-                             $invoice->TotalTax,
-                             $invoice->Currency,
-                             $invoice->Total
-                         ));
+            Console::log(
+                "Invoice created in {$this->InvoiceProviderName}:",
+                sprintf(
+                    '%s for %s (%.2f + %.2f tax = %s %.2f)',
+                    $invoice->Number,
+                    $invoice->Client->Name,
+                    $invoice->SubTotal,
+                    $invoice->TotalTax,
+                    $invoice->Currency,
+                    $invoice->Total
+                )
+            );
 
             // TODO: something better with this data
             file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));

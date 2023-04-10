@@ -44,10 +44,11 @@ use RuntimeException;
  * @method TimeEntry updateTimeEntry(SyncContext $ctx, TimeEntry $timeEntry)
  * @method TimeEntry deleteTimeEntry(SyncContext $ctx, TimeEntry $timeEntry)
  */
-class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
-                                                           WorkspaceProvider,
-                                                           UserProvider,
-                                                           BillableTimeEntryProvider
+class ClockifyProvider extends HttpSyncProvider implements
+    IServiceShared,
+    WorkspaceProvider,
+    UserProvider,
+    BillableTimeEntryProvider
 {
     /**
      * @var int|null
@@ -58,8 +59,8 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
     {
         return [
             TimeEntry::class => \Lkrms\Time\Entity\Clockify\TimeEntry::class,
-            Project::class   => \Lkrms\Time\Entity\Clockify\Project::class,
-            Task::class      => \Lkrms\Time\Entity\Clockify\Task::class,
+            Project::class => \Lkrms\Time\Entity\Clockify\Project::class,
+            Task::class => \Lkrms\Time\Entity\Clockify\Task::class,
         ];
     }
 
@@ -91,8 +92,8 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
     protected function getExpiry(?string $path): ?int
     {
         return !is_null($this->CacheExpiry)
-                   ? $this->CacheExpiry
-                   : Env::getInt('clockify_cache_expiry', 600);
+            ? $this->CacheExpiry
+            : Env::getInt('clockify_cache_expiry', 600);
     }
 
     /**
@@ -172,10 +173,12 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
             $this->CacheExpiry = null;
         }
         Console::debugOnce(
-            sprintf("Connected to Clockify workspace '%s' as %s ('%s')",
-                    $user->ActiveWorkspace,
-                    $user->Name,
-                    $user->Id)
+            sprintf(
+                "Connected to Clockify workspace '%s' as %s ('%s')",
+                $user->ActiveWorkspace,
+                $user->Name,
+                $user->Id
+            )
         );
 
         return $this;
@@ -237,9 +240,9 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
     private function getReportFilter($entity): array
     {
         return [
-            'ids'      => [$entity instanceof SyncEntity ? $entity->Id : $entity],
+            'ids' => [$entity instanceof SyncEntity ? $entity->Id : $entity],
             'contains' => 'CONTAINS',
-            'status'   => 'ALL',
+            'status' => 'ALL',
         ];
     }
 
@@ -248,7 +251,7 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
      */
     private function getCurlerWithPostCache(...$args): Curler
     {
-        $curler                    = $this->getCurler(...$args);
+        $curler = $this->getCurler(...$args);
         $curler->CachePostResponse = true;
 
         return $curler;
@@ -263,18 +266,18 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
 
         $query = [
             'dateRangeStart' => $from,
-            'dateRangeEnd'   => $to,
-            'sortOrder'      => 'ASCENDING',
+            'dateRangeEnd' => $to,
+            'sortOrder' => 'ASCENDING',
             'detailedFilter' => [
                 'sortColumn' => 'DATE',
-                'page'       => 1,
-                'pageSize'   => 1000,
-                'options'    => [
+                'page' => 1,
+                'pageSize' => 1000,
+                'options' => [
                     'totals' => 'EXCLUDE',
                 ],
             ],
-            'users'    => $user ? $this->getReportFilter($user) : null,
-            'clients'  => $client ? $this->getReportFilter($client) : null,
+            'users' => $user ? $this->getReportFilter($user) : null,
+            'clients' => $client ? $this->getReportFilter($client) : null,
             'projects' => $project ? $this->getReportFilter($project) : null,
         ];
 
@@ -289,24 +292,24 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
         $pipeline = Pipeline::create($this->container())
             ->throughCallback(static function (array $entry): array {
                 $client = !($entry['clientId'] ?? null) ? null : [
-                    'id'   => $entry['clientId'],
+                    'id' => $entry['clientId'],
                     'name' => $entry['clientName'],
                 ];
                 $entry = Arr::from($entry)->merge([
                     'user' => !($entry['userId'] ?? null) ? null : [
-                        'id'    => $entry['userId'],
-                        'name'  => $entry['userName'],
+                        'id' => $entry['userId'],
+                        'name' => $entry['userName'],
                         'email' => $entry['userEmail'],
                     ],
-                    'client'  => $client,
+                    'client' => $client,
                     'project' => !($entry['projectId'] ?? null) ? null : [
-                        'id'     => $entry['projectId'],
-                        'name'   => $entry['projectName'],
-                        'color'  => $entry['projectColor'],
+                        'id' => $entry['projectId'],
+                        'name' => $entry['projectName'],
+                        'color' => $entry['projectColor'],
                         'client' => $client,
                     ],
                     'task' => !($entry['taskId'] ?? null) ? null : [
-                        'id'   => $entry['taskId'],
+                        'id' => $entry['taskId'],
                         'name' => $entry['taskName'],
                     ],
                 ])->diffKey(array_flip([
@@ -343,7 +346,7 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
     public function getTimeEntry(Context $ctx, $id): TimeEntry
     {
         $workspaceId = $this->getWorkspaceId();
-        $query       = ['hydrated' => true];
+        $query = ['hydrated' => true];
 
         return TimeEntry::provide(
             $this->getCurler("/workspaces/$workspaceId/time-entries/$id")->get($query), $this, $ctx
@@ -361,9 +364,9 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared,
         bool $unmark = false
     ): void {
         $workspaceId = $this->getWorkspaceId();
-        $data        = [
+        $data = [
             'timeEntryIds' => [],
-            'invoiced'     => !$unmark,
+            'invoiced' => !$unmark,
         ];
 
         foreach ($timeEntries as $time) {

@@ -70,11 +70,11 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
      */
     private const ENTITY_KEY_MAPS = [
         Client::class => [
-            'ContactID'    => 'Id',
+            'ContactID' => 'Id',
             'EmailAddress' => 'Email',
         ],
         Invoice::class => [
-            'Contact'      => 'Client',
+            'Contact' => 'Client',
             'CurrencyCode' => 'Currency',
         ],
     ];
@@ -86,15 +86,15 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
      */
     private const ENTITY_QUERY_MAPS = [
         Client::class => [
-            'name'  => 'Name',
+            'name' => 'Name',
             'email' => 'EmailAddress'
         ],
         Invoice::class => [
-            'number'    => 'InvoiceNumber',
+            'number' => 'InvoiceNumber',
             'reference' => 'Reference',
-            'date'      => 'Date',
-            'due_date'  => 'DueDate',
-            'status'    => 'Status',
+            'date' => 'Date',
+            'due_date' => 'DueDate',
+            'status' => 'Status',
         ],
     ];
 
@@ -144,14 +144,14 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
     protected function getOAuth2Provider(): AbstractProvider
     {
         return new GenericProvider([
-            'clientId'                => $this->env()->get('xero_app_client_id'),
-            'clientSecret'            => $this->env()->get('xero_app_client_secret'),
-            'redirectUri'             => $this->OAuth2RedirectUri,
-            'urlAuthorize'            => 'https://login.xero.com/identity/connect/authorize',
-            'urlAccessToken'          => 'https://identity.xero.com/connect/token',
+            'clientId' => $this->env()->get('xero_app_client_id'),
+            'clientSecret' => $this->env()->get('xero_app_client_secret'),
+            'redirectUri' => $this->OAuth2RedirectUri,
+            'urlAuthorize' => 'https://login.xero.com/identity/connect/authorize',
+            'urlAccessToken' => 'https://identity.xero.com/connect/token',
             'urlResourceOwnerDetails' => 'https://identity.xero.com/connect/userinfo',
-            'scopes'                  => self::OAUTH2_SCOPES,
-            'scopeSeparator'          => ' ',
+            'scopes' => self::OAUTH2_SCOPES,
+            'scopeSeparator' => ' ',
         ]);
     }
 
@@ -184,12 +184,14 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
     public function checkHeartbeat(int $ttl = 300)
     {
         $connections = $this->getConnections($ttl);
-        $count       = count($connections);
+        $count = count($connections);
 
         Console::debug(
-            sprintf('Connected to Xero with %d %s:',
-                    $count,
-                    Convert::plural($count, 'tenant connection')),
+            sprintf(
+                'Connected to Xero with %d %s:',
+                $count,
+                Convert::plural($count, 'tenant connection')
+            ),
             $this->getFormattedTenantList($connections)
         );
 
@@ -239,7 +241,7 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
     protected function getHeaders(?string $path): ?ICurlerHeaders
     {
         if ($path === '/connections') {
-            $tenantId    = null;
+            $tenantId = null;
             $accessToken = $this->getAccessToken(self::OAUTH2_SCOPES);
         } else {
             if (!($tenantId = $this->getTenantId())) {
@@ -253,8 +255,10 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
         }
 
         $headers = CurlerHeaders::create()
-            ->setHeader(HttpHeader::AUTHORIZATION,
-                        'Bearer ' . $accessToken->Token);
+            ->setHeader(
+                HttpHeader::AUTHORIZATION,
+                'Bearer ' . $accessToken->Token
+            );
         if ($tenantId) {
             return $headers->setHeader('Xero-Tenant-Id', $tenantId);
         }
@@ -265,13 +269,13 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
     protected function _getTenantIdKey(): string
     {
         return $this->_TenantIdKey
-                   ?: ($this->_TenantIdKey =
-                       implode(':', [
-                           static::class,
-                           'tenant',
-                           $this->getBaseUrl(),
-                           'uuid',
-                       ]));
+            ?: ($this->_TenantIdKey =
+                implode(':', [
+                    static::class,
+                    'tenant',
+                    $this->getBaseUrl(),
+                    'uuid',
+                ]));
     }
 
     private function getConnections(int $ttl = -1): array
@@ -325,7 +329,7 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
             return $tenantId;
         }
 
-        $token   = $this->authorize();
+        $token = $this->authorize();
         $eventId = $token->Claims['authentication_event_id'];
 
         // If a connection was "newly authorized in the current auth flow", or
@@ -344,7 +348,7 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
         }
 
         $connection = array_pop($connection);
-        $tenantId   = $connection['tenantId'];
+        $tenantId = $connection['tenantId'];
         Cache::set($this->TenantIdKey, $tenantId);
 
         return $tenantId;
@@ -362,8 +366,10 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
         }
 
         Console::warn(
-            sprintf("Not connected to Xero tenant '%s'; tenant connections:",
-                    $tenantId),
+            sprintf(
+                "Not connected to Xero tenant '%s'; tenant connections:",
+                $tenantId
+            ),
             $this->getFormattedTenantList($connections)
         );
 
@@ -404,8 +410,8 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
             }
 
             [$prefix, $eq, $glue] = $_filterField === $filterField
-                                        ? ['', '==', ' OR ']
-                                        : ['NOT ', '!=', ' AND '];
+                ? ['', '==', ' OR ']
+                : ['NOT ', '!=', ' AND '];
 
             // TODO: escape each $value
             $where[$field] = array_map(
@@ -465,26 +471,26 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
 
     private function generateInvoice(Invoice $invoice): array
     {
-        $data                  = [];
-        $data['Type']          = 'ACCREC';
-        $data['Contact']       = ['ContactID' => $invoice->Client->Id];
+        $data = [];
+        $data['Type'] = 'ACCREC';
+        $data['Contact'] = ['ContactID' => $invoice->Client->Id];
         $data['InvoiceNumber'] = $invoice->Number;
-        $data['Reference']     = $invoice->Reference;
-        $data['Date']          = $invoice->Date;
-        $data['DueDate']       = $invoice->DueDate;
-        $data['LineItems']     = [];
-        $data['Status']        = $invoice->Status;
+        $data['Reference'] = $invoice->Reference;
+        $data['Date'] = $invoice->Date;
+        $data['DueDate'] = $invoice->DueDate;
+        $data['LineItems'] = [];
+        $data['Status'] = $invoice->Status;
 
         $data = array_filter($data, fn($value) => !is_null($value));
 
         foreach ($invoice->LineItems as $lineItem) {
-            $line                = [];
+            $line = [];
             $line['Description'] = $lineItem->Description;
-            $line['Quantity']    = $lineItem->Quantity;
-            $line['UnitAmount']  = $lineItem->UnitAmount;
-            $line['ItemCode']    = $lineItem->ItemCode;
+            $line['Quantity'] = $lineItem->Quantity;
+            $line['UnitAmount'] = $lineItem->UnitAmount;
+            $line['ItemCode'] = $lineItem->ItemCode;
             $line['AccountCode'] = $lineItem->AccountCode;
-            $line['Tracking']    = $lineItem->Tracking;
+            $line['Tracking'] = $lineItem->Tracking;
 
             $line = array_filter($line, fn($value) => !is_null($value));
 

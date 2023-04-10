@@ -7,13 +7,13 @@ use Lkrms\Facade\Convert;
 
 class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
 {
-    public const DATE        = 1 << 0;
-    public const TIME        = 1 << 1;
-    public const PROJECT     = 1 << 2;
-    public const TASK        = 1 << 3;
-    public const USER        = 1 << 4;
+    public const DATE = 1 << 0;
+    public const TIME = 1 << 1;
+    public const PROJECT = 1 << 2;
+    public const TASK = 1 << 3;
+    public const USER = 1 << 4;
     public const DESCRIPTION = 1 << 5;
-    public const ALL         = (1 << 6) - 1;
+    public const ALL = (1 << 6) - 1;
 
     /**
      * @var int|string|null
@@ -104,15 +104,15 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
     public function getBillableAmount(): float
     {
         return $this->Billable
-                   ? round(($this->BillableRate ?: 0) * ($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
-                   : 0;
+            ? round(($this->BillableRate ?: 0) * ($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            : 0;
     }
 
     public function getBillableHours(): float
     {
         return $this->Billable
-                   ? round(($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
-                   : 0;
+            ? round(($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            : 0;
     }
 
     /**
@@ -146,17 +146,17 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
      * @return string
      */
     public function getSummary(
-        int $show          = TimeEntry::ALL,
+        int $show = TimeEntry::ALL,
         string $dateFormat = 'd/m/Y',
         string $timeFormat = 'g.ia',
-        bool $markdown     = false
+        bool $markdown = false
     ): string {
         $escape = $markdown ? '\\' : '';
         $format = [
             'project' => $markdown ? '**' : '',
-            'task'    => $markdown ? '' : '',
-            'user'    => $markdown ? '*' : '',
-            'line1'   => $markdown ? ['### ', ''] : '',
+            'task' => $markdown ? '' : '',
+            'user' => $markdown ? '*' : '',
+            'line1' => $markdown ? ['### ', ''] : '',
         ];
 
         $parts1 = [];
@@ -171,7 +171,7 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
         }
         if ($parts1) {
             $parts2[] = "{$escape}[" . implode(' ', $parts1) . "{$escape}]";
-            $parts1   = [];
+            $parts1 = [];
         }
 
         // "<project> - <task>" => $parts2
@@ -183,7 +183,7 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
         }
         if ($parts1) {
             $parts2[] = implode(' - ', $parts1);
-            $parts1   = [];
+            $parts1 = [];
         }
 
         // "(<user>)" => $parts2
@@ -211,10 +211,10 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
     final public function mergeWith(TimeEntry $entry, string $delimiter = "\n\n"): TimeEntry
     {
         if (is_null($this->Merged)) {
-            $merged         = clone $this;
+            $merged = clone $this;
             $merged->Merged = [$this];
         } else {
-            $merged         = $this;
+            $merged = $this;
         }
 
         // Clear properties with different values
@@ -226,10 +226,10 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
 
         // Combine properties that can be aggregated
         $merged->Description = Convert::sparseToString($delimiter, [$merged->Description, $entry->Description]);
-        $merged->Start       = $merged->Start && $entry->Start ? min($merged->Start, $entry->Start) : null;
-        $merged->End         = null;
-        $merged->Seconds     = !is_null($merged->Seconds) && !is_null($entry->Seconds) ? $merged->Seconds + $entry->Seconds : null;
-        $merged->Merged[]    = $entry;
+        $merged->Start = $merged->Start && $entry->Start ? min($merged->Start, $entry->Start) : null;
+        $merged->End = null;
+        $merged->Seconds = !is_null($merged->Seconds) && !is_null($entry->Seconds) ? $merged->Seconds + $entry->Seconds : null;
+        $merged->Merged[] = $entry;
 
         return $merged;
     }

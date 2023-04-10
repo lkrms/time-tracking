@@ -91,9 +91,9 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
      * @return TimeEntryCollection
      */
     public function groupBy(
-        $show              = TimeEntry::ALL,
+        $show = TimeEntry::ALL,
         callable $callback = null,
-        bool $markdown     = false
+        bool $markdown = false
     ): TimeEntryCollection {
         $dateFormat = Env::get('time_entry_date_format', 'd/m/Y');
         $timeFormat = Env::get('time_entry_time_format', 'g.ia');
@@ -101,7 +101,7 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
         $times = $this->sort()->toArray();
 
         /** @var array<string,TimeEntry> */
-        $groupTime    = [];
+        $groupTime = [];
         $groupSummary = [];
         foreach ($times as $t) {
             $summary = $t->getSummary(
@@ -111,12 +111,12 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
                 $markdown
             );
 
-            $groupBy   = !is_null($callback) ? $callback($t) : [];
+            $groupBy = !is_null($callback) ? $callback($t) : [];
             $groupBy[] = $summary;
-            $groupBy   = Compute::hash(...$groupBy);
+            $groupBy = Compute::hash(...$groupBy);
 
             if (!array_key_exists($groupBy, $groupTime)) {
-                $groupTime[$groupBy]    = $t;
+                $groupTime[$groupBy] = $t;
                 $groupSummary[$groupBy] = $summary;
                 continue;
             }
@@ -125,7 +125,7 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
         }
 
         /** @var TimeEntryCollection */
-        $grouped                  = $this->app()->get(static::class);
+        $grouped = $this->app()->get(static::class);
         list($separator, $marker) = $markdown ? ["\n\n", '*'] : ["\n", null];
         foreach ($groupTime as $groupBy => $time) {
             $time->Description = Convert::sparseToString($separator, [

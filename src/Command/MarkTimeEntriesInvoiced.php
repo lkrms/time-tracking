@@ -28,12 +28,12 @@ class MarkTimeEntriesInvoiced extends Command
         Console::info('Retrieving time entries from', $this->TimeEntryProviderName);
 
         $markInvoiced = [];
-        $totalAmount  = 0;
-        $totalHours   = 0;
+        $totalAmount = 0;
+        $totalHours = 0;
         foreach ($this->getTimeEntries(true, false) as $entry) {
             $markInvoiced[] = $entry;
-            $totalAmount   += $entry->getBillableAmount();
-            $totalHours    += $entry->getBillableHours();
+            $totalAmount += $entry->getBillableAmount();
+            $totalHours += $entry->getBillableHours();
         }
 
         $count = Convert::plural(count($markInvoiced), 'time entry', 'time entries', true);
@@ -41,12 +41,14 @@ class MarkTimeEntriesInvoiced extends Command
 
         if (Env::dryRun()) {
             foreach ($markInvoiced as $entry) {
-                printf("Would mark %s as invoiced: %.2f hours on %s ('%s', %s)\n",
-                       $entry->Id,
-                       $entry->getBillableHours(),
-                       $entry->Start->format('d/m/Y'),
-                       $entry->Project->Name ?? '<no project>',
-                       $entry->Project->Client->Name ?? '<no client>');
+                printf(
+                    "Would mark %s as invoiced: %.2f hours on %s ('%s', %s)\n",
+                    $entry->Id,
+                    $entry->getBillableHours(),
+                    $entry->Start->format('d/m/Y'),
+                    $entry->Project->Name ?? '<no project>',
+                    $entry->Project->Client->Name ?? '<no client>'
+                );
             }
             Console::info("$count would be marked as invoiced:", $total);
 

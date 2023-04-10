@@ -81,12 +81,12 @@ abstract class Command extends CliCommand
     public function __construct(CliAppContainer $container, BillableTimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
     {
         parent::__construct($container);
-        $this->TimeEntryProvider     = $timeEntryProvider;
-        $this->InvoiceProvider       = $invoiceProvider;
-        $this->UniqueProviders       = Convert::toUniqueList([$this->TimeEntryProvider, $this->InvoiceProvider]);
+        $this->TimeEntryProvider = $timeEntryProvider;
+        $this->InvoiceProvider = $invoiceProvider;
+        $this->UniqueProviders = Convert::toUniqueList([$this->TimeEntryProvider, $this->InvoiceProvider]);
         $this->TimeEntryProviderName = Convert::classToBasename(get_class($timeEntryProvider), 'Provider');
-        $this->InvoiceProviderName   = Convert::classToBasename(get_class($invoiceProvider), 'Provider');
-        $this->UniqueProviderNames   = Convert::stringsToUniqueList([$this->TimeEntryProviderName, $this->InvoiceProviderName]);
+        $this->InvoiceProviderName = Convert::classToBasename(get_class($invoiceProvider), 'Provider');
+        $this->UniqueProviderNames = Convert::stringsToUniqueList([$this->TimeEntryProviderName, $this->InvoiceProviderName]);
     }
 
     public function getLongDescription(): ?string
@@ -106,10 +106,10 @@ abstract class Command extends CliCommand
      * @return array<CliOption|CliOptionBuilder>
      */
     protected function getTimeEntryOptions(
-        string $action       = 'List time entries',
-        bool $requireDates   = true,
+        string $action = 'List time entries',
+        bool $requireDates = true,
         bool $addForceOption = true,
-        bool $addHideOption  = false,
+        bool $addHideOption = false,
         ...$otherOptions
     ): array {
         $options = [
@@ -161,8 +161,10 @@ abstract class Command extends CliCommand
                 ->bindTo($this->Hide);
         }
         if ($otherOptions) {
-            $options = [...$options,
-                        ...$otherOptions];
+            $options = [
+                ...$options,
+                ...$otherOptions
+            ];
         }
         if ($addForceOption) {
             $options[] = CliOption::build()
@@ -180,7 +182,7 @@ abstract class Command extends CliCommand
      */
     protected function getTimeEntries(
         bool $billable = null,
-        bool $billed   = null
+        bool $billed = null
     ): iterable {
         return $this->TimeEntryProvider->getTimeEntries(
             new SyncContext($this->app()),
@@ -197,11 +199,11 @@ abstract class Command extends CliCommand
     protected function getTimeEntryMask(): int
     {
         $showMap = [
-            'date'        => TimeEntry::DATE,
-            'time'        => TimeEntry::TIME,
-            'project'     => TimeEntry::PROJECT,
-            'task'        => TimeEntry::TASK,
-            'user'        => TimeEntry::USER,
+            'date' => TimeEntry::DATE,
+            'time' => TimeEntry::TIME,
+            'project' => TimeEntry::PROJECT,
+            'task' => TimeEntry::TASK,
+            'user' => TimeEntry::USER,
             'description' => TimeEntry::DESCRIPTION,
         ];
 

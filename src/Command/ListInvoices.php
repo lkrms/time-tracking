@@ -26,7 +26,7 @@ class ListInvoices extends Command
 
         $query = [
             '$orderby' => 'date desc',
-            '!status'  => 'DELETED',
+            '!status' => 'DELETED',
         ];
         if ($prefix = Env::get('invoice_number_prefix', null)) {
             $query['number'] = "{$prefix}*";
