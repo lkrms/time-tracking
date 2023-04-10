@@ -2,8 +2,9 @@
 <?php
 
 use Lkrms\Facade\Cli;
+use Lkrms\Sync\Command\CheckSyncProviderHeartbeat;
+use Lkrms\Sync\Command\GetSyncEntities;
 use Lkrms\Time\ClockifyProvider;
-use Lkrms\Time\Command\CheckHeartbeat;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\Command\ListInvoices;
@@ -11,17 +12,18 @@ use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
 use Lkrms\Time\XeroProvider;
 
-require (dirname(__DIR__) . "/vendor/autoload.php");
+require dirname(__DIR__) . '/vendor/autoload.php';
 
-(Cli::load(dirname(__DIR__))
+Cli::load(dirname(__DIR__))
     ->loadCache()
     ->loadSync()
     ->service(XeroProvider::class)
     ->service(ClockifyProvider::class)
-    ->command(["client", "list"], ListClients::class)
-    ->command(["entry", "list"], ListTimeEntries::class)
-    ->command(["invoice", "list"], ListInvoices::class)
-    ->command(["invoice", "generate"], GenerateInvoices::class)
-    ->command(["entry", "mark-invoiced"], MarkTimeEntriesInvoiced::class)
-    ->command(["heartbeat"], CheckHeartbeat::class)
-    ->runAndExit());
+    ->command(['client', 'list'], ListClients::class)
+    ->command(['entry', 'list'], ListTimeEntries::class)
+    ->command(['invoice', 'list'], ListInvoices::class)
+    ->command(['invoice', 'generate'], GenerateInvoices::class)
+    ->command(['entry', 'mark-invoiced'], MarkTimeEntriesInvoiced::class)
+    ->command(['heartbeat'], CheckSyncProviderHeartbeat::class)
+    ->command(['get'], GetSyncEntities::class)
+    ->runAndExit();

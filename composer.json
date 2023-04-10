@@ -3,10 +3,10 @@
     "license": "MIT",
     "description": "Time entry automation",
     "require": {
-        "php": ">=7.4,<8.2",
-        "firebase/php-jwt": "^6.2",
-        "league/oauth2-client": "^2.6",
-        "lkrms/util": "^0.18.4"
+        "php": ">=7.4 <8.3",
+        "firebase/php-jwt": "^6",
+        "league/oauth2-client": "^2",
+        "lkrms/util": "^0.19.34"
     },
     "autoload": {
         "psr-4": {
@@ -17,7 +17,7 @@
         "phpstan/extension-installer": "^1",
         "phpstan/phpstan": "^1",
         "phpstan/phpstan-deprecation-rules": "^1",
-        "phpunit/phpunit": "^9"
+        "phpunit/phpunit": "^9 || ^10"
     },
     "config": {
         "sort-packages": true,

@@ -1,25 +1,24 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time;
 
 use DateTimeInterface;
 use Lkrms\Contract\IServiceShared;
-use Lkrms\Curler\CachingCurler;
+use Lkrms\Curler\Contract\ICurlerHeaders;
 use Lkrms\Curler\Curler;
+use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Facade\Console;
-use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
 use Lkrms\Support\Arr;
 use Lkrms\Support\ArrayKeyConformity;
 use Lkrms\Support\DateFormatter;
-use Lkrms\Support\PipelineImmutable;
+use Lkrms\Support\Pipeline;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Concept\SyncEntity;
+use Lkrms\Sync\Contract\ISyncContext as Context;
+use Lkrms\Sync\Support\HttpSyncDefinition as Definition;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder;
-use Lkrms\Sync\Support\SyncContext as Context;
 use Lkrms\Sync\Support\SyncOperation as OP;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Project;
@@ -45,7 +44,11 @@ use RuntimeException;
  * @method TimeEntry updateTimeEntry(SyncContext $ctx, TimeEntry $timeEntry)
  * @method TimeEntry deleteTimeEntry(SyncContext $ctx, TimeEntry $timeEntry)
  */
-class ClockifyProvider extends HttpSyncProvider implements IServiceShared, WorkspaceProvider, UserProvider, BillableTimeEntryProvider
+class ClockifyProvider extends HttpSyncProvider implements
+    IServiceShared,
+    WorkspaceProvider,
+    UserProvider,
+    BillableTimeEntryProvider
 {
     /**
      * @var int|null
@@ -56,8 +59,8 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
     {
         return [
             TimeEntry::class => \Lkrms\Time\Entity\Clockify\TimeEntry::class,
-            Project::class   => \Lkrms\Time\Entity\Clockify\Project::class,
-            Task::class      => \Lkrms\Time\Entity\Clockify\Task::class,
+            Project::class => \Lkrms\Time\Entity\Clockify\Project::class,
+            Task::class => \Lkrms\Time\Entity\Clockify\Task::class,
         ];
     }
 
@@ -66,34 +69,31 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
         return [$this->getBaseUrl(), $this->getWorkspaceId()];
     }
 
-    protected function createDateFormatter(): DateFormatter
+    protected function getDateFormatter(): DateFormatter
     {
         return new DateFormatter();
     }
 
     protected function getBaseUrl(?string $path = null): string
     {
-        if ($path && strpos($path, "/reports/") !== false)
-        {
-            return Env::get("clockify_reports_api_base_endpoint", "https://reports.api.clockify.me/v1");
+        if ($path && strpos($path, '/reports/') !== false) {
+            return Env::get('clockify_reports_api_base_endpoint', 'https://reports.api.clockify.me/v1');
         }
 
-        return Env::get("clockify_api_base_endpoint", "https://api.clockify.me/api/v1");
+        return Env::get('clockify_api_base_endpoint', 'https://api.clockify.me/api/v1');
     }
 
-    protected function getCurlerHeaders(?string $path): ?CurlerHeaders
+    protected function getHeaders(?string $path): ?ICurlerHeaders
     {
-        $headers = new CurlerHeaders();
-        $headers->setHeader("X-Api-Key", Env::get("clockify_api_key"));
-
-        return $headers;
+        return CurlerHeaders::create()
+            ->setHeader('X-Api-Key', Env::get('clockify_api_key'));
     }
 
-    protected function getCurlerCacheExpiry(?string $path): ?int
+    protected function getExpiry(?string $path): ?int
     {
         return !is_null($this->CacheExpiry)
             ? $this->CacheExpiry
-            : Env::getInt("clockify_cache_expiry", 600);
+            : Env::getInt('clockify_cache_expiry', 600);
     }
 
     /**
@@ -101,75 +101,84 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
      */
     private static $DateFormatter;
 
-    protected function prepareCurler(Curler $curler): void
+    protected function buildCurler(CurlerBuilder $curlerB): CurlerBuilder
     {
-        if (!self::$DateFormatter)
-        {
+        if (!self::$DateFormatter) {
             // Prevent recursion
-            if ($this->getEndpointUrl("/user") == $curler->BaseUrl)
-            {
-                return;
+            if ($this->getEndpointUrl('/user') === $curlerB->get('baseUrl')) {
+                return $curlerB;
             }
             self::$DateFormatter = new DateFormatter(
-                "Y-m-d\TH:i:s.v\Z",
-                $this->getCurrentUser()->Settings["timeZone"]
+                'Y-m-d\TH:i:s.v\Z',
+                $this->getCurrentUser()->Settings['timeZone']
             );
         }
-        $curler->DateFormatter = self::$DateFormatter;
+
+        return $curlerB->dateFormatter(self::$DateFormatter);
     }
 
-    protected function getHttpDefinition(string $entity, HttpSyncDefinitionBuilder $define)
+    protected function getHttpDefinition(string $entity, HttpSyncDefinitionBuilder $defB): HttpSyncDefinitionBuilder
     {
+        if ($entity === Workspace::class) {
+            return $defB
+                ->path('/workspaces')
+                ->operations([OP::READ, OP::READ_LIST])
+                ->overrides([
+                    OP::READ =>
+                        fn(Definition $def, int $op, Context $ctx, $id) =>
+                            $this->with(Workspace::class, $ctx)
+                                 ->getList()
+                                 ->nextWithValue('Id', $id)
+                ]);
+        }
+
         $workspaceId = $this->getWorkspaceId();
-
-        switch ($entity)
-        {
-            case Workspace::class:
-                return $define->operations([OP::READ, OP::READ_LIST])
-                    ->path("/workspaces")
-                    ->overrides([
-                        OP::READ => (fn(Context $ctx, $id) =>
-                            Convert::iterableToItem($this->with(Workspace::class, $ctx)->getList(), "Id", $id))
-                    ]);
-
+        switch ($entity) {
             case User::class:
-                return $define->operations([OP::READ, OP::READ_LIST])
+                return $defB
                     ->path("/workspaces/$workspaceId/users")
+                    ->operations([OP::READ, OP::READ_LIST])
                     ->overrides([
-                        OP::READ => fn(Context $ctx, $id) => (is_null($id)
-                            ? User::provide($this->getCurler("/user")->get(), $this, $ctx)
-                            : Convert::iterableToItem($this->with(User::class, $ctx)->getList(), "Id", $id))
+                        OP::READ =>
+                            fn(Definition $def, int $op, Context $ctx, $id) =>
+                                is_null($id)
+                                    ? $def->withPath('/user')
+                                          ->getFallbackSyncOperationClosure(OP::READ)($ctx, null)
+                                    : $this->with(User::class, $ctx)
+                                           ->getList()
+                                           ->nextWithValue('Id', $id)
                     ]);
 
             case Client::class:
-                return $define->operations([OP::READ, OP::READ_LIST])
-                    ->path("/workspaces/$workspaceId/clients");
+                return $defB
+                    ->path("/workspaces/$workspaceId/clients")
+                    ->operations([OP::READ, OP::READ_LIST]);
 
             case Project::class:
-                return $define->operations([OP::READ, OP::READ_LIST])
+                return $defB
                     ->path("/workspaces/$workspaceId/projects")
-                    ->query(["hydrated" => true]);
+                    ->operations([OP::READ, OP::READ_LIST])
+                    ->query(['hydrated' => true]);
         }
 
-        return null;
+        return $defB;
     }
 
     public function checkHeartbeat(int $ttl = 300)
     {
         $this->CacheExpiry = $ttl ?: null;
-        try
-        {
+        try {
             $user = $this->getCurrentUser();
-        }
-        finally
-        {
+        } finally {
             $this->CacheExpiry = null;
         }
         Console::debugOnce(
-            sprintf("Connected to Clockify workspace '%s' as %s ('%s')",
+            sprintf(
+                "Connected to Clockify workspace '%s' as %s ('%s')",
                 $user->ActiveWorkspace,
                 $user->Name,
-                $user->Id)
+                $user->Id
+            )
         );
 
         return $this;
@@ -177,7 +186,7 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
 
     protected function getWorkspaceId(): string
     {
-        return Env::get("clockify_workspace_id");
+        return Env::get('clockify_workspace_id');
     }
 
     /**
@@ -199,13 +208,12 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
      */
     public function getTasks(Context $ctx, $projectId): iterable
     {
-        if (!$projectId)
-        {
+        if (!$projectId) {
             return [];
         }
         $workspaceId = $this->getWorkspaceId();
 
-        return Task::provideList($this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks")->get(), $this, ArrayKeyConformity::PARTIAL, $ctx);
+        return Task::provideList($this->getCurler("/workspaces/$workspaceId/projects/$projectId/tasks")->get(), $this, ArrayKeyConformity::NONE, $ctx);
     }
 
     /**
@@ -217,9 +225,8 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
      */
     public function getTask(Context $ctx, $id, $projectId): Task
     {
-        if (!$projectId)
-        {
-            throw new RuntimeException("Invalid projectId");
+        if (!$projectId) {
+            throw new RuntimeException('Invalid projectId');
         }
         $workspaceId = $this->getWorkspaceId();
 
@@ -233,19 +240,20 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
     private function getReportFilter($entity): array
     {
         return [
-            "ids"      => [$entity instanceof SyncEntity ? $entity->Id : $entity],
-            "contains" => "CONTAINS",
-            "status"   => "ALL",
+            'ids' => [$entity instanceof SyncEntity ? $entity->Id : $entity],
+            'contains' => 'CONTAINS',
+            'status' => 'ALL',
         ];
     }
 
-    private function getPostCachingCurler(...$args): Curler
+    /**
+     * @param mixed ...$args
+     */
+    private function getCurlerWithPostCache(...$args): Curler
     {
         $curler = $this->getCurler(...$args);
-        if ($curler instanceof CachingCurler)
-        {
-            $curler->CachePostRequests = true;
-        }
+        $curler->CachePostResponse = true;
+
         return $curler;
     }
 
@@ -257,82 +265,78 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
         $workspaceId = $this->getWorkspaceId();
 
         $query = [
-            "dateRangeStart" => $from,
-            "dateRangeEnd"   => $to,
-            "sortOrder"      => "ASCENDING",
-            "detailedFilter" => [
-                "sortColumn" => "DATE",
-                "page"       => 1,
-                "pageSize"   => 1000,
-                "options"    => [
-                    "totals" => "EXCLUDE",
+            'dateRangeStart' => $from,
+            'dateRangeEnd' => $to,
+            'sortOrder' => 'ASCENDING',
+            'detailedFilter' => [
+                'sortColumn' => 'DATE',
+                'page' => 1,
+                'pageSize' => 1000,
+                'options' => [
+                    'totals' => 'EXCLUDE',
                 ],
             ],
-            "users"    => $user ? $this->getReportFilter($user) : null,
-            "clients"  => $client ? $this->getReportFilter($client) : null,
-            "projects" => $project ? $this->getReportFilter($project) : null,
+            'users' => $user ? $this->getReportFilter($user) : null,
+            'clients' => $client ? $this->getReportFilter($client) : null,
+            'projects' => $project ? $this->getReportFilter($project) : null,
         ];
 
-        if (!is_null($billable))
-        {
-            $query["billable"] = $billable;
+        if (!is_null($billable)) {
+            $query['billable'] = $billable;
         }
 
-        if (!is_null($billed))
-        {
-            $query["invoicingState"] = $billed ? "INVOICED" : "UNINVOICED";
+        if (!is_null($billed)) {
+            $query['invoicingState'] = $billed ? 'INVOICED' : 'UNINVOICED';
         }
 
-        $pipeline = PipelineImmutable::create($this->container())
-            ->throughCallback(static function (array $entry): array
-            {
-                $client = !($entry["clientId"] ?? null) ? null : [
-                    "id"   => $entry["clientId"],
-                    "name" => $entry["clientName"],
+        $pipeline = Pipeline::create($this->container())
+            ->throughCallback(static function (array $entry): array {
+                $client = !($entry['clientId'] ?? null) ? null : [
+                    'id' => $entry['clientId'],
+                    'name' => $entry['clientName'],
                 ];
-                $entry = (Arr::with($entry)->merge([
-                    "user"      => !($entry["userId"] ?? null) ? null : [
-                        "id"    => $entry["userId"],
-                        "name"  => $entry["userName"],
-                        "email" => $entry["userEmail"],
+                $entry = Arr::from($entry)->merge([
+                    'user' => !($entry['userId'] ?? null) ? null : [
+                        'id' => $entry['userId'],
+                        'name' => $entry['userName'],
+                        'email' => $entry['userEmail'],
                     ],
-                    "client"     => $client,
-                    "project"    => !($entry["projectId"] ?? null) ? null : [
-                        "id"     => $entry["projectId"],
-                        "name"   => $entry["projectName"],
-                        "color"  => $entry["projectColor"],
-                        "client" => $client,
+                    'client' => $client,
+                    'project' => !($entry['projectId'] ?? null) ? null : [
+                        'id' => $entry['projectId'],
+                        'name' => $entry['projectName'],
+                        'color' => $entry['projectColor'],
+                        'client' => $client,
                     ],
-                    "task"     => !($entry["taskId"] ?? null) ? null : [
-                        "id"   => $entry["taskId"],
-                        "name" => $entry["taskName"],
+                    'task' => !($entry['taskId'] ?? null) ? null : [
+                        'id' => $entry['taskId'],
+                        'name' => $entry['taskName'],
                     ],
                 ])->diffKey(array_flip([
-                    "userId",
-                    "userName",
-                    "userEmail",
-                    "clientId",
-                    "clientName",
-                    "projectId",
-                    "projectName",
-                    "projectColor",
-                    "client",
-                    "taskId",
-                    "taskName"
-                ]))->toArray());
-                if (($entry["project"] ?? null) &&
-                    is_array($entry["task"] ?? null) &&
-                    !array_key_exists("project", $entry["task"]))
-                {
-                    $entry["task"]["project"] = $entry["project"];
+                    'userId',
+                    'userName',
+                    'userEmail',
+                    'clientId',
+                    'clientName',
+                    'projectId',
+                    'projectName',
+                    'projectColor',
+                    'client',
+                    'taskId',
+                    'taskName'
+                ]))->toArray();
+                if (($entry['project'] ?? null) &&
+                        is_array($entry['task'] ?? null) &&
+                        !array_key_exists('project', $entry['task'])) {
+                    $entry['task']['project'] = $entry['project'];
                 }
 
                 return $entry;
             });
 
-            return TimeEntry::provideList($pipeline->stream(
-                $this->getPostCachingCurler("/workspaces/$workspaceId/reports/detailed")->post($query)["timeentries"]
-            )->start(), $this, ArrayKeyConformity::PARTIAL, $ctx);
+        return TimeEntry::provideList($pipeline->stream(
+            $this->getCurlerWithPostCache("/workspaces/$workspaceId/reports/detailed")->post($query)['timeentries']
+        )->start(), $this, ArrayKeyConformity::NONE, $ctx);
     }
 
     /**
@@ -342,7 +346,7 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
     public function getTimeEntry(Context $ctx, $id): TimeEntry
     {
         $workspaceId = $this->getWorkspaceId();
-        $query       = ["hydrated" => true];
+        $query = ['hydrated' => true];
 
         return TimeEntry::provide(
             $this->getCurler("/workspaces/$workspaceId/time-entries/$id")->get($query), $this, $ctx
@@ -358,25 +362,21 @@ class ClockifyProvider extends HttpSyncProvider implements IServiceShared, Works
     public function markTimeEntriesInvoiced(
         iterable $timeEntries,
         bool $unmark = false
-    ): void
-    {
+    ): void {
         $workspaceId = $this->getWorkspaceId();
-        $data        = [
-            "timeEntryIds" => [],
-            "invoiced"     => !$unmark,
+        $data = [
+            'timeEntryIds' => [],
+            'invoiced' => !$unmark,
         ];
 
-        foreach ($timeEntries as $time)
-        {
-            $data["timeEntryIds"][] = $time->Id;
+        foreach ($timeEntries as $time) {
+            $data['timeEntryIds'][] = $time->Id;
         }
 
-        if (!$data["timeEntryIds"])
-        {
+        if (!$data['timeEntryIds']) {
             return;
         }
 
         $this->getCurler("/workspaces/$workspaceId/time-entries/invoiced")->patch($data);
     }
-
 }

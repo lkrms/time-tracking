@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
@@ -9,13 +7,13 @@ use Lkrms\Facade\Convert;
 
 class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
 {
-    public const DATE        = 1 << 0;
-    public const TIME        = 1 << 1;
-    public const PROJECT     = 1 << 2;
-    public const TASK        = 1 << 3;
-    public const USER        = 1 << 4;
+    public const DATE = 1 << 0;
+    public const TIME = 1 << 1;
+    public const PROJECT = 1 << 2;
+    public const TASK = 1 << 3;
+    public const USER = 1 << 4;
     public const DESCRIPTION = 1 << 5;
-    public const ALL         = (1 << 6) - 1;
+    public const ALL = (1 << 6) - 1;
 
     /**
      * @var int|string|null
@@ -124,12 +122,9 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
      */
     private function enclose(string $string, $element): string
     {
-        if (is_array($element))
-        {
+        if (is_array($element)) {
             return $element[0] . $string . $element[1];
-        }
-        else
-        {
+        } else {
             return trim($element . $string . $element);
         }
     }
@@ -151,100 +146,90 @@ class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
      * @return string
      */
     public function getSummary(
-        int $show          = TimeEntry::ALL,
-        string $dateFormat = "d/m/Y",
-        string $timeFormat = "g.ia",
-        bool $markdown     = false
-    ): string
-    {
-        $escape = $markdown ? "\\" : "";
+        int $show = TimeEntry::ALL,
+        string $dateFormat = 'd/m/Y',
+        string $timeFormat = 'g.ia',
+        bool $markdown = false
+    ): string {
+        $escape = $markdown ? '\\' : '';
         $format = [
-            "project" => $markdown ? "**" : "",
-            "task"    => $markdown ? "" : "",
-            "user"    => $markdown ? "*" : "",
-            "line1"   => $markdown ? ["### ", ""] : "",
+            'project' => $markdown ? '**' : '',
+            'task' => $markdown ? '' : '',
+            'user' => $markdown ? '*' : '',
+            'line1' => $markdown ? ['### ', ''] : '',
         ];
 
         $parts1 = [];
         $parts2 = [];
 
         // "[<date> <start> - <end>]" => $parts2
-        if (($show & self::DATE) && $this->Start)
-        {
+        if (($show & self::DATE) && $this->Start) {
             $parts1[] = $this->Start->format($dateFormat);
         }
-        if (($show & self::TIME) && $this->Start && $this->End)
-        {
+        if (($show & self::TIME) && $this->Start && $this->End) {
             $parts1[] = "{$this->Start->format($timeFormat)} - {$this->End->format($timeFormat)}";
         }
-        if ($parts1)
-        {
-            $parts2[] = "{$escape}[" . implode(" ", $parts1) . "{$escape}]";
-            $parts1   = [];
+        if ($parts1) {
+            $parts2[] = "{$escape}[" . implode(' ', $parts1) . "{$escape}]";
+            $parts1 = [];
         }
 
         // "<project> - <task>" => $parts2
-        if (($show & self::PROJECT) && ($this->Project->Name ?? null))
-        {
-            $parts1[] = $this->enclose($this->Project->Name, $format["project"]);
+        if (($show & self::PROJECT) && ($this->Project->Name ?? null)) {
+            $parts1[] = $this->enclose($this->Project->Name, $format['project']);
         }
-        if (($show & self::TASK) && ($this->Task->Name ?? null))
-        {
-            $parts1[] = $this->enclose($this->Task->Name, $format["task"]);
+        if (($show & self::TASK) && ($this->Task->Name ?? null)) {
+            $parts1[] = $this->enclose($this->Task->Name, $format['task']);
         }
-        if ($parts1)
-        {
-            $parts2[] = implode(" - ", $parts1);
-            $parts1   = [];
+        if ($parts1) {
+            $parts2[] = implode(' - ', $parts1);
+            $parts1 = [];
         }
 
         // "(<user>)" => $parts2
-        if (($show & self::USER) && ($this->User->Name ?? null))
-        {
-            $parts2[] = $this->enclose("({$this->User->Name})", $format["user"]);
+        if (($show & self::USER) && ($this->User->Name ?? null)) {
+            $parts2[] = $this->enclose("({$this->User->Name})", $format['user']);
         }
 
         // "[<date> <start> - <end>] <project> - <task> (<user>)" => $parts1
-        if ($parts2)
-        {
-            $parts1[] = $this->enclose(implode(" ", $parts2), $format["line1"]);
+        if ($parts2) {
+            $parts1[] = $this->enclose(implode(' ', $parts2), $format['line1']);
         }
 
-        if (($show & self::DESCRIPTION) && ($this->Description))
-        {
+        if (($show & self::DESCRIPTION) && ($this->Description)) {
             $parts1[] = $this->Description;
         }
 
         return implode($markdown ? "\n\n" : "\n", $parts1);
     }
 
+    public function getDescription(string $separator = "\n", ?string $marker = null): string
+    {
+        return Convert::linesToLists($this->Description, $separator, $marker, '/^\h*[-*]\h+/', true);
+    }
+
     final public function mergeWith(TimeEntry $entry, string $delimiter = "\n\n"): TimeEntry
     {
-        if (is_null($this->Merged))
-        {
-            $merged         = clone $this;
+        if (is_null($this->Merged)) {
+            $merged = clone $this;
             $merged->Merged = [$this];
-        }
-        else
-        {
+        } else {
             $merged = $this;
         }
 
         // Clear properties with different values
-        foreach (["Project", "Task", "User", "Workspace", "Billable", "BillableRate"] as $prop)
-        {
-            if (!is_null($merged->$prop) && !$merged->propertyHasSameValueAs($prop, $entry))
-            {
+        foreach (['Project', 'Task', 'User', 'Workspace', 'Billable', 'BillableRate'] as $prop) {
+            if (!is_null($merged->$prop) && !$merged->propertyHasSameValueAs($prop, $entry)) {
                 $merged->$prop = null;
             }
         }
 
         // Combine properties that can be aggregated
         $merged->Description = Convert::sparseToString($delimiter, [$merged->Description, $entry->Description]);
-        $merged->Start       = $merged->Start && $entry->Start ? min($merged->Start, $entry->Start) : null;
-        $merged->End         = null;
-        $merged->Seconds     = !is_null($merged->Seconds) && !is_null($entry->Seconds) ? $merged->Seconds + $entry->Seconds : null;
-        $merged->Merged[]    = $entry;
+        $merged->Start = $merged->Start && $entry->Start ? min($merged->Start, $entry->Start) : null;
+        $merged->End = null;
+        $merged->Seconds = !is_null($merged->Seconds) && !is_null($entry->Seconds) ? $merged->Seconds + $entry->Seconds : null;
+        $merged->Merged[] = $entry;
 
         return $merged;
     }

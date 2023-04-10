@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Entity;
 
@@ -40,5 +38,4 @@ class Workspace extends \Lkrms\Sync\Concept\SyncEntity
      * @var string|null
      */
     public $FeatureSubscriptionType;
-
 }

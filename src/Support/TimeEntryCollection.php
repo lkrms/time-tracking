@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Lkrms\Time\Support;
 
@@ -17,8 +15,8 @@ use UnexpectedValueException;
 /**
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
- * @method TimeEntry[] toArray()
- * @method TimeEntryCollection sort()
+ * @extends TypedCollection<TimeEntry>
+ * @implements ReturnsContainer<IContainer>
  */
 final class TimeEntryCollection extends TypedCollection implements ReturnsContainer
 {
@@ -57,16 +55,17 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
     protected function compareItems($a, $b, bool $strict = false): int
     {
         // Sort entries by start time if possible
-        if ($a->Start && $b->Start)
-        {
-            if ($a->Start < $b->Start) { return - 1; }
-            elseif ($a->Start > $b->Start) { return 1; }
+        if ($a->Start && $b->Start) {
+            if ($a->Start < $b->Start) {
+                return -1;
+            } elseif ($a->Start > $b->Start) {
+                return 1;
+            }
         }
 
         // If not, sort by ID if both entries have integer IDs
-        if (Test::isIntValue($a->Id) && Test::isIntValue($b->Id))
-        {
-            return ((int)$a->Id) - ((int)$b->Id);
+        if (Test::isIntValue($a->Id) && Test::isIntValue($b->Id)) {
+            return ((int) $a->Id) - ((int) $b->Id);
         }
 
         // Otherwise leave them as-is
@@ -94,19 +93,17 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
     public function groupBy(
         $show = TimeEntry::ALL,
         callable $callback = null,
-        bool $markdown     = false
-    ): TimeEntryCollection
-    {
-        $dateFormat = Env::get("time_entry_date_format", "d/m/Y");
-        $timeFormat = Env::get("time_entry_time_format", "g.ia");
+        bool $markdown = false
+    ): TimeEntryCollection {
+        $dateFormat = Env::get('time_entry_date_format', 'd/m/Y');
+        $timeFormat = Env::get('time_entry_time_format', 'g.ia');
 
         $times = $this->sort()->toArray();
 
         /** @var array<string,TimeEntry> */
-        $groupTime    = [];
+        $groupTime = [];
         $groupSummary = [];
-        foreach ($times as $t)
-        {
+        foreach ($times as $t) {
             $summary = $t->getSummary(
                 $show & ~TimeEntry::DESCRIPTION,
                 $dateFormat,
@@ -114,13 +111,12 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
                 $markdown
             );
 
-            $groupBy   = !is_null($callback) ? $callback($t) : [];
+            $groupBy = !is_null($callback) ? $callback($t) : [];
             $groupBy[] = $summary;
-            $groupBy   = Compute::hash(...$groupBy);
+            $groupBy = Compute::hash(...$groupBy);
 
-            if (!array_key_exists($groupBy, $groupTime))
-            {
-                $groupTime[$groupBy]    = $t;
+            if (!array_key_exists($groupBy, $groupTime)) {
+                $groupTime[$groupBy] = $t;
                 $groupSummary[$groupBy] = $summary;
                 continue;
             }
@@ -130,32 +126,31 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
 
         /** @var TimeEntryCollection */
         $grouped = $this->app()->get(static::class);
-        list ($separator, $marker) = $markdown ? ["\n\n", "*"] : ["\n", null];
-        foreach ($groupTime as $groupBy => $time)
-        {
+        list($separator, $marker) = $markdown ? ["\n\n", '*'] : ["\n", null];
+        foreach ($groupTime as $groupBy => $time) {
             $time->Description = Convert::sparseToString($separator, [
                 $groupSummary[$groupBy],
-                ($show & TimeEntry::DESCRIPTION
-                    ? Convert::linesToLists($time->Description, $separator, $marker)
-                    : null),
+                $show & TimeEntry::DESCRIPTION
+                    ? $time->getDescription($separator, $marker)
+                    : null,
             ]);
             $grouped[] = $time;
         }
+
         return $grouped;
     }
 
     public function __get(string $name)
     {
-        switch ($name)
-        {
-            case "BillableAmount":
+        switch ($name) {
+            case 'BillableAmount':
                 return array_reduce(
                     $this->toArray(),
                     fn($prev, TimeEntry $item) => $prev + $item->getBillableAmount(),
                     0
                 );
 
-            case "BillableHours":
+            case 'BillableHours':
                 return array_reduce(
                     $this->toArray(),
                     fn($prev, TimeEntry $item) => $prev + $item->getBillableHours(),
