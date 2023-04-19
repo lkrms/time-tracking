@@ -2,17 +2,17 @@
 
 namespace Lkrms\Time\Entity\Provider;
 
-use Lkrms\Sync\Support\SyncContext;
+use Lkrms\Sync\Contract\ISyncContext;
 use Lkrms\Time\Entity\Invoice;
 
 /**
  * Syncs Invoice objects with a backend
  *
- * @method Invoice createInvoice(SyncContext $ctx, Invoice $invoice)
- * @method Invoice getInvoice(SyncContext $ctx, int|string|null $id)
- * @method iterable<Invoice> getInvoices(SyncContext $ctx)
+ * @method Invoice createInvoice(ISyncContext $ctx, Invoice $invoice)
+ * @method Invoice getInvoice(ISyncContext $ctx, int|string|null $id)
+ * @method iterable<Invoice> getInvoices(ISyncContext $ctx)
  *
- * @lkrms-generate-command lk-util generate sync provider --class='Lkrms\Time\Entity\Invoice' --extend='Lkrms\Time\Entity\Provider\ClientProvider' --magic --op='create,get,get-list'
+ * @lkrms-generate-command lk-util generate sync provider --extend='Lkrms\Time\Entity\Provider\ClientProvider' --magic --op='create,get,get-list' 'Lkrms\Time\Entity\Invoice'
  */
 interface InvoiceProvider extends ClientProvider
 {

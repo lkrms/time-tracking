@@ -4,8 +4,9 @@ namespace Lkrms\Time\Entity;
 
 use DateTimeInterface;
 use Lkrms\Facade\Convert;
+use Lkrms\Sync\Concept\SyncEntity;
 
-class TimeEntry extends \Lkrms\Sync\Concept\SyncEntity
+class TimeEntry extends SyncEntity
 {
     public const DATE = 1 << 0;
     public const TIME = 1 << 1;

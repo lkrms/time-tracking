@@ -2,7 +2,9 @@
 
 namespace Lkrms\Time\Entity;
 
-class Client extends \Lkrms\Sync\Concept\SyncEntity
+use Lkrms\Sync\Concept\SyncEntity;
+
+class Client extends SyncEntity
 {
     /**
      * @var int|string|null

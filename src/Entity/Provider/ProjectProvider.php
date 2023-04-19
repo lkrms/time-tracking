@@ -2,17 +2,17 @@
 
 namespace Lkrms\Time\Entity\Provider;
 
+use Lkrms\Sync\Contract\ISyncContext;
 use Lkrms\Sync\Contract\ISyncProvider;
-use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Entity\Project;
 
 /**
  * Syncs Project objects with a backend
  *
- * @method Project getProject(SyncContext $ctx, int|string|null $id)
- * @method iterable<Project> getProjects(SyncContext $ctx)
+ * @method Project getProject(ISyncContext $ctx, int|string|null $id)
+ * @method iterable<Project> getProjects(ISyncContext $ctx)
  *
- * @lkrms-generate-command lk-util generate sync provider --class='Lkrms\Time\Entity\Project' --magic --op='get,get-list'
+ * @lkrms-generate-command lk-util generate sync provider --magic --op='get,get-list' 'Lkrms\Time\Entity\Project'
  */
 interface ProjectProvider extends ISyncProvider
 {

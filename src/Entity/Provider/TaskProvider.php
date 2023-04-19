@@ -2,17 +2,17 @@
 
 namespace Lkrms\Time\Entity\Provider;
 
+use Lkrms\Sync\Contract\ISyncContext;
 use Lkrms\Sync\Contract\ISyncProvider;
-use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Entity\Task;
 
 /**
  * Syncs Task objects with a backend
  *
- * @method Task getTask(SyncContext $ctx, int|string|null $id)
- * @method iterable<Task> getTasks(SyncContext $ctx)
+ * @method Task getTask(ISyncContext $ctx, int|string|null $id)
+ * @method iterable<Task> getTasks(ISyncContext $ctx)
  *
- * @lkrms-generate-command lk-util generate sync provider --class='Lkrms\Time\Entity\Task' --magic --op='get,get-list'
+ * @lkrms-generate-command lk-util generate sync provider --magic --op='get,get-list' 'Lkrms\Time\Entity\Task'
  */
 interface TaskProvider extends ISyncProvider
 {
