@@ -3,12 +3,12 @@
 namespace Lkrms\Time\Concept;
 
 use DateTimeImmutable;
-use Lkrms\Cli\CliAppContainer;
+use Lkrms\Cli\Catalog\CliOptionType;
+use Lkrms\Cli\Catalog\CliOptionValueType;
+use Lkrms\Cli\CliApplication;
+use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionBuilder;
-use Lkrms\Cli\CliOptionType;
-use Lkrms\Cli\Concept\CliCommand;
-use Lkrms\Cli\Enumeration\CliOptionValueType;
 use Lkrms\Facade\Convert;
 use Lkrms\Sync\Contract\ISyncProvider;
 use Lkrms\Sync\Support\SyncContext;
@@ -78,7 +78,7 @@ abstract class Command extends CliCommand
      */
     protected $Force;
 
-    public function __construct(CliAppContainer $container, BillableTimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
+    public function __construct(CliApplication $container, BillableTimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
     {
         parent::__construct($container);
         $this->TimeEntryProvider = $timeEntryProvider;
@@ -89,12 +89,12 @@ abstract class Command extends CliCommand
         $this->UniqueProviderNames = Convert::stringsToUniqueList([$this->TimeEntryProviderName, $this->InvoiceProviderName]);
     }
 
-    public function getLongDescription(): ?string
+    protected function getLongDescription(): ?string
     {
         return null;
     }
 
-    public function getUsageSections(): ?array
+    protected function getHelpSections(): ?array
     {
         return null;
     }

@@ -8,8 +8,8 @@ use Lkrms\Contract\ReturnsContainer;
 use Lkrms\Facade\Compute;
 use Lkrms\Facade\Convert;
 use Lkrms\Facade\Env;
-use Lkrms\Facade\Test;
 use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Utility\Test;
 use UnexpectedValueException;
 
 /**

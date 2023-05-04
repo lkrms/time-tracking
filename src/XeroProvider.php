@@ -4,12 +4,12 @@ namespace Lkrms\Time;
 
 use Closure;
 use DateTimeInterface;
-use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
-use Lkrms\Auth\Concern\GetsOAuth2AccessToken;
+use Lkrms\Auth\Concern\GetsOAuth2AccessTokens;
+use Lkrms\Concern\TReadable;
 use Lkrms\Contract\IReadable;
-use Lkrms\Contract\IServiceShared;
+use Lkrms\Contract\IServiceSingleton;
 use Lkrms\Curler\Contract\ICurlerHeaders;
 use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Curler\CurlerHeaders;
@@ -17,16 +17,16 @@ use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Facade\Cache;
 use Lkrms\Facade\Console;
 use Lkrms\Facade\Convert;
+use Lkrms\Support\Catalog\HttpHeader;
 use Lkrms\Support\DateFormatter;
 use Lkrms\Support\DateParser\RegexDateParser;
-use Lkrms\Support\Dictionary\HttpHeader;
 use Lkrms\Support\Http\HttpServer;
+use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Contract\ISyncContext as Context;
 use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as Definition;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as DefinitionBuilder;
-use Lkrms\Sync\Support\SyncOperation as OP;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\Provider\InvoiceProvider;
@@ -35,15 +35,16 @@ use UnexpectedValueException;
 
 /**
  * @property-read string $TenantIdKey
+ *
  * @method Invoice createInvoice(SyncContext $ctx, Invoice $invoice)
  * @method Invoice getInvoice(SyncContext $ctx, int|string|null $id)
  * @method iterable<Invoice> getInvoices(SyncContext $ctx)
  * @method Client getClient(SyncContext $ctx, int|string|null $id)
  * @method iterable<Client> getClients(SyncContext $ctx)
  */
-final class XeroProvider extends HttpSyncProvider implements IServiceShared, IReadable, InvoiceProvider
+final class XeroProvider extends HttpSyncProvider implements IReadable, IServiceSingleton, InvoiceProvider
 {
-    use GetsOAuth2AccessToken;
+    use GetsOAuth2AccessTokens, TReadable;
 
     /**
      * Entity => endpoint path
@@ -141,7 +142,7 @@ final class XeroProvider extends HttpSyncProvider implements IServiceShared, IRe
         return $listener;
     }
 
-    protected function getOAuth2Provider(): AbstractProvider
+    protected function getOAuth2Provider(): GenericProvider
     {
         return new GenericProvider([
             'clientId' => $this->env()->get('xero_app_client_id'),
