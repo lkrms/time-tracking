@@ -10,7 +10,7 @@ use Lkrms\Time\Entity\Invoice;
 
 class ListInvoices extends Command
 {
-    public function getShortDescription(): string
+    public function description(): string
     {
         return 'List invoices in ' . $this->InvoiceProviderName;
     }

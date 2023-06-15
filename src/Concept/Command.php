@@ -3,12 +3,12 @@
 namespace Lkrms\Time\Concept;
 
 use DateTimeImmutable;
-use Lkrms\Cli\CliAppContainer;
+use Lkrms\Cli\Catalog\CliOptionType;
+use Lkrms\Cli\Catalog\CliOptionValueType;
+use Lkrms\Cli\CliApplication;
+use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionBuilder;
-use Lkrms\Cli\CliOptionType;
-use Lkrms\Cli\Concept\CliCommand;
-use Lkrms\Cli\Enumeration\CliOptionValueType;
 use Lkrms\Facade\Convert;
 use Lkrms\Sync\Contract\ISyncProvider;
 use Lkrms\Sync\Support\SyncContext;
@@ -69,6 +69,16 @@ abstract class Command extends CliCommand
     protected $ProjectId;
 
     /**
+     * @var bool|null
+     */
+    protected $Billable;
+
+    /**
+     * @var bool|null
+     */
+    protected $Unbilled;
+
+    /**
      * @var string[]|null
      */
     protected $Hide;
@@ -78,7 +88,7 @@ abstract class Command extends CliCommand
      */
     protected $Force;
 
-    public function __construct(CliAppContainer $container, BillableTimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
+    public function __construct(CliApplication $container, BillableTimeEntryProvider $timeEntryProvider, InvoiceProvider $invoiceProvider)
     {
         parent::__construct($container);
         $this->TimeEntryProvider = $timeEntryProvider;
@@ -89,12 +99,12 @@ abstract class Command extends CliCommand
         $this->UniqueProviderNames = Convert::stringsToUniqueList([$this->TimeEntryProviderName, $this->InvoiceProviderName]);
     }
 
-    public function getLongDescription(): ?string
+    protected function getLongDescription(): ?string
     {
         return null;
     }
 
-    public function getUsageSections(): ?array
+    protected function getHelpSections(): ?array
     {
         return null;
     }
@@ -102,7 +112,6 @@ abstract class Command extends CliCommand
     /**
      * Get standard options for TimeEntry-related commands
      *
-     * @param CliOption|CliOptionBuilder ...$otherOptions
      * @return array<CliOption|CliOptionBuilder>
      */
     protected function getTimeEntryOptions(
@@ -110,14 +119,15 @@ abstract class Command extends CliCommand
         bool $requireDates = true,
         bool $addForceOption = true,
         bool $addHideOption = false,
-        ...$otherOptions
+        bool $addBillableOption = false,
+        bool $addUnbilledOption = false
     ): array {
         $options = [
             CliOption::build()
                 ->long('from')
                 ->short('s')
                 ->valueName('start_date')
-                ->description("$action from <start_date>")
+                ->description("$action starting from this date")
                 ->optionType($requireDates ? CliOptionType::VALUE_POSITIONAL : CliOptionType::VALUE)
                 ->valueType(CliOptionValueType::DATE)
                 ->required($requireDates)
@@ -127,7 +137,7 @@ abstract class Command extends CliCommand
                 ->long('to')
                 ->short('e')
                 ->valueName('end_date')
-                ->description("$action to <end_date>")
+                ->description("$action ending before this date")
                 ->optionType($requireDates ? CliOptionType::VALUE_POSITIONAL : CliOptionType::VALUE)
                 ->valueType(CliOptionValueType::DATE)
                 ->required($requireDates)
@@ -148,6 +158,20 @@ abstract class Command extends CliCommand
                 ->optionType(CliOptionType::VALUE)
                 ->bindTo($this->ProjectId),
         ];
+        if ($addBillableOption) {
+            $options[] = CliOption::build()
+                ->long('billable')
+                ->short('b')
+                ->description("$action that are billable")
+                ->bindTo($this->Billable);
+        }
+        if ($addUnbilledOption) {
+            $options[] = CliOption::build()
+                ->long('unbilled')
+                ->short('B')
+                ->description("$action that have not been billed")
+                ->bindTo($this->Unbilled);
+        }
         if ($addHideOption) {
             $options[] = CliOption::build()
                 ->long('hide')
@@ -159,12 +183,6 @@ abstract class Command extends CliCommand
                 ->multipleAllowed(true)
                 ->defaultValue(['time', 'user'])
                 ->bindTo($this->Hide);
-        }
-        if ($otherOptions) {
-            $options = [
-                ...$options,
-                ...$otherOptions
-            ];
         }
         if ($addForceOption) {
             $options[] = CliOption::build()
@@ -191,8 +209,8 @@ abstract class Command extends CliCommand
             $this->ProjectId,
             $this->StartDate,
             $this->EndDate,
-            $billable,
-            $billed
+            Convert::coalesce($billable, $this->Billable ?: null),
+            Convert::coalesce($billed, $this->Unbilled ? false : null)
         );
     }
 

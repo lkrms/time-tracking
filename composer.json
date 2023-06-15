@@ -6,7 +6,7 @@
         "php": ">=7.4 <8.3",
         "firebase/php-jwt": "^6",
         "league/oauth2-client": "^2",
-        "lkrms/util": "^0.19.34"
+        "lkrms/util": "^0.20.26"
     },
     "autoload": {
         "psr-4": {
@@ -17,7 +17,7 @@
         "phpstan/extension-installer": "^1",
         "phpstan/phpstan": "^1",
         "phpstan/phpstan-deprecation-rules": "^1",
-        "phpunit/phpunit": "^9 || ^10"
+        "phpunit/phpunit": "^9"
     },
     "config": {
         "sort-packages": true,

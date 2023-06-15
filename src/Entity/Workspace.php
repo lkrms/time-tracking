@@ -2,7 +2,9 @@
 
 namespace Lkrms\Time\Entity;
 
-class Workspace extends \Lkrms\Sync\Concept\SyncEntity
+use Lkrms\Sync\Concept\SyncEntity;
+
+class Workspace extends SyncEntity
 {
     /**
      * @var int|string|null

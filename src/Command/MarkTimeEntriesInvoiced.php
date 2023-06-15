@@ -9,14 +9,14 @@ use Lkrms\Time\Concept\Command;
 
 class MarkTimeEntriesInvoiced extends Command
 {
-    public function getShortDescription(): string
+    public function description(): string
     {
         return 'Mark time entries as invoiced';
     }
 
     protected function getOptionList(): array
     {
-        return $this->getTimeEntryOptions($this->getShortDescription());
+        return $this->getTimeEntryOptions($this->description());
     }
 
     protected function run(string ...$params)

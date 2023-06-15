@@ -2,7 +2,9 @@
 
 namespace Lkrms\Time\Entity;
 
-class InvoiceLineItem extends \Lkrms\Sync\Concept\SyncEntity
+use Lkrms\Sync\Concept\SyncEntity;
+
+class InvoiceLineItem extends SyncEntity
 {
     /**
      * @var int|string|null

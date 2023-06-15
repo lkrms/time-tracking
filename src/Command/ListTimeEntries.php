@@ -10,14 +10,14 @@ use Lkrms\Time\Support\TimeEntryCollection;
 
 class ListTimeEntries extends Command
 {
-    public function getShortDescription(): string
+    public function description(): string
     {
         return 'Summarise time entries in ' . $this->TimeEntryProviderName;
     }
 
     protected function getOptionList(): array
     {
-        return $this->getTimeEntryOptions('List time entries', true, false, true);
+        return $this->getTimeEntryOptions('List time entries', true, false, true, true, true);
     }
 
     protected function run(string ...$params)
@@ -46,6 +46,6 @@ class ListTimeEntries extends Command
 
         $count = Convert::plural($billableCount, 'time entry is', 'time entries are', true);
         $total = $this->getBillableSummary($billableAmount, $billableHours);
-        Console::info("$count uninvoiced:", $total);
+        Console::info("$count unbilled:", $total);
     }
 }

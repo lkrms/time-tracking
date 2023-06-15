@@ -10,16 +10,14 @@ use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Facade\Console;
 use Lkrms\Facade\Env;
-use Lkrms\Support\Arr;
-use Lkrms\Support\ArrayKeyConformity;
+use Lkrms\Support\Catalog\ArrayKeyConformity;
 use Lkrms\Support\DateFormatter;
-use Lkrms\Support\Pipeline;
+use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Concept\SyncEntity;
 use Lkrms\Sync\Contract\ISyncContext as Context;
 use Lkrms\Sync\Support\HttpSyncDefinition as Definition;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder;
-use Lkrms\Sync\Support\SyncOperation as OP;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Project;
 use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
@@ -62,6 +60,11 @@ class ClockifyProvider extends HttpSyncProvider implements
             Project::class => \Lkrms\Time\Entity\Clockify\Project::class,
             Task::class => \Lkrms\Time\Entity\Clockify\Task::class,
         ];
+    }
+
+    public function name(): ?string
+    {
+        return sprintf('Clockify { %s }', $this->getWorkspaceId());
     }
 
     public function getBackendIdentifier(): array
@@ -289,50 +292,49 @@ class ClockifyProvider extends HttpSyncProvider implements
             $query['invoicingState'] = $billed ? 'INVOICED' : 'UNINVOICED';
         }
 
-        $pipeline = Pipeline::create($this->container())
-            ->throughCallback(static function (array $entry): array {
-                $client = !($entry['clientId'] ?? null) ? null : [
-                    'id' => $entry['clientId'],
-                    'name' => $entry['clientName'],
-                ];
-                $entry = Arr::from($entry)->merge([
-                    'user' => !($entry['userId'] ?? null) ? null : [
-                        'id' => $entry['userId'],
-                        'name' => $entry['userName'],
-                        'email' => $entry['userEmail'],
-                    ],
-                    'client' => $client,
-                    'project' => !($entry['projectId'] ?? null) ? null : [
-                        'id' => $entry['projectId'],
-                        'name' => $entry['projectName'],
-                        'color' => $entry['projectColor'],
-                        'client' => $client,
-                    ],
-                    'task' => !($entry['taskId'] ?? null) ? null : [
-                        'id' => $entry['taskId'],
-                        'name' => $entry['taskName'],
-                    ],
-                ])->diffKey(array_flip([
-                    'userId',
-                    'userName',
-                    'userEmail',
-                    'clientId',
-                    'clientName',
-                    'projectId',
-                    'projectName',
-                    'projectColor',
-                    'client',
-                    'taskId',
-                    'taskName'
-                ]))->toArray();
-                if (($entry['project'] ?? null) &&
-                        is_array($entry['task'] ?? null) &&
-                        !array_key_exists('project', $entry['task'])) {
-                    $entry['task']['project'] = $entry['project'];
-                }
+        $pipeline = $this->pipeline()->throughCallback(function (array $entry): array {
+            $client = ($entry['clientId'] ?? null) ? [
+                'id' => $entry['clientId'],
+                'name' => $entry['clientName'],
+            ] : null;
+            $user = ($entry['userId'] ?? null) ? [
+                'id' => $entry['userId'],
+                'name' => $entry['userName'],
+                'email' => $entry['userEmail'],
+            ] : null;
+            $project = ($entry['projectId'] ?? null) ? [
+                'id' => $entry['projectId'],
+                'name' => $entry['projectName'],
+                'color' => $entry['projectColor'],
+                'client' => $client,
+            ] : null;
+            $task = ($entry['taskId'] ?? null) ? [
+                'id' => $entry['taskId'],
+                'name' => $entry['taskName'],
+            ] : null;
+            if ($project && $task) {
+                $task['project'] = $project;
+            }
+            $entry = array_merge($entry, [
+                'user' => $user,
+                'project' => $project,
+                'task' => $task
+            ]);
+            unset(
+                $entry['clientId'],
+                $entry['clientName'],
+                $entry['userId'],
+                $entry['userName'],
+                $entry['userEmail'],
+                $entry['projectId'],
+                $entry['projectName'],
+                $entry['projectColor'],
+                $entry['taskId'],
+                $entry['taskName']
+            );
 
-                return $entry;
-            });
+            return $entry;
+        });
 
         return TimeEntry::provideList($pipeline->stream(
             $this->getCurlerWithPostCache("/workspaces/$workspaceId/reports/detailed")->post($query)['timeentries']

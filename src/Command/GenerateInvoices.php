@@ -16,7 +16,7 @@ use Lkrms\Time\Support\TimeEntryCollection;
 
 class GenerateInvoices extends Command
 {
-    public function getShortDescription(): string
+    public function description(): string
     {
         return 'Create invoices for unbilled time entries';
     }
@@ -50,7 +50,7 @@ class GenerateInvoices extends Command
         }
 
         if (!$timeEntryCount) {
-            Console::info('No uninvoiced time entries');
+            Console::info('No unbilled time entries');
 
             return;
         }

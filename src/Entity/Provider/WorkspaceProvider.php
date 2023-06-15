@@ -2,17 +2,17 @@
 
 namespace Lkrms\Time\Entity\Provider;
 
+use Lkrms\Sync\Contract\ISyncContext;
 use Lkrms\Sync\Contract\ISyncProvider;
-use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Entity\Workspace;
 
 /**
  * Syncs Workspace objects with a backend
  *
- * @method Workspace getWorkspace(SyncContext $ctx, int|string|null $id)
- * @method iterable<Workspace> getWorkspaces(SyncContext $ctx)
+ * @method Workspace getWorkspace(ISyncContext $ctx, int|string|null $id)
+ * @method iterable<Workspace> getWorkspaces(ISyncContext $ctx)
  *
- * @lkrms-generate-command lk-util generate sync provider --class='Lkrms\Time\Entity\Workspace' --magic --op='get,get-list'
+ * @lkrms-generate-command lk-util generate sync provider --magic --op='get,get-list' 'Lkrms\Time\Entity\Workspace'
  */
 interface WorkspaceProvider extends ISyncProvider
 {

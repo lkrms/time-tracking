@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-use Lkrms\Facade\Cli;
+use Lkrms\Cli\CliApplication;
 use Lkrms\Sync\Command\CheckSyncProviderHeartbeat;
 use Lkrms\Sync\Command\GetSyncEntities;
 use Lkrms\Time\ClockifyProvider;
@@ -14,7 +14,7 @@ use Lkrms\Time\XeroProvider;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-Cli::load(dirname(__DIR__))
+(new CliApplication(dirname(__DIR__)))
     ->loadCache()
     ->loadSync()
     ->service(XeroProvider::class)
