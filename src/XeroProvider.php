@@ -4,9 +4,10 @@ namespace Lkrms\Time;
 
 use Closure;
 use DateTimeInterface;
-use League\OAuth2\Client\Provider\GenericProvider;
 use League\OAuth2\Client\Token\AccessTokenInterface;
-use Lkrms\Auth\Concern\GetsOAuth2AccessTokens;
+use Lkrms\Auth\Catalog\OAuth2Flow;
+use Lkrms\Auth\OAuth2Client;
+use Lkrms\Auth\OAuth2Provider;
 use Lkrms\Concern\TReadable;
 use Lkrms\Contract\IReadable;
 use Lkrms\Contract\IServiceSingleton;
@@ -44,7 +45,7 @@ use UnexpectedValueException;
  */
 final class XeroProvider extends HttpSyncProvider implements IReadable, IServiceSingleton, InvoiceProvider
 {
-    use GetsOAuth2AccessTokens, TReadable;
+    use OAuth2Client, TReadable;
 
     /**
      * Entity => endpoint path
@@ -119,7 +120,7 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
      */
     private $_TenantIdKey;
 
-    protected function getOAuth2Listener(): HttpServer
+    protected function getOAuth2Listener(): ?HttpServer
     {
         $env = $this->env();
 
@@ -142,9 +143,9 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
         return $listener;
     }
 
-    protected function getOAuth2Provider(): GenericProvider
+    protected function getOAuth2Provider(): OAuth2Provider
     {
-        return new GenericProvider([
+        return new OAuth2Provider([
             'clientId' => $this->env()->get('xero_app_client_id'),
             'clientSecret' => $this->env()->get('xero_app_client_secret'),
             'redirectUri' => $this->OAuth2RedirectUri,
@@ -156,12 +157,22 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
         ]);
     }
 
-    protected function getOAuth2JsonWebKeySetUrl(): string
+    protected function getOAuth2Flow(): int
+    {
+        return OAuth2Flow::AUTHORIZATION_CODE;
+    }
+
+    protected function getOAuth2JsonWebKeySetUrl(): ?string
     {
         return 'https://identity.xero.com/.well-known/openid-configuration/jwks';
     }
 
     protected function receiveOAuth2Token(AccessTokenInterface $token): void {}
+
+    public function name(): ?string
+    {
+        return sprintf('Xero { %s }', $this->requireTenantId());
+    }
 
     public function getBackendIdentifier(): array
     {

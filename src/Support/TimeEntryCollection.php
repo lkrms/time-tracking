@@ -15,11 +15,14 @@ use UnexpectedValueException;
 /**
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
- * @extends TypedCollection<TimeEntry>
+ *
+ * @extends TypedCollection<array-key,TimeEntry>
  * @implements ReturnsContainer<IContainer>
  */
 final class TimeEntryCollection extends TypedCollection implements ReturnsContainer
 {
+    protected const ITEM_CLASS = TimeEntry::class;
+
     /**
      * @var IContainer
      */
@@ -40,11 +43,6 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
     public function container(): IContainer
     {
         return $this->Container;
-    }
-
-    protected function getItemClass(): string
-    {
-        return TimeEntry::class;
     }
 
     /**
@@ -98,7 +96,7 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
         $dateFormat = Env::get('time_entry_date_format', 'd/m/Y');
         $timeFormat = Env::get('time_entry_time_format', 'g.ia');
 
-        $times = $this->sort()->toArray();
+        $times = $this->sort()->all();
 
         /** @var array<string,TimeEntry> */
         $groupTime = [];
@@ -145,14 +143,14 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
         switch ($name) {
             case 'BillableAmount':
                 return array_reduce(
-                    $this->toArray(),
+                    $this->all(),
                     fn($prev, TimeEntry $item) => $prev + $item->getBillableAmount(),
                     0
                 );
 
             case 'BillableHours':
                 return array_reduce(
-                    $this->toArray(),
+                    $this->all(),
                     fn($prev, TimeEntry $item) => $prev + $item->getBillableHours(),
                     0
                 );
