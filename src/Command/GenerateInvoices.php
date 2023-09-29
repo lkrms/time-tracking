@@ -2,10 +2,7 @@
 
 namespace Lkrms\Time\Command;
 
-use DateTimeImmutable;
 use Lkrms\Facade\Console;
-use Lkrms\Facade\Convert;
-use Lkrms\Facade\Env;
 use Lkrms\Facade\File;
 use Lkrms\Time\Concept\Command;
 use Lkrms\Time\Entity\Client;
@@ -13,6 +10,9 @@ use Lkrms\Time\Entity\Invoice;
 use Lkrms\Time\Entity\InvoiceLineItem;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Support\TimeEntryCollection;
+use Lkrms\Utility\Convert;
+use Lkrms\Utility\Env;
+use DateTimeImmutable;
 
 class GenerateInvoices extends Command
 {
@@ -104,7 +104,7 @@ class GenerateInvoices extends Command
         File::maybeCreateDirectory($tempDir = implode('/', [
             $this->app()->getTempPath(),
             Convert::classToBasename(self::class),
-            $this->InvoiceProviderName . '-' . $this->InvoiceProvider->getProviderHash()
+            $this->InvoiceProviderName . '-' . $this->InvoiceProvider->getProviderId()
         ]));
 
         foreach ($clientTimes as $clientId => $entries) {

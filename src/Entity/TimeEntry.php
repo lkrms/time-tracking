@@ -2,19 +2,19 @@
 
 namespace Lkrms\Time\Entity;
 
-use DateTimeInterface;
-use Lkrms\Facade\Convert;
 use Lkrms\Sync\Concept\SyncEntity;
+use Lkrms\Utility\Convert;
+use DateTimeInterface;
 
 class TimeEntry extends SyncEntity
 {
-    public const DATE = 1 << 0;
-    public const TIME = 1 << 1;
-    public const PROJECT = 1 << 2;
-    public const TASK = 1 << 3;
-    public const USER = 1 << 4;
-    public const DESCRIPTION = 1 << 5;
-    public const ALL = (1 << 6) - 1;
+    public const DATE = 1;
+    public const TIME = 2;
+    public const PROJECT = 4;
+    public const TASK = 8;
+    public const USER = 16;
+    public const DESCRIPTION = 32;
+    public const ALL = TimeEntry::DATE | TimeEntry::TIME | TimeEntry::PROJECT | TimeEntry::TASK | TimeEntry::USER | TimeEntry::DESCRIPTION;
 
     /**
      * @var int|string|null
@@ -86,6 +86,16 @@ class TimeEntry extends SyncEntity
      */
     private $Merged;
 
+    public static function getRelationships(): array
+    {
+        return [
+            'User' => User::class,
+            'Task' => Task::class,
+            'Project' => Project::class,
+            'Workspace' => Workspace::class,
+        ];
+    }
+
     public static function getDateProperties(): array
     {
         return [
@@ -94,40 +104,18 @@ class TimeEntry extends SyncEntity
         ];
     }
 
-    /**
-     * @return TimeEntry[]|null
-     */
-    final public function getMerged(): ?array
-    {
-        return $this->Merged;
-    }
-
     public function getBillableAmount(): float
     {
         return $this->Billable
-            ? round(($this->BillableRate ?: 0) * ($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            ? round(($this->BillableRate ?? 0) * ($this->Seconds ?? 0) / 3600, 2, PHP_ROUND_HALF_UP)
             : 0;
     }
 
     public function getBillableHours(): float
     {
         return $this->Billable
-            ? round(($this->Seconds ?: 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            ? round(($this->Seconds ?? 0) / 3600, 2, PHP_ROUND_HALF_UP)
             : 0;
-    }
-
-    /**
-     * @param string $string
-     * @param string|string[] $element
-     * @return string
-     */
-    private function enclose(string $string, $element): string
-    {
-        if (is_array($element)) {
-            return $element[0] . $string . $element[1];
-        } else {
-            return trim($element . $string . $element);
-        }
     }
 
     /**
@@ -141,10 +129,7 @@ class TimeEntry extends SyncEntity
      * <description>
      * ```
      *
-     * @param int $show A bitmask of `TimeEntry::*` values.
-     * @param string $dateFormat
-     * @param string $timeFormat
-     * @return string
+     * @param int-mask-of<TimeEntry::*> $show
      */
     public function getSummary(
         int $show = TimeEntry::ALL,
@@ -204,9 +189,17 @@ class TimeEntry extends SyncEntity
         return implode($markdown ? "\n\n" : "\n", $parts1);
     }
 
-    public function getDescription(string $separator = "\n", ?string $marker = null): string
+    public function description(string $separator = "\n", ?string $marker = null): string
     {
-        return Convert::linesToLists($this->Description, $separator, $marker, '/^\h*[-*]\h+/', true);
+        return Convert::linesToLists($this->Description, $separator, $marker, '/^(?P<indent>\h*[-*] )/', true);
+    }
+
+    /**
+     * @return TimeEntry[]|null
+     */
+    final public function getMerged(): ?array
+    {
+        return $this->Merged;
     }
 
     final public function mergeWith(TimeEntry $entry, string $delimiter = "\n\n"): TimeEntry
@@ -218,14 +211,14 @@ class TimeEntry extends SyncEntity
             $merged = $this;
         }
 
-        // Clear properties with different values
+        // Clear properties with conflicting values
         foreach (['Project', 'Task', 'User', 'Workspace', 'Billable', 'BillableRate'] as $prop) {
-            if (!is_null($merged->$prop) && !$merged->propertyHasSameValueAs($prop, $entry)) {
+            if (!is_null($merged->$prop) && $merged->$prop !== $entry->$prop) {
                 $merged->$prop = null;
             }
         }
 
-        // Combine properties that can be aggregated
+        // Combine properties that can be joined or aggregated
         $merged->Description = Convert::sparseToString($delimiter, [$merged->Description, $entry->Description]);
         $merged->Start = $merged->Start && $entry->Start ? min($merged->Start, $entry->Start) : null;
         $merged->End = null;
@@ -233,5 +226,18 @@ class TimeEntry extends SyncEntity
         $merged->Merged[] = $entry;
 
         return $merged;
+    }
+
+    /**
+     * Enclose a string between delimiters
+     *
+     * @param string|array{string,string} $element
+     */
+    private function enclose(string $string, $element): string
+    {
+        if (is_array($element)) {
+            return $element[0] . $string . $element[1];
+        }
+        return trim($element . $string . $element);
     }
 }

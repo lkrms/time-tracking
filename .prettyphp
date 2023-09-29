@@ -1,0 +1,14 @@
+{
+    "src": [
+        "bin",
+        "src",
+        "tests"
+    ],
+    "includeIfPhp": true,
+    "enable": [
+        "align-chains",
+        "align-fn",
+        "preserve-one-line",
+        "strict-lists"
+    ]
+}

@@ -2,19 +2,19 @@
 
 namespace Lkrms\Time\Concept;
 
-use DateTimeImmutable;
 use Lkrms\Cli\Catalog\CliOptionType;
 use Lkrms\Cli\Catalog\CliOptionValueType;
 use Lkrms\Cli\CliApplication;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionBuilder;
-use Lkrms\Facade\Convert;
 use Lkrms\Sync\Contract\ISyncProvider;
 use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
 use Lkrms\Time\Entity\Provider\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Utility\Convert;
+use DateTimeImmutable;
 
 abstract class Command extends CliCommand
 {
@@ -160,36 +160,36 @@ abstract class Command extends CliCommand
         ];
         if ($addBillableOption) {
             $options[] = CliOption::build()
-                ->long('billable')
-                ->short('b')
-                ->description("$action that are billable")
-                ->bindTo($this->Billable);
+                             ->long('billable')
+                             ->short('b')
+                             ->description("$action that are billable")
+                             ->bindTo($this->Billable);
         }
         if ($addUnbilledOption) {
             $options[] = CliOption::build()
-                ->long('unbilled')
-                ->short('B')
-                ->description("$action that have not been billed")
-                ->bindTo($this->Unbilled);
+                             ->long('unbilled')
+                             ->short('B')
+                             ->description("$action that have not been billed")
+                             ->bindTo($this->Unbilled);
         }
         if ($addHideOption) {
             $options[] = CliOption::build()
-                ->long('hide')
-                ->short('h')
-                ->valueName('value')
-                ->description('Exclude a value from time entry descriptions')
-                ->optionType(CliOptionType::ONE_OF)
-                ->allowedValues(['date', 'time', 'project', 'task', 'user', 'description'])
-                ->multipleAllowed(true)
-                ->defaultValue(['time', 'user'])
-                ->bindTo($this->Hide);
+                             ->long('hide')
+                             ->short('h')
+                             ->valueName('value')
+                             ->description('Exclude a value from time entry descriptions')
+                             ->optionType(CliOptionType::ONE_OF)
+                             ->allowedValues(['date', 'time', 'project', 'task', 'user', 'description'])
+                             ->multipleAllowed(true)
+                             ->defaultValue(['time', 'user'])
+                             ->bindTo($this->Hide);
         }
         if ($addForceOption) {
             $options[] = CliOption::build()
-                ->long('force')
-                ->short('f')
-                ->description('Disable dry-run mode')
-                ->bindTo($this->Force);
+                             ->long('force')
+                             ->short('f')
+                             ->description('Disable dry-run mode')
+                             ->bindTo($this->Force);
         }
 
         return $options;
@@ -203,7 +203,7 @@ abstract class Command extends CliCommand
         bool $billed = null
     ): iterable {
         return $this->TimeEntryProvider->getTimeEntries(
-            new SyncContext($this->app()),
+            new SyncContext($this->App, $this->TimeEntryProvider),
             null,
             $this->ClientId,
             $this->ProjectId,

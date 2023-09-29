@@ -6,9 +6,9 @@ use Lkrms\Concept\TypedCollection;
 use Lkrms\Contract\IContainer;
 use Lkrms\Contract\ReturnsContainer;
 use Lkrms\Facade\Compute;
-use Lkrms\Facade\Convert;
-use Lkrms\Facade\Env;
 use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Utility\Convert;
+use Lkrms\Utility\Env;
 use Lkrms\Utility\Test;
 use UnexpectedValueException;
 
@@ -28,10 +28,9 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
      */
     private $Container;
 
-    public function __construct(IContainer $container)
+    public function __construct($items = [], IContainer $container)
     {
-        parent::__construct();
-
+        parent::__construct($items);
         $this->Container = $container;
     }
 
@@ -129,7 +128,7 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
             $time->Description = Convert::sparseToString($separator, [
                 $groupSummary[$groupBy],
                 $show & TimeEntry::DESCRIPTION
-                    ? $time->getDescription($separator, $marker)
+                    ? $time->description($separator, $marker)
                     : null,
             ]);
             $grouped[] = $time;

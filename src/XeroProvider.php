@@ -2,8 +2,6 @@
 
 namespace Lkrms\Time;
 
-use Closure;
-use DateTimeInterface;
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Lkrms\Auth\Catalog\OAuth2Flow;
 use Lkrms\Auth\OAuth2Client;
@@ -12,25 +10,27 @@ use Lkrms\Concern\TReadable;
 use Lkrms\Contract\IReadable;
 use Lkrms\Contract\IServiceSingleton;
 use Lkrms\Curler\Contract\ICurlerHeaders;
+use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Curler\CurlerHeaders;
-use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Facade\Cache;
 use Lkrms\Facade\Console;
-use Lkrms\Facade\Convert;
 use Lkrms\Support\Catalog\HttpHeader;
-use Lkrms\Support\DateFormatter;
 use Lkrms\Support\DateParser\RegexDateParser;
 use Lkrms\Support\Http\HttpServer;
+use Lkrms\Support\DateFormatter;
 use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Contract\ISyncContext as Context;
 use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as Definition;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as DefinitionBuilder;
+use Lkrms\Time\Entity\Provider\InvoiceProvider;
 use Lkrms\Time\Entity\Client;
 use Lkrms\Time\Entity\Invoice;
-use Lkrms\Time\Entity\Provider\InvoiceProvider;
+use Lkrms\Utility\Convert;
+use Closure;
+use DateTimeInterface;
 use RuntimeException;
 use UnexpectedValueException;
 
@@ -215,31 +215,31 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
         return $curlerB->alwaysPaginate();
     }
 
-    protected function getHttpDefinition(string $entity, DefinitionBuilder $defB): DefinitionBuilder
+    protected function buildHttpDefinition(string $entity, DefinitionBuilder $defB): DefinitionBuilder
     {
         $defB = $defB
-            ->path(sprintf('/api.xro/2.0/%s', self::ENTITY_PATH_MAP[$entity] ?? $entity::plural()))
-            ->callback(fn(Definition $def, int $op, Context $ctx): Definition =>
-                           $def->withPager(new QueryPager('page', self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::plural(), 100))
-                               ->if($op === OP::READ_LIST, fn(Definition $def) => $def->withQuery($this->buildQuery($ctx, self::ENTITY_QUERY_MAPS[$entity]))));
+                    ->path(sprintf('/api.xro/2.0/%s', self::ENTITY_PATH_MAP[$entity] ?? $entity::plural()))
+                    ->callback(fn(Definition $def, int $op, Context $ctx): Definition =>
+                                   $def->withPager(new QueryPager('page', self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::plural(), 100))
+                                       ->if($op === OP::READ_LIST, fn(Definition $def) => $def->withQuery($this->buildQuery($ctx, self::ENTITY_QUERY_MAPS[$entity]))));
 
         switch ($entity) {
             case Invoice::class:
                 return $defB
-                    ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
-                    ->dataToEntityPipeline($this->pipeline()
-                                                ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
-                                                ->through(fn(array $payload, Closure $next) =>
-                                                              $payload['Type'] === 'ACCREC' ? $next($payload) : null))
-                    ->entityToDataPipeline($this->pipeline()
-                                                ->after(fn(Invoice $invoice) =>
-                                                            $this->generateInvoice($invoice)));
+                           ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
+                           ->pipelineFromBackend($this->pipeline()
+                                                      ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
+                                                      ->through(fn(array $payload, Closure $next) =>
+                                                                    $payload['Type'] === 'ACCREC' ? $next($payload) : null))
+                           ->pipelineToBackend($this->pipeline()
+                                                    ->after(fn(Invoice $invoice) =>
+                                                                $this->generateInvoice($invoice)));
 
             case Client::class:
                 return $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->dataToEntityPipeline($this->pipeline()
-                                                ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity]));
+                           ->operations([OP::READ, OP::READ_LIST])
+                           ->pipelineFromBackend($this->pipeline()
+                                                      ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity]));
         }
 
         return $defB;
@@ -416,8 +416,8 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
 
         $where = [];
         foreach ($fieldMap as $filterField => $field) {
-            if (is_null($values = $ctx->claimFilterValue($_filterField = $filterField)) &&
-                    is_null($values = $ctx->claimFilterValue($_filterField = "!$filterField"))) {
+            if (is_null($values = $ctx->claimFilter($_filterField = $filterField)) &&
+                    is_null($values = $ctx->claimFilter($_filterField = "!$filterField"))) {
                 continue;
             }
 
@@ -461,7 +461,7 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
             $query['where'] = implode(' AND ', $parts);
         }
 
-        if ($orderby = $ctx->claimFilterValue('$orderby')) {
+        if ($orderby = $ctx->claimFilter('$orderby')) {
             $parts = [];
             // Format: "<field_name>[ (ASC|DESC)][,...]"
             foreach (explode(',', $orderby) as $expr) {

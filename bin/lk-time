@@ -4,19 +4,19 @@
 use Lkrms\Cli\CliApplication;
 use Lkrms\Sync\Command\CheckSyncProviderHeartbeat;
 use Lkrms\Sync\Command\GetSyncEntities;
-use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\Command\ListInvoices;
 use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
+use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\XeroProvider;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 (new CliApplication(dirname(__DIR__)))
-    ->loadCache()
-    ->loadSync()
+    ->startCache()
+    ->startSync()
     ->service(XeroProvider::class)
     ->service(ClockifyProvider::class)
     ->command(['client', 'list'], ListClients::class)

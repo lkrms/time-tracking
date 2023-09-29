@@ -2,11 +2,11 @@
 
 namespace Lkrms\Time\Entity\Clockify;
 
-use DateTimeImmutable;
-use Lkrms\Facade\Convert;
 use Lkrms\Time\Entity\Project;
 use Lkrms\Time\Entity\Task;
 use Lkrms\Time\Entity\User;
+use Lkrms\Utility\Convert;
+use DateTimeImmutable;
 
 class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
 {
@@ -33,17 +33,17 @@ class TimeEntry extends \Lkrms\Time\Entity\TimeEntry
 
     protected function _setTimeInterval($value)
     {
-        if ($value['start'] ?? null) {
+        if (isset($value['start'])) {
             $this->Start = new DateTimeImmutable($value['start']);
         }
 
-        if ($value['end'] ?? null) {
+        if (isset($value['end'])) {
             $this->End = new DateTimeImmutable($value['end']);
         }
 
         if (is_int($value['duration'] ?? null)) {
             $this->Seconds = $value['duration'];
-        } elseif ($value['duration'] ?? null) {
+        } elseif (isset($value['duration'])) {
             $this->Seconds = Convert::intervalToSeconds($value['duration']);
         }
     }

@@ -2,14 +2,12 @@
 
 namespace Lkrms\Time;
 
-use DateTimeInterface;
 use Lkrms\Contract\IServiceShared;
 use Lkrms\Curler\Contract\ICurlerHeaders;
 use Lkrms\Curler\Curler;
 use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Facade\Console;
-use Lkrms\Facade\Env;
 use Lkrms\Support\Catalog\ArrayKeyConformity;
 use Lkrms\Support\DateFormatter;
 use Lkrms\Sync\Catalog\SyncOperation as OP;
@@ -18,15 +16,17 @@ use Lkrms\Sync\Concept\SyncEntity;
 use Lkrms\Sync\Contract\ISyncContext as Context;
 use Lkrms\Sync\Support\HttpSyncDefinition as Definition;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder;
-use Lkrms\Time\Entity\Client;
-use Lkrms\Time\Entity\Project;
 use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
 use Lkrms\Time\Entity\Provider\UserProvider;
 use Lkrms\Time\Entity\Provider\WorkspaceProvider;
+use Lkrms\Time\Entity\Client;
+use Lkrms\Time\Entity\Project;
 use Lkrms\Time\Entity\Task;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Entity\User;
 use Lkrms\Time\Entity\Workspace;
+use Lkrms\Utility\Env;
+use DateTimeInterface;
 use RuntimeException;
 
 /**
@@ -108,7 +108,7 @@ class ClockifyProvider extends HttpSyncProvider implements
     {
         if (!self::$DateFormatter) {
             // Prevent recursion
-            if ($this->getEndpointUrl('/user') === $curlerB->get('baseUrl')) {
+            if ($this->getEndpointUrl('/user') === $curlerB->getB('baseUrl')) {
                 return $curlerB;
             }
             self::$DateFormatter = new DateFormatter(
@@ -120,48 +120,48 @@ class ClockifyProvider extends HttpSyncProvider implements
         return $curlerB->dateFormatter(self::$DateFormatter);
     }
 
-    protected function getHttpDefinition(string $entity, HttpSyncDefinitionBuilder $defB): HttpSyncDefinitionBuilder
+    protected function buildHttpDefinition(string $entity, HttpSyncDefinitionBuilder $defB): HttpSyncDefinitionBuilder
     {
         if ($entity === Workspace::class) {
             return $defB
-                ->path('/workspaces')
-                ->operations([OP::READ, OP::READ_LIST])
-                ->overrides([
-                    OP::READ =>
-                        fn(Definition $def, int $op, Context $ctx, $id) =>
-                            $this->with(Workspace::class, $ctx)
-                                 ->getList()
-                                 ->nextWithValue('Id', $id)
-                ]);
+                       ->path('/workspaces')
+                       ->operations([OP::READ, OP::READ_LIST])
+                       ->overrides([
+                           OP::READ =>
+                               fn(Definition $def, int $op, Context $ctx, $id = null) =>
+                                   $this->with(Workspace::class, $ctx)
+                                        ->getList()
+                                        ->nextWithValue('Id', $id)
+                       ]);
         }
 
         $workspaceId = $this->getWorkspaceId();
         switch ($entity) {
             case User::class:
                 return $defB
-                    ->path("/workspaces/$workspaceId/users")
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->overrides([
-                        OP::READ =>
-                            fn(Definition $def, int $op, Context $ctx, $id) =>
-                                is_null($id)
-                                    ? $def->withPath('/user')
-                                          ->getFallbackSyncOperationClosure(OP::READ)($ctx, null)
-                                    : $this->with(User::class, $ctx)
-                                           ->getList()
-                                           ->nextWithValue('Id', $id)
-                    ]);
+                           ->path("/workspaces/$workspaceId/users")
+                           ->operations([OP::READ, OP::READ_LIST])
+                           ->overrides([
+                               OP::READ =>
+                                   fn(Definition $def, int $op, Context $ctx, $id = null) =>
+                                       is_null($id)
+                                           ? $def->withPath('/user')
+                                                 ->getFallbackSyncOperationClosure(OP::READ)($ctx, null)
+                                           : $this->with(User::class, $ctx)
+                                                  ->getList()
+                                                  ->nextWithValue('Id', $id)
+                           ]);
 
             case Client::class:
                 return $defB
-                    ->path("/workspaces/$workspaceId/clients")
-                    ->operations([OP::READ, OP::READ_LIST]);
+                           ->path("/workspaces/$workspaceId/clients")
+                           ->operations([OP::READ, OP::READ_LIST]);
 
             case Project::class:
                 return $defB
-                    ->path("/workspaces/$workspaceId/projects")
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->query(['hydrated' => true]);
+                           ->path("/workspaces/$workspaceId/projects")
+                           ->operations([OP::READ, OP::READ_LIST])
+                           ->query(['hydrated' => true]);
         }
 
         return $defB;
