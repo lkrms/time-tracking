@@ -16,10 +16,10 @@
         "bin/lk-time"
     ],
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.0",
         "firebase/php-jwt": "^6",
         "league/oauth2-client": "^2",
-        "lkrms/util": "^0.20.67"
+        "lkrms/util": "^0.20.69"
     },
     "require-dev": {
         "phpstan/extension-installer": "^1",
@@ -38,7 +38,7 @@
         },
         "sort-packages": true,
         "platform": {
-            "php": "7.4.33"
+            "php": "8.0.30"
         }
     }
 }

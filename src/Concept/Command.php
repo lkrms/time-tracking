@@ -8,8 +8,8 @@ use Lkrms\Cli\CliApplication;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionBuilder;
+use Lkrms\Support\Iterator\Contract\FluentIteratorInterface;
 use Lkrms\Sync\Contract\ISyncProvider;
-use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
 use Lkrms\Time\Entity\Provider\InvoiceProvider;
 use Lkrms\Time\Entity\TimeEntry;
@@ -196,22 +196,24 @@ abstract class Command extends CliCommand
     }
 
     /**
-     * @return iterable<TimeEntry>
+     * @return FluentIteratorInterface<array-key,TimeEntry>
      */
     protected function getTimeEntries(
-        bool $billable = null,
-        bool $billed = null
-    ): iterable {
-        return $this->TimeEntryProvider->getTimeEntries(
-            new SyncContext($this->App, $this->TimeEntryProvider),
-            null,
-            $this->ClientId,
-            $this->ProjectId,
-            $this->StartDate,
-            $this->EndDate,
-            Convert::coalesce($billable, $this->Billable ?: null),
-            Convert::coalesce($billed, $this->Unbilled ? false : null)
-        );
+        ?bool $billable = null,
+        ?bool $billed = null
+    ): FluentIteratorInterface {
+        $filter = [
+            'client_id' => $this->ClientId,
+            'project_id' => $this->ProjectId,
+            'start_date' => $this->StartDate,
+            'end_date' => $this->EndDate,
+            'billable' => Convert::coalesce($billable, $this->Billable ?: null),
+            'billed' => Convert::coalesce($billed, $this->Unbilled ? false : null),
+        ];
+
+        return $this->TimeEntryProvider
+                    ->with(TimeEntry::class)
+                    ->getList($filter);
     }
 
     protected function getTimeEntryMask(): int

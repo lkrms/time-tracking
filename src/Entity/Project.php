@@ -2,6 +2,7 @@
 
 namespace Lkrms\Time\Entity;
 
+use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
 
 class Project extends SyncEntity
@@ -17,9 +18,19 @@ class Project extends SyncEntity
     public $Name;
 
     /**
-     * @var array|null
+     * @var string|null
      */
-    public $HourlyRate;
+    public $Description;
+
+    /**
+     * @var bool|null
+     */
+    public $Billable;
+
+    /**
+     * @var Task[]|null
+     */
+    public $Tasks;
 
     /**
      * @var Client|null
@@ -32,27 +43,26 @@ class Project extends SyncEntity
     public $Workspace;
 
     /**
-     * @var bool|null
+     * @var float|null
      */
-    public $Billable;
+    public $BillableRate;
 
     /**
      * @var string|null
      */
-    public $Color;
+    public $Colour;
 
     /**
      * @var bool|null
      */
     public $Archived;
 
-    /**
-     * @var Task[]|null
-     */
-    public $Tasks;
-
-    /**
-     * @var string|null
-     */
-    public $Note;
+    public static function getRelationships(): array
+    {
+        return [
+            'Tasks' => [RelationshipType::ONE_TO_MANY => Task::class],
+            'Client' => [RelationshipType::ONE_TO_ONE => Client::class],
+            'Workspace' => [RelationshipType::ONE_TO_ONE => Workspace::class],
+        ];
+    }
 }

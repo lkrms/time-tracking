@@ -2,6 +2,7 @@
 
 namespace Lkrms\Time\Entity;
 
+use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
 
 class Task extends SyncEntity
@@ -20,4 +21,11 @@ class Task extends SyncEntity
      * @var Project|null
      */
     public $Project;
+
+    public static function getRelationships(): array
+    {
+        return [
+            'Project' => [RelationshipType::ONE_TO_ONE => Project::class],
+        ];
+    }
 }

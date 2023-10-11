@@ -2,6 +2,7 @@
 
 namespace Lkrms\Time\Entity;
 
+use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
 use Lkrms\Utility\Convert;
 use DateTimeInterface;
@@ -46,15 +47,9 @@ class TimeEntry extends SyncEntity
      */
     public $Project;
 
-    /**
-     * @var DateTimeInterface|null
-     */
-    public $Start;
+    public ?DateTimeInterface $Start = null;
 
-    /**
-     * @var DateTimeInterface|null
-     */
-    public $End;
+    public ?DateTimeInterface $End = null;
 
     /**
      * @var int|null
@@ -89,18 +84,10 @@ class TimeEntry extends SyncEntity
     public static function getRelationships(): array
     {
         return [
-            'User' => User::class,
-            'Task' => Task::class,
-            'Project' => Project::class,
-            'Workspace' => Workspace::class,
-        ];
-    }
-
-    public static function getDateProperties(): array
-    {
-        return [
-            'Start',
-            'End',
+            'User' => [RelationshipType::ONE_TO_ONE => User::class],
+            'Task' => [RelationshipType::ONE_TO_ONE => Task::class],
+            'Project' => [RelationshipType::ONE_TO_ONE => Project::class],
+            'Workspace' => [RelationshipType::ONE_TO_ONE => Workspace::class],
         ];
     }
 
@@ -137,12 +124,12 @@ class TimeEntry extends SyncEntity
         string $timeFormat = 'g.ia',
         bool $markdown = false
     ): string {
-        $escape = $markdown ? '\\' : '';
-        $format = [
-            'project' => $markdown ? '**' : '',
-            'task' => $markdown ? '' : '',
-            'user' => $markdown ? '*' : '',
-            'line1' => $markdown ? ['### ', ''] : '',
+        $esc = $markdown ? '\\' : '';
+        $tag = [
+            $markdown ? ['### ', ''] : '',
+            self::PROJECT => $markdown ? '**' : '',
+            self::TASK => $markdown ? '' : '',
+            self::USER => $markdown ? '*' : '',
         ];
 
         $parts1 = [];
@@ -156,16 +143,16 @@ class TimeEntry extends SyncEntity
             $parts1[] = "{$this->Start->format($timeFormat)} - {$this->End->format($timeFormat)}";
         }
         if ($parts1) {
-            $parts2[] = "{$escape}[" . implode(' ', $parts1) . "{$escape}]";
+            $parts2[] = "{$esc}[" . implode(' ', $parts1) . ']';
             $parts1 = [];
         }
 
         // "<project> - <task>" => $parts2
         if (($show & self::PROJECT) && ($this->Project->Name ?? null)) {
-            $parts1[] = $this->enclose($this->Project->Name, $format['project']);
+            $parts1[] = $this->enclose($this->Project->Name, $tag[self::PROJECT]);
         }
         if (($show & self::TASK) && ($this->Task->Name ?? null)) {
-            $parts1[] = $this->enclose($this->Task->Name, $format['task']);
+            $parts1[] = $this->enclose($this->Task->Name, $tag[self::TASK]);
         }
         if ($parts1) {
             $parts2[] = implode(' - ', $parts1);
@@ -174,12 +161,12 @@ class TimeEntry extends SyncEntity
 
         // "(<user>)" => $parts2
         if (($show & self::USER) && ($this->User->Name ?? null)) {
-            $parts2[] = $this->enclose("({$this->User->Name})", $format['user']);
+            $parts2[] = $this->enclose("({$this->User->Name})", $tag[self::USER]);
         }
 
         // "[<date> <start> - <end>] <project> - <task> (<user>)" => $parts1
         if ($parts2) {
-            $parts1[] = $this->enclose(implode(' ', $parts2), $format['line1']);
+            $parts1[] = $this->enclose(implode(' ', $parts2), $tag[0]);
         }
 
         if (($show & self::DESCRIPTION) && ($this->Description)) {
@@ -191,7 +178,13 @@ class TimeEntry extends SyncEntity
 
     public function description(string $separator = "\n", ?string $marker = null): string
     {
-        return Convert::linesToLists($this->Description, $separator, $marker, '/^(?P<indent>\h*[-*] )/', true);
+        return Convert::linesToLists(
+            $this->Description,
+            $separator,
+            $marker,
+            '/^(?<indent>\h*[-*] )/',
+            true
+        );
     }
 
     /**
@@ -231,13 +224,13 @@ class TimeEntry extends SyncEntity
     /**
      * Enclose a string between delimiters
      *
-     * @param string|array{string,string} $element
+     * @param string|array{string,string} $tag
      */
-    private function enclose(string $string, $element): string
+    private function enclose(string $string, $tag): string
     {
-        if (is_array($element)) {
-            return $element[0] . $string . $element[1];
+        if (is_array($tag)) {
+            return $tag[0] . $string . $tag[1];
         }
-        return trim($element . $string . $element);
+        return trim($tag . $string . $tag);
     }
 }
