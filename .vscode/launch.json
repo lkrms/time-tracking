@@ -6,7 +6,7 @@
             "type": "php",
             "request": "launch",
             "program": "${workspaceFolder}/bin/lk-time",
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "port": 0,
             "runtimeExecutable": "bash",
             "runtimeArgs": [
