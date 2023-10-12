@@ -8,7 +8,7 @@ use Lkrms\Cli\CliApplication;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionBuilder;
-use Lkrms\Support\Iterator\Contract\FluentIteratorInterface;
+use Lkrms\Iterator\Contract\FluentIteratorInterface;
 use Lkrms\Sync\Contract\ISyncProvider;
 use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
 use Lkrms\Time\Entity\Provider\InvoiceProvider;
@@ -234,6 +234,10 @@ abstract class Command extends CliCommand
         );
     }
 
+    /**
+     * @param int|float $amount
+     * @param int|float $hours
+     */
     protected function getBillableSummary($amount, $hours): string
     {
         return sprintf('$%.2f (%.2f hours)', $amount, $hours);

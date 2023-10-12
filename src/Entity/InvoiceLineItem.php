@@ -37,7 +37,7 @@ class InvoiceLineItem extends SyncEntity
     public $AccountCode;
 
     /**
-     * @var array|null
+     * @var array<string,string>|null
      */
     public $Tracking;
 

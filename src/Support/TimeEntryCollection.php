@@ -6,7 +6,6 @@ use Lkrms\Concept\TypedCollection;
 use Lkrms\Container\Container;
 use Lkrms\Contract\IContainer;
 use Lkrms\Contract\ReceivesContainer;
-use Lkrms\Contract\ReturnsContainer;
 use Lkrms\Facade\Compute;
 use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Utility\Convert;
@@ -19,7 +18,6 @@ use UnexpectedValueException;
  * @property-read float $BillableHours
  *
  * @extends TypedCollection<array-key,TimeEntry>
- * @implements ReturnsContainer<IContainer>
  */
 final class TimeEntryCollection extends TypedCollection implements ReceivesContainer
 {
@@ -126,6 +124,9 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
         return $grouped;
     }
 
+    /**
+     * @return mixed
+     */
     public function __get(string $name)
     {
         switch ($name) {

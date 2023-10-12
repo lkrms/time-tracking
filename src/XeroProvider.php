@@ -7,6 +7,7 @@ use Lkrms\Auth\Catalog\OAuth2Flow;
 use Lkrms\Auth\OAuth2Client;
 use Lkrms\Auth\OAuth2Provider;
 use Lkrms\Concern\TReadable;
+use Lkrms\Contract\IDateFormatter;
 use Lkrms\Contract\IReadable;
 use Lkrms\Contract\IServiceSingleton;
 use Lkrms\Curler\Contract\ICurlerHeaders;
@@ -181,16 +182,9 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
         ];
     }
 
-    protected function getDateFormatter(): DateFormatter
+    protected function getDateFormatter(?string $path = null): IDateFormatter
     {
         return new DateFormatter(DateTimeInterface::ATOM, null, RegexDateParser::dotNet());
-    }
-
-    public static function getContextualBindings(): array
-    {
-        return [
-            Invoice::class => \Lkrms\Time\Entity\Xero\Invoice::class,
-        ];
     }
 
     public function checkHeartbeat(int $ttl = 300)

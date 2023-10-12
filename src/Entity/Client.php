@@ -2,6 +2,7 @@
 
 namespace Lkrms\Time\Entity;
 
+use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
 
 class Client extends SyncEntity
@@ -19,20 +20,15 @@ class Client extends SyncEntity
     /**
      * @var string|null
      */
-    public $Email;
+    public $Description;
 
     /**
-     * @var Workspace|null
+     * @var string|null
      */
-    public $Workspace;
+    public $Email;
 
     /**
      * @var bool|null
      */
     public $Archived;
-
-    /**
-     * @var string|null
-     */
-    public $Note;
 }

@@ -2,7 +2,9 @@
 
 namespace Lkrms\Time\Entity;
 
+use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
+use DateTimeInterface;
 
 class Invoice extends SyncEntity
 {
@@ -21,15 +23,9 @@ class Invoice extends SyncEntity
      */
     public $Reference;
 
-    /**
-     * @var \DateTimeInterface|null
-     */
-    public $Date;
+    public ?DateTimeInterface $Date;
 
-    /**
-     * @var \DateTimeInterface|null
-     */
-    public $DueDate;
+    public ?DateTimeInterface $DueDate;
 
     /**
      * @var Client|null
@@ -71,11 +67,11 @@ class Invoice extends SyncEntity
      */
     public $Total;
 
-    public static function getDateProperties(): array
+    public static function getRelationships(): array
     {
         return [
-            'Date',
-            'DueDate',
+            'Client' => [RelationshipType::ONE_TO_ONE => Client::class],
+            'LineItems' => [RelationshipType::ONE_TO_MANY => InvoiceLineItem::class],
         ];
     }
 }

@@ -38,11 +38,6 @@ class Project extends SyncEntity
     public $Client;
 
     /**
-     * @var Workspace|null
-     */
-    public $Workspace;
-
-    /**
      * @var float|null
      */
     public $BillableRate;
@@ -62,7 +57,6 @@ class Project extends SyncEntity
         return [
             'Tasks' => [RelationshipType::ONE_TO_MANY => Task::class],
             'Client' => [RelationshipType::ONE_TO_ONE => Client::class],
-            'Workspace' => [RelationshipType::ONE_TO_ONE => Workspace::class],
         ];
     }
 }

@@ -57,11 +57,6 @@ class TimeEntry extends SyncEntity
     public $Seconds;
 
     /**
-     * @var Workspace|null
-     */
-    public $Workspace;
-
-    /**
      * @var float|null
      */
     public $BillableRate;
@@ -87,7 +82,6 @@ class TimeEntry extends SyncEntity
             'User' => [RelationshipType::ONE_TO_ONE => User::class],
             'Task' => [RelationshipType::ONE_TO_ONE => Task::class],
             'Project' => [RelationshipType::ONE_TO_ONE => Project::class],
-            'Workspace' => [RelationshipType::ONE_TO_ONE => Workspace::class],
         ];
     }
 
@@ -205,7 +199,7 @@ class TimeEntry extends SyncEntity
         }
 
         // Clear properties with conflicting values
-        foreach (['Project', 'Task', 'User', 'Workspace', 'Billable', 'BillableRate'] as $prop) {
+        foreach (['Project', 'Task', 'User', 'Billable', 'BillableRate'] as $prop) {
             if (!is_null($merged->$prop) && $merged->$prop !== $entry->$prop) {
                 $merged->$prop = null;
             }

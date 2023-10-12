@@ -5,7 +5,7 @@ namespace Lkrms\Time\Entity;
 use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
 
-class User extends SyncEntity
+class Tenant extends SyncEntity
 {
     /**
      * @var int|string|null
@@ -20,22 +20,12 @@ class User extends SyncEntity
     /**
      * @var string|null
      */
-    public $Email;
+    public $LogoUrl;
 
     /**
-     * @var string|null
+     * @var User[]|null
      */
-    public $PhotoUrl;
-
-    /**
-     * @var bool|null
-     */
-    public $IsActive;
-
-    /**
-     * @var Tenant|null
-     */
-    public $ActiveTenant;
+    public $Users;
 
     /**
      * @var array<string,mixed>|null
@@ -45,7 +35,7 @@ class User extends SyncEntity
     public static function getRelationships(): array
     {
         return [
-            'ActiveTenant' => [RelationshipType::ONE_TO_ONE => Tenant::class],
+            'Users' => [RelationshipType::ONE_TO_MANY => User::class],
         ];
     }
 }
