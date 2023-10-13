@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time;
+namespace Lkrms\Time\Sync\Provider\Xero;
 
 use League\OAuth2\Client\Token\AccessTokenInterface;
 use Lkrms\Auth\Catalog\OAuth2Flow;
@@ -26,9 +26,9 @@ use Lkrms\Sync\Contract\ISyncContext as Context;
 use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as Definition;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as DefinitionBuilder;
-use Lkrms\Time\Entity\Provider\InvoiceProvider;
-use Lkrms\Time\Entity\Client;
-use Lkrms\Time\Entity\Invoice;
+use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
+use Lkrms\Time\Sync\Entity\Client;
+use Lkrms\Time\Sync\Entity\Invoice;
 use Lkrms\Utility\Convert;
 use Closure;
 use DateTimeInterface;
@@ -44,7 +44,10 @@ use UnexpectedValueException;
  * @method Client getClient(SyncContext $ctx, int|string|null $id)
  * @method iterable<Client> getClients(SyncContext $ctx)
  */
-final class XeroProvider extends HttpSyncProvider implements IReadable, IServiceSingleton, InvoiceProvider
+final class XeroProvider extends HttpSyncProvider implements
+    IReadable,
+    IServiceSingleton,
+    InvoiceProvider
 {
     use OAuth2Client, TReadable;
 

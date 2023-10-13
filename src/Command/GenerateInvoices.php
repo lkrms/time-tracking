@@ -5,11 +5,11 @@ namespace Lkrms\Time\Command;
 use Lkrms\Facade\Console;
 use Lkrms\Facade\File;
 use Lkrms\Time\Command\Concept\Command;
-use Lkrms\Time\Entity\Client;
-use Lkrms\Time\Entity\Invoice;
-use Lkrms\Time\Entity\InvoiceLineItem;
-use Lkrms\Time\Entity\TimeEntry;
 use Lkrms\Time\Support\TimeEntryCollection;
+use Lkrms\Time\Sync\Entity\Client;
+use Lkrms\Time\Sync\Entity\Invoice;
+use Lkrms\Time\Sync\Entity\InvoiceLineItem;
+use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Utility\Convert;
 use DateTimeImmutable;
 

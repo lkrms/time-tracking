@@ -7,7 +7,7 @@ use Lkrms\Container\Container;
 use Lkrms\Contract\IContainer;
 use Lkrms\Contract\ReceivesContainer;
 use Lkrms\Facade\Compute;
-use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Utility\Convert;
 use Lkrms\Utility\Env;
 use Lkrms\Utility\Test;

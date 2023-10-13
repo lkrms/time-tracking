@@ -9,9 +9,9 @@ use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionBuilder;
 use Lkrms\Iterator\Contract\FluentIteratorInterface;
-use Lkrms\Time\Entity\Provider\BillableTimeProvider;
-use Lkrms\Time\Entity\Provider\InvoiceProvider;
-use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
+use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
+use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Utility\Convert;
 use DateTimeImmutable;
 

@@ -5,7 +5,7 @@ namespace Lkrms\Time\Command;
 use Lkrms\Facade\Console;
 use Lkrms\Facade\Format;
 use Lkrms\Time\Command\Concept\Command;
-use Lkrms\Time\Entity\Invoice;
+use Lkrms\Time\Sync\Entity\Invoice;
 use Lkrms\Utility\Env;
 
 class ListInvoices extends Command

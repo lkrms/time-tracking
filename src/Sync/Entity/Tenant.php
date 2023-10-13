@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time\Entity;
+namespace Lkrms\Time\Sync\Entity;
 
 use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
 
-class Task extends SyncEntity
+class Tenant extends SyncEntity
 {
     /**
      * @var int|string|null
@@ -18,14 +18,24 @@ class Task extends SyncEntity
     public $Name;
 
     /**
-     * @var Project|null
+     * @var string|null
      */
-    public $Project;
+    public $LogoUrl;
+
+    /**
+     * @var User[]|null
+     */
+    public $Users;
+
+    /**
+     * @var array<string,mixed>|null
+     */
+    public $Settings;
 
     public static function getRelationships(): array
     {
         return [
-            'Project' => [RelationshipType::ONE_TO_ONE => Project::class],
+            'Users' => [RelationshipType::ONE_TO_MANY => User::class],
         ];
     }
 }

@@ -9,10 +9,10 @@ use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\Command\ListInvoices;
 use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
-use Lkrms\Time\Entity\Provider\BillableTimeProvider;
-use Lkrms\Time\Entity\Provider\InvoiceProvider;
-use Lkrms\Time\ClockifyProvider;
-use Lkrms\Time\XeroProvider;
+use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
+use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
+use Lkrms\Time\Sync\Provider\Clockify\ClockifyProvider;
+use Lkrms\Time\Sync\Provider\Xero\XeroProvider;
 use Lkrms\Utility\Env;
 
 require dirname(__DIR__) . '/vendor/autoload.php';

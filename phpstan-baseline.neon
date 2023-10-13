@@ -1,21 +1,21 @@
 parameters:
 	ignoreErrors:
 		-
-			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:buildQuery\\(\\) has parameter \\$fieldMap with no value type specified in iterable type array\\.$#"
+			message: "#^Method Lkrms\\\\Time\\\\Sync\\\\Provider\\\\Xero\\\\XeroProvider\\:\\:buildQuery\\(\\) has parameter \\$fieldMap with no value type specified in iterable type array\\.$#"
 			count: 1
-			path: src/XeroProvider.php
+			path: src/Sync/Provider/Xero/XeroProvider.php
 
 		-
-			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:buildQuery\\(\\) return type has no value type specified in iterable type array\\.$#"
+			message: "#^Method Lkrms\\\\Time\\\\Sync\\\\Provider\\\\Xero\\\\XeroProvider\\:\\:buildQuery\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
-			path: src/XeroProvider.php
+			path: src/Sync/Provider/Xero/XeroProvider.php
 
 		-
-			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:generateInvoice\\(\\) return type has no value type specified in iterable type array\\.$#"
+			message: "#^Method Lkrms\\\\Time\\\\Sync\\\\Provider\\\\Xero\\\\XeroProvider\\:\\:generateInvoice\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
-			path: src/XeroProvider.php
+			path: src/Sync/Provider/Xero/XeroProvider.php
 
 		-
-			message: "#^Method Lkrms\\\\Time\\\\XeroProvider\\:\\:getConnections\\(\\) return type has no value type specified in iterable type array\\.$#"
+			message: "#^Method Lkrms\\\\Time\\\\Sync\\\\Provider\\\\Xero\\\\XeroProvider\\:\\:getConnections\\(\\) return type has no value type specified in iterable type array\\.$#"
 			count: 1
-			path: src/XeroProvider.php
+			path: src/Sync/Provider/Xero/XeroProvider.php

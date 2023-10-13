@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time;
+namespace Lkrms\Time\Sync\Provider\Clockify;
 
 use Lkrms\Contract\IContainer;
 use Lkrms\Contract\IDateFormatter;
@@ -18,15 +18,13 @@ use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Sync\Support\SyncContext;
-use Lkrms\Time\Entity\Provider\BillableTimeProvider;
-use Lkrms\Time\Entity\Provider\TenantProvider;
-use Lkrms\Time\Entity\Provider\UserProvider;
-use Lkrms\Time\Entity\Client;
-use Lkrms\Time\Entity\Project;
-use Lkrms\Time\Entity\Task;
-use Lkrms\Time\Entity\Tenant;
-use Lkrms\Time\Entity\TimeEntry;
-use Lkrms\Time\Entity\User;
+use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
+use Lkrms\Time\Sync\Entity\Client;
+use Lkrms\Time\Sync\Entity\Project;
+use Lkrms\Time\Sync\Entity\Task;
+use Lkrms\Time\Sync\Entity\Tenant;
+use Lkrms\Time\Sync\Entity\TimeEntry;
+use Lkrms\Time\Sync\Entity\User;
 use Lkrms\Utility\Convert;
 use Lkrms\Utility\Env;
 use DateTimeImmutable;
@@ -35,8 +33,6 @@ use UnexpectedValueException;
 
 final class ClockifyProvider extends HttpSyncProvider implements
     IServiceSingleton,
-    TenantProvider,
-    UserProvider,
     BillableTimeProvider
 {
     /**

@@ -30,7 +30,10 @@
     "autoload": {
         "psr-4": {
             "Lkrms\\Time\\": "src/"
-        }
+        },
+        "files": [
+            "bootstrap.php"
+        ]
     },
     "config": {
         "allow-plugins": {
