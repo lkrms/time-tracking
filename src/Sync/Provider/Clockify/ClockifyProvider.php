@@ -259,11 +259,13 @@ final class ClockifyProvider extends HttpSyncProvider implements
                                         ->withCurlerProperties([CurlerProperty::CACHE_POST_RESPONSE => true])
                                         ->withArgs($this->detailedReportQuery($ctx)),
 
-                                default => $def,
+                                default =>
+                                    $def,
                             }
                     ),
 
-            default => $defB,
+            default =>
+                $defB,
         };
     }
 

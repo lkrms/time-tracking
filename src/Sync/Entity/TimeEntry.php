@@ -191,7 +191,7 @@ class TimeEntry extends SyncEntity
 
     final public function mergeWith(TimeEntry $entry, string $delimiter = "\n\n"): TimeEntry
     {
-        if (is_null($this->Merged)) {
+        if ($this->Merged === null) {
             $merged = clone $this;
             $merged->Merged = [$this];
         } else {
@@ -200,7 +200,7 @@ class TimeEntry extends SyncEntity
 
         // Clear properties with conflicting values
         foreach (['Project', 'Task', 'User', 'Billable', 'BillableRate'] as $prop) {
-            if (!is_null($merged->$prop) && $merged->$prop !== $entry->$prop) {
+            if ($merged->$prop !== null && $merged->$prop !== $entry->$prop) {
                 $merged->$prop = null;
             }
         }
@@ -209,7 +209,7 @@ class TimeEntry extends SyncEntity
         $merged->Description = Convert::sparseToString($delimiter, [$merged->Description, $entry->Description]);
         $merged->Start = $merged->Start && $entry->Start ? min($merged->Start, $entry->Start) : null;
         $merged->End = null;
-        $merged->Seconds = !is_null($merged->Seconds) && !is_null($entry->Seconds) ? $merged->Seconds + $entry->Seconds : null;
+        $merged->Seconds = $merged->Seconds !== null && $entry->Seconds !== null ? $merged->Seconds + $entry->Seconds : null;
         $merged->Merged[] = $entry;
 
         return $merged;

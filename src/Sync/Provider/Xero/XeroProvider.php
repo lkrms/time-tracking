@@ -16,7 +16,6 @@ use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Facade\Cache;
 use Lkrms\Facade\Console;
-use Lkrms\Support\Catalog\HttpHeader;
 use Lkrms\Support\DateParser\RegexDateParser;
 use Lkrms\Support\Http\HttpServer;
 use Lkrms\Support\DateFormatter;
@@ -24,8 +23,8 @@ use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Contract\ISyncContext as Context;
 use Lkrms\Sync\Contract\ISyncEntity;
-use Lkrms\Sync\Support\HttpSyncDefinition as Definition;
-use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as DefinitionBuilder;
+use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
+use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
@@ -37,12 +36,6 @@ use UnexpectedValueException;
 
 /**
  * @property-read string $TenantIdKey
- *
- * @method Invoice createInvoice(SyncContext $ctx, Invoice $invoice)
- * @method Invoice getInvoice(SyncContext $ctx, int|string|null $id)
- * @method iterable<Invoice> getInvoices(SyncContext $ctx)
- * @method Client getClient(SyncContext $ctx, int|string|null $id)
- * @method iterable<Client> getClients(SyncContext $ctx)
  */
 final class XeroProvider extends HttpSyncProvider implements
     IReadable,
@@ -126,21 +119,19 @@ final class XeroProvider extends HttpSyncProvider implements
 
     protected function getOAuth2Listener(): ?HttpServer
     {
-        $env = $this->env();
-
         $listener = new HttpServer(
-            $env->get('app_host', 'localhost'),
-            $env->getInt('app_port', 27755)
+            $this->Env->get('app_host', 'localhost'),
+            $this->Env->getInt('app_port', 27755),
         );
 
-        $proxyHost = $env->get('app_proxy_host', null);
-        $proxyPort = $env->getInt('app_proxy_port', null);
+        $proxyHost = $this->Env->getNullable('app_proxy_host', null);
+        $proxyPort = $this->Env->getNullableInt('app_proxy_port', null);
 
-        if ($proxyHost && !is_null($proxyPort)) {
+        if ($proxyHost !== null && $proxyPort !== null) {
             return $listener->withProxy(
                 $proxyHost,
                 $proxyPort,
-                $env->getBool('app_proxy_tls', null)
+                $this->Env->getNullableBool('app_proxy_tls', null)
             );
         }
 
@@ -150,8 +141,8 @@ final class XeroProvider extends HttpSyncProvider implements
     protected function getOAuth2Provider(): OAuth2Provider
     {
         return new OAuth2Provider([
-            'clientId' => $this->env()->get('xero_app_client_id'),
-            'clientSecret' => $this->env()->get('xero_app_client_secret'),
+            'clientId' => $this->Env->get('xero_app_client_id'),
+            'clientSecret' => $this->Env->get('xero_app_client_secret'),
             'redirectUri' => $this->OAuth2RedirectUri,
             'urlAuthorize' => 'https://login.xero.com/identity/connect/authorize',
             'urlAccessToken' => 'https://identity.xero.com/connect/token',
@@ -171,7 +162,10 @@ final class XeroProvider extends HttpSyncProvider implements
         return 'https://identity.xero.com/.well-known/openid-configuration/jwks';
     }
 
-    protected function receiveOAuth2Token(AccessTokenInterface $token): void {}
+    protected function receiveOAuth2Token(AccessTokenInterface $token): void
+    {
+        Console::debug('Xero access token received');
+    }
 
     public function name(): ?string
     {
@@ -187,7 +181,11 @@ final class XeroProvider extends HttpSyncProvider implements
 
     protected function getDateFormatter(?string $path = null): IDateFormatter
     {
-        return new DateFormatter(DateTimeInterface::ATOM, null, RegexDateParser::dotNet());
+        return new DateFormatter(
+            DateTimeInterface::ATOM,
+            null,
+            RegexDateParser::dotNet(),
+        );
     }
 
     public function checkHeartbeat(int $ttl = 300)
@@ -209,34 +207,63 @@ final class XeroProvider extends HttpSyncProvider implements
         return $curlerB->alwaysPaginate();
     }
 
-    protected function buildHttpDefinition(string $entity, DefinitionBuilder $defB): DefinitionBuilder
+    protected function buildHttpDefinition(string $entity, HttpDefB $defB): HttpDefB
     {
-        $defB = $defB
-                    ->path(sprintf('/api.xro/2.0/%s', self::ENTITY_PATH_MAP[$entity] ?? $entity::plural()))
-                    ->callback(fn(Definition $def, int $op, Context $ctx): Definition =>
-                                   $def->withPager(new QueryPager('page', self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::plural(), 100))
-                                       ->if($op === OP::READ_LIST, fn(Definition $def) => $def->withQuery($this->buildQuery($ctx, self::ENTITY_QUERY_MAPS[$entity]))));
+        $defB =
+            $defB
+                ->path(sprintf(
+                    '/api.xro/2.0/%s',
+                    self::ENTITY_PATH_MAP[$entity] ?? $entity::plural(),
+                ))
+                ->pager(new QueryPager(
+                    'page',
+                    self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::plural(),
+                    100,
+                ))
+                ->callback(
+                    fn(HttpDef $def, $op, Context $ctx) =>
+                        match ($op) {
+                            OP::READ_LIST => $def->withQuery(
+                                $this->buildQuery(
+                                    $ctx, self::ENTITY_QUERY_MAPS[$entity]
+                                )
+                            ),
 
-        switch ($entity) {
-            case Invoice::class:
-                return $defB
-                           ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
-                           ->pipelineFromBackend($this->pipeline()
-                                                      ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
-                                                      ->through(fn(array $payload, Closure $next) =>
-                                                                    $payload['Type'] === 'ACCREC' ? $next($payload) : null))
-                           ->pipelineToBackend($this->pipeline()
-                                                    ->after(fn(Invoice $invoice) =>
-                                                                $this->generateInvoice($invoice)));
+                            default => $def,
+                        }
+                );
 
-            case Client::class:
-                return $defB
-                           ->operations([OP::READ, OP::READ_LIST])
-                           ->pipelineFromBackend($this->pipeline()
-                                                      ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity]));
-        }
+        return match ($entity) {
+            Invoice::class =>
+                $defB
+                    ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
+                    ->pipelineFromBackend(
+                        $this->pipeline()
+                             ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
+                             ->through(
+                                 // Discard accounts payable invoices
+                                 fn(array $payload, Closure $next) =>
+                                     $payload['Type'] === 'ACCREC'
+                                         ? $next($payload)
+                                         : null
+                             )
+                    )
+                    ->pipelineToBackend(
+                        $this->pipeline()
+                             ->after(
+                                 fn(Invoice $invoice) =>
+                                     $this->generateInvoice($invoice)
+                             )
+                    ),
 
-        return $defB;
+            Client::class =>
+                $defB
+                    ->operations([OP::READ, OP::READ_LIST])
+                    ->keyMap(self::ENTITY_KEY_MAPS[$entity]),
+
+            default =>
+                $defB,
+        };
     }
 
     protected function getBaseUrl(?string $path = null): string
@@ -250,7 +277,8 @@ final class XeroProvider extends HttpSyncProvider implements
             $tenantId = null;
             $accessToken = $this->getAccessToken(self::OAUTH2_SCOPES);
         } else {
-            if (!($tenantId = $this->getTenantId())) {
+            $tenantId = $this->getTenantId();
+            if ($tenantId === null) {
                 Console::warn(
                     "Environment variable 'xero_tenant_id' should be set to one of the following GUIDs:",
                     $this->formatTenantList($this->getConnections())
@@ -260,12 +288,11 @@ final class XeroProvider extends HttpSyncProvider implements
             $accessToken = $this->getAccessToken(self::OAUTH2_SCOPES);
         }
 
-        $headers = CurlerHeaders::create()
-            ->setHeader(
-                HttpHeader::AUTHORIZATION,
-                'Bearer ' . $accessToken->Token
-            );
-        if ($tenantId) {
+        $headers =
+            CurlerHeaders::create()
+                ->applyAccessToken($accessToken);
+
+        if ($tenantId !== null) {
             return $headers->setHeader('Xero-Tenant-Id', $tenantId);
         }
 
@@ -275,7 +302,7 @@ final class XeroProvider extends HttpSyncProvider implements
     protected function _getTenantIdKey(): string
     {
         return $this->_TenantIdKey
-            ?: ($this->_TenantIdKey =
+            ?? ($this->_TenantIdKey =
                 implode(':', [
                     static::class,
                     'tenant',
@@ -284,6 +311,9 @@ final class XeroProvider extends HttpSyncProvider implements
                 ]));
     }
 
+    /**
+     * @return array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>
+     */
     private function getConnections(int $ttl = -1): array
     {
         // See https://developer.xero.com/documentation/guides/oauth2/tenants
@@ -291,7 +321,7 @@ final class XeroProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param array<array<string,mixed>> $connections
+     * @param array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}> $connections
      */
     private function formatTenantList(array $connections, bool $withMarkup = true): string
     {
@@ -312,7 +342,8 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function requireTenantId(): string
     {
-        if ($tenantId = $this->getTenantId()) {
+        $tenantId = $this->getTenantId();
+        if ($tenantId !== null) {
             return $tenantId;
         }
 
@@ -321,6 +352,8 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function getTenantId(): ?string
     {
+        $flushed = false;
+
         // Flush the token cache to trigger [re-]authorization if a cached or
         // configured tenant ID isn't in the connections list
         if (!$this->checkTenantAccess()) {
@@ -330,7 +363,7 @@ final class XeroProvider extends HttpSyncProvider implements
         }
 
         if ($tenantId = $this->getPreferredTenantId(false)) {
-            if (!($flushed ?? false)) {
+            if (!$flushed) {
                 $this->flushTenantId();
             }
 
@@ -339,7 +372,8 @@ final class XeroProvider extends HttpSyncProvider implements
 
         // If there is no tenant ID in the environment, try to get one from the
         // cache or via authorization
-        if ($tenantId = Cache::get($this->TenantIdKey) ?: null) {
+        $tenantId = Cache::get($this->TenantIdKey);
+        if (is_string($tenantId)) {
             return $tenantId;
         }
 
@@ -349,14 +383,17 @@ final class XeroProvider extends HttpSyncProvider implements
         // If a connection was "newly authorized in the current auth flow", or
         // only one connection exists, we can safely use its tenantId in lieu of
         // an explicit configuration
+        $connections = $this->getConnections();
         $connection = array_filter(
-            $connections = $this->getConnections(),
+            $connections,
             fn(array $conn) =>
-                $conn['authEventId'] == $eventId
+                $eventId === $conn['authEventId']
         );
+
         if (!$connection && count($connections) === 1) {
             $connection = $connections;
         }
+
         if (!$connection) {
             return null;
         }
@@ -370,11 +407,14 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function checkTenantAccess(?string $tenantId = null): bool
     {
-        $tenantId = $tenantId ?: $this->getPreferredTenantId();
-        if (!$tenantId ||
+        if ($tenantId === null) {
+            $tenantId = $this->getPreferredTenantId();
+        }
+
+        if ($tenantId === null ||
                 array_filter(
                     $connections = $this->getConnections(),
-                    fn(array $conn) => !strcasecmp($conn['tenantId'], $tenantId)
+                    fn(array $conn) => !strcasecmp($conn['tenantId'], $tenantId),
                 )) {
             return true;
         }
@@ -382,7 +422,7 @@ final class XeroProvider extends HttpSyncProvider implements
         Console::warn(
             sprintf(
                 "Not connected to Xero tenant '%s'; tenant connections:",
-                $tenantId
+                $tenantId,
             ),
             $this->formatTenantList($connections)
         );
@@ -392,12 +432,15 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function getPreferredTenantId(bool $allowCache = true): ?string
     {
-        $tenantId = $this->env()->get('xero_tenant_id', null);
-        if (!$tenantId && $allowCache) {
-            return Cache::get($this->TenantIdKey) ?: null;
+        $tenantId = $this->Env->getNullable('xero_tenant_id', null);
+        if ($tenantId === null && $allowCache) {
+            $tenantId = Cache::get($this->TenantIdKey);
+            return $tenantId === false
+                ? null
+                : $tenantId;
         }
 
-        return $tenantId ?: null;
+        return $tenantId;
     }
 
     /**
@@ -406,49 +449,73 @@ final class XeroProvider extends HttpSyncProvider implements
     private function flushTenantId()
     {
         Cache::delete($this->TenantIdKey);
-
         return $this;
     }
 
+    /**
+     * @param array<string,string> $fieldMap
+     * @return array<string,mixed>
+     */
     private function buildQuery(Context $ctx, array $fieldMap): array
     {
         $query = [
-            'page' => 1
+            'page' => 1,
         ];
 
+        // Prepare a "where" parameter by claiming recognised values from the
+        // filter and converting them to Xero's query language
         $where = [];
         foreach ($fieldMap as $filterField => $field) {
-            if (is_null($values = $ctx->claimFilter($_filterField = $filterField)) &&
-                    is_null($values = $ctx->claimFilter($_filterField = "!$filterField"))) {
-                continue;
+            $_filterField = $filterField;
+            $values = $ctx->claimFilter($_filterField);
+
+            if ($values === null) {
+                $_filterField = "!$filterField";
+                $values = $ctx->claimFilter($_filterField);
+
+                if ($values === null) {
+                    continue;
+                }
             }
 
-            [$prefix, $eq, $glue] = $_filterField === $filterField
-                ? ['', '==', ' OR ']
-                : ['NOT ', '!=', ' AND '];
+            if ($_filterField === $filterField) {
+                [$prefix, $eq, $glue] = ['', '==', ' OR '];
+            } else {
+                [$prefix, $eq, $glue] = ['NOT ', '!=', ' AND '];
+            }
 
             // TODO: escape each $value
             $where[$field] = array_map(
                 function ($value) use ($field, $prefix, $eq) {
+                    // Map wildcards to Contains, StartsWith or EndsWith if they
+                    // appear around, after or before other text, respectively
                     $expr = preg_replace(
-                        ['/^\*([^*]*)\*$/', '/^([^*]*)\*$/', '/^\*([^*]*)$/'],
+                        [
+                            '/^\*([^*]++)\*$/',
+                            '/^([^*]++)\*$/',
+                            '/^\*([^*]++)$/',
+                        ],
                         [
                             "{$prefix}{$field}.Contains(\"\$1\")",
                             "{$prefix}{$field}.StartsWith(\"\$1\")",
                             "{$prefix}{$field}.EndsWith(\"\$1\")",
                         ],
-                        $value
+                        $value,
+                        -1,
+                        $count,
                     );
-                    if ($expr === $value) {
+                    if (!$count) {
                         return "{$field}{$eq}\"$value\"";
                     }
-
                     return $expr;
                 },
-                Convert::toArray($values)
+                (array) $values
             );
             $where[$field]['__glue'] = $glue;
         }
+
+        // Reduce `$where` to a string, using parentheses to separate
+        // expressions if necessary
         if ($where) {
             $parts = [];
             foreach ($where as $group) {
@@ -463,16 +530,22 @@ final class XeroProvider extends HttpSyncProvider implements
             $query['where'] = implode(' AND ', $parts);
         }
 
-        if ($orderby = $ctx->claimFilter('$orderby')) {
+        // Add an "order" parameter if an "$orderby" filter is provided
+        $orderby = $ctx->claimFilter('$orderby');
+        if ($orderby !== null) {
             $parts = [];
             // Format: "<field_name>[ (ASC|DESC)][,...]"
             foreach (explode(',', $orderby) as $expr) {
                 $expr = preg_split('/\h+/', trim($expr));
                 if (count($expr) > 2) {
-                    throw new UnexpectedValueException("Invalid \$orderby value '{$orderby}'");
+                    throw new UnexpectedValueException(
+                        sprintf('Invalid $orderby value: %s', $orderby)
+                    );
                 }
-                if ($field = $fieldMap[$expr[0]] ?? null) {
-                    $parts[] = $field . (strtoupper($expr[1] ?? '') == 'DESC' ? ' DESC' : '');
+                $field = $fieldMap[$expr[0]] ?? null;
+                if ($field !== null) {
+                    $ascDesc = strtoupper($expr[1] ?? '');
+                    $parts[] = $field . ($ascDesc === 'DESC' ? ' DESC' : '');
                 }
             }
             if ($parts) {
@@ -483,6 +556,9 @@ final class XeroProvider extends HttpSyncProvider implements
         return $query;
     }
 
+    /**
+     * @return array<string,mixed>
+     */
     private function generateInvoice(Invoice $invoice): array
     {
         $data = [];
@@ -495,7 +571,7 @@ final class XeroProvider extends HttpSyncProvider implements
         $data['LineItems'] = [];
         $data['Status'] = $invoice->Status;
 
-        $data = array_filter($data, fn($value) => !is_null($value));
+        $data = array_filter($data, fn($value) => $value !== null);
 
         foreach ($invoice->LineItems as $lineItem) {
             $line = [];
@@ -506,7 +582,7 @@ final class XeroProvider extends HttpSyncProvider implements
             $line['AccountCode'] = $lineItem->AccountCode;
             $line['Tracking'] = $lineItem->Tracking;
 
-            $line = array_filter($line, fn($value) => !is_null($value));
+            $line = array_filter($line, fn($value) => $value !== null);
 
             $data['LineItems'][] = $line;
         }
