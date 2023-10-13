@@ -3,7 +3,7 @@
 namespace Lkrms\Time\Command;
 
 use Lkrms\Facade\Console;
-use Lkrms\Time\Concept\Command;
+use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Entity\Client;
 
 class ListClients extends Command

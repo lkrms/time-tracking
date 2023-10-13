@@ -18,7 +18,7 @@ use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Sync\Support\SyncContext;
-use Lkrms\Time\Entity\Provider\BillableTimeEntryProvider;
+use Lkrms\Time\Entity\Provider\BillableTimeProvider;
 use Lkrms\Time\Entity\Provider\TenantProvider;
 use Lkrms\Time\Entity\Provider\UserProvider;
 use Lkrms\Time\Entity\Client;
@@ -37,7 +37,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     IServiceSingleton,
     TenantProvider,
     UserProvider,
-    BillableTimeEntryProvider
+    BillableTimeProvider
 {
     /**
      * Entity => input key => property
@@ -57,9 +57,6 @@ final class ClockifyProvider extends HttpSyncProvider implements
             'imageUrl' => 'LogoUrl',
             'memberships' => 'Users',
             'workspaceSettings' => 'Settings',
-        ],
-        TimeEntry::class => [
-            'workspaceId' => 'Tenant',
         ],
         User::class => [
             'profilePicture' => 'PhotoUrl',
@@ -120,8 +117,9 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
         Console::debugOnce(
             sprintf(
-                "Connected to Clockify workspace '%s' as %s ('%s')",
+                "Connected to Clockify workspace '%s' (%s) as '%s' (%s)",
                 $user->ActiveTenant->Name,
+                $user->ActiveTenant->Id,
                 $user->Name,
                 $user->Id,
             )
@@ -253,7 +251,6 @@ final class ClockifyProvider extends HttpSyncProvider implements
                         '/workspaces/:workspaceId/reports/detailed',
                     ])
                     ->pipelineFromBackend($this->callbackPipeline([$this, 'normaliseTimeEntry']))
-                    ->keyMap(self::ENTITY_PROPERTY_MAP[TimeEntry::class])
                     ->callback(
                         fn(HttpDef $def, $op, Context $ctx) =>
                             match ($op) {

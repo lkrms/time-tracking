@@ -9,16 +9,23 @@ use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\Command\ListInvoices;
 use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
+use Lkrms\Time\Entity\Provider\BillableTimeProvider;
+use Lkrms\Time\Entity\Provider\InvoiceProvider;
 use Lkrms\Time\ClockifyProvider;
 use Lkrms\Time\XeroProvider;
+use Lkrms\Utility\Env;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 (new CliApplication(dirname(__DIR__)))
     ->startCache()
     ->startSync()
-    ->service(XeroProvider::class)
-    ->service(ClockifyProvider::class)
+    ->services([
+        BillableTimeProvider::class => Env::get('billable_time_provider'),
+        InvoiceProvider::class => Env::get('invoice_provider'),
+        ClockifyProvider::class,
+        XeroProvider::class,
+    ])
     ->command(['client', 'list'], ListClients::class)
     ->command(['entry', 'list'], ListTimeEntries::class)
     ->command(['invoice', 'list'], ListInvoices::class)

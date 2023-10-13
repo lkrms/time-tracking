@@ -2,7 +2,7 @@
 
 namespace Lkrms\Time\Entity\Provider;
 
-use Lkrms\Support\Iterator\Contract\FluentIteratorInterface;
+use Lkrms\Iterator\Contract\FluentIteratorInterface;
 use Lkrms\Sync\Contract\ISyncContext;
 use Lkrms\Time\Entity\Invoice;
 

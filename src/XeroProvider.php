@@ -192,14 +192,11 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
         $connections = $this->getConnections($ttl);
         $count = count($connections);
 
-        Console::debug(
-            sprintf(
-                'Connected to Xero with %d %s:',
-                $count,
-                Convert::plural($count, 'tenant connection')
-            ),
-            $this->getFormattedTenantList($connections)
-        );
+        Console::debug(sprintf(
+            'Connected to Xero with %d %s:',
+            $count,
+            Convert::plural($count, 'tenant connection')
+        ), $this->formatTenantList($connections, false));
 
         return $this;
     }
@@ -253,7 +250,7 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
             if (!($tenantId = $this->getTenantId())) {
                 Console::warn(
                     "Environment variable 'xero_tenant_id' should be set to one of the following GUIDs:",
-                    $this->getFormattedTenantList($this->getConnections())
+                    $this->formatTenantList($this->getConnections())
                 );
                 throw new RuntimeException('No tenant ID');
             }
@@ -293,13 +290,21 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
     /**
      * @param array<array<string,mixed>> $connections
      */
-    private function getFormattedTenantList(array $connections): string
+    private function formatTenantList(array $connections, bool $withMarkup = true): string
     {
-        return implode("\n", array_map(
-            fn($conn) =>
-                sprintf('- %s ~~(%s)~~', $conn['tenantId'], $conn['tenantName']),
-            $connections
-        ));
+        $d = $withMarkup ? '~~' : '';
+
+        $format =
+            count($connections) > 1
+                ? "- %s {$d}(%s){$d}"
+                : "%s {$d}(%s){$d}";
+
+        return
+            implode("\n", array_map(
+                fn($conn) =>
+                    sprintf($format, $conn['tenantId'], $conn['tenantName']),
+                $connections,
+            ));
     }
 
     private function requireTenantId(): string
@@ -376,7 +381,7 @@ final class XeroProvider extends HttpSyncProvider implements IReadable, IService
                 "Not connected to Xero tenant '%s'; tenant connections:",
                 $tenantId
             ),
-            $this->getFormattedTenantList($connections)
+            $this->formatTenantList($connections)
         );
 
         return false;

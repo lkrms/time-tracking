@@ -2,7 +2,6 @@
 
 namespace Lkrms\Time\Entity;
 
-use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
 
 class Client extends SyncEntity
