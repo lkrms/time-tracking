@@ -1,17 +1,25 @@
 {
     "name": "lkrms/time-tracking",
-    "license": "MIT",
     "description": "Time entry automation",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/lkrms/time-tracking/issues",
+        "source": "https://github.com/lkrms/time-tracking"
+    },
+    "authors": [
+        {
+            "name": "Luke Arms",
+            "email": "luke@linacreative.com"
+        }
+    ],
+    "bin": [
+        "bin/lk-time"
+    ],
     "require": {
-        "php": ">=7.4 <8.3",
+        "php": ">=8.0",
         "firebase/php-jwt": "^6",
         "league/oauth2-client": "^2",
-        "lkrms/util": "^0.20.26"
-    },
-    "autoload": {
-        "psr-4": {
-            "Lkrms\\Time\\": "src/"
-        }
+        "lkrms/util": "^0.20.71"
     },
     "require-dev": {
         "phpstan/extension-installer": "^1",
@@ -19,10 +27,21 @@
         "phpstan/phpstan-deprecation-rules": "^1",
         "phpunit/phpunit": "^9"
     },
+    "autoload": {
+        "psr-4": {
+            "Lkrms\\Time\\": "src/"
+        },
+        "files": [
+            "bootstrap.php"
+        ]
+    },
     "config": {
-        "sort-packages": true,
         "allow-plugins": {
             "phpstan/extension-installer": true
+        },
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0.30"
         }
     }
 }

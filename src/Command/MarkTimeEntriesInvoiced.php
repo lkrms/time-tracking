@@ -3,9 +3,9 @@
 namespace Lkrms\Time\Command;
 
 use Lkrms\Facade\Console;
-use Lkrms\Facade\Convert;
-use Lkrms\Facade\Env;
-use Lkrms\Time\Concept\Command;
+use Lkrms\Time\Command\Concept\Command;
+use Lkrms\Utility\Convert;
+use Lkrms\Utility\Env;
 
 class MarkTimeEntriesInvoiced extends Command
 {

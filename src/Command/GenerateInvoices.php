@@ -2,17 +2,16 @@
 
 namespace Lkrms\Time\Command;
 
-use DateTimeImmutable;
 use Lkrms\Facade\Console;
-use Lkrms\Facade\Convert;
-use Lkrms\Facade\Env;
 use Lkrms\Facade\File;
-use Lkrms\Time\Concept\Command;
-use Lkrms\Time\Entity\Client;
-use Lkrms\Time\Entity\Invoice;
-use Lkrms\Time\Entity\InvoiceLineItem;
-use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Support\TimeEntryCollection;
+use Lkrms\Time\Sync\Entity\Client;
+use Lkrms\Time\Sync\Entity\Invoice;
+use Lkrms\Time\Sync\Entity\InvoiceLineItem;
+use Lkrms\Time\Sync\Entity\TimeEntry;
+use Lkrms\Utility\Convert;
+use DateTimeImmutable;
 
 class GenerateInvoices extends Command
 {
@@ -29,7 +28,7 @@ class GenerateInvoices extends Command
     protected function run(string ...$params)
     {
         if (!$this->Force) {
-            Env::dryRun(true);
+            $this->Env->dryRun(true);
         }
 
         Console::info('Retrieving unbilled time from', $this->TimeEntryProviderName);
@@ -43,7 +42,8 @@ class GenerateInvoices extends Command
 
         foreach ($times as $time) {
             $clientId = $time->Project->Client->Id;
-            $entries = $clientTimes[$clientId] ?? ($clientTimes[$clientId] = $this->app()->get(TimeEntryCollection::class));
+            $entries = $clientTimes[$clientId]
+                ?? ($clientTimes[$clientId] = $this->App->get(TimeEntryCollection::class));
             $entries[] = $time;
             $clientNames[$clientId] = $time->Project->Client->Name;
             $timeEntryCount++;
@@ -57,43 +57,42 @@ class GenerateInvoices extends Command
 
         Console::info('Retrieving clients from', $this->InvoiceProviderName);
         $invClients = Convert::listToMap(
-            $this->InvoiceProvider->with(Client::class)->getListA(['name' => $clientNames]),
+            $this->InvoiceProvider
+                 ->with(Client::class)
+                 ->getListA(['name' => $clientNames]),
             'Name'
         );
 
-        Console::log('Preparing ' . Convert::plural(count($clientTimes), 'client invoice', null, true)
-            . ' for ' . Convert::plural($timeEntryCount, 'time entry', 'time entries', true));
+        $count = count($clientTimes);
+        Console::log(sprintf(
+            'Preparing %d %s for %d %s',
+            $count,
+            Convert::plural($count, 'client invoice'),
+            $timeEntryCount,
+            Convert::plural($timeEntryCount, 'time entry', 'time entries'),
+        ));
 
-        $showMap = [
-            'date' => TimeEntry::DATE,
-            'time' => TimeEntry::TIME,
-            'project' => TimeEntry::PROJECT,
-            'task' => TimeEntry::TASK,
-            'user' => TimeEntry::USER,
-            'description' => TimeEntry::DESCRIPTION,
-        ];
-        $show = array_reduce(
-            $this->Hide,
-            fn($prev, $value) => $prev & ~$showMap[$value],
-            TimeEntry::ALL
-        );
-
+        $show = $this->getTimeEntryMask();
         $next = null;
 
-        if ($prefix = Env::get('invoice_number_prefix', null)) {
-            $next = (int) Env::get('invoice_number_next', '1');
+        $prefix = $this->Env->getNullable('invoice_number_prefix', null);
+        if ($prefix !== null) {
+            $next = $this->Env->getInt('invoice_number_next', 1);
 
             /** @var iterable<Invoice> $invoices */
-            $invoices = $this->InvoiceProvider->with(Invoice::class)->getList([
-                'number' => "{$prefix}*",
-                '$orderby' => 'date desc',
-                '!status' => 'DELETED',
-            ]);
+            $invoices =
+                $this->InvoiceProvider
+                     ->with(Invoice::class)
+                     ->getList([
+                         'number' => "{$prefix}*",
+                         '$orderby' => 'date desc',
+                         '!status' => 'DELETED',
+                     ]);
 
             $seen = 0;
             foreach ($invoices as $invoice) {
                 $next = max((int) substr($invoice->Number, strlen($prefix)) + 1, $next, 1);
-                if ($seen++ == 99) {
+                if ($seen++ === 99) {
                     break;
                 }
             }
@@ -101,17 +100,19 @@ class GenerateInvoices extends Command
             unset($invoices);
         }
 
-        File::maybeCreateDirectory($tempDir = implode('/', [
-            $this->app()->getTempPath(),
+        $tempDir = implode('/', [
+            $this->App->getTempPath(),
             Convert::classToBasename(self::class),
-            $this->InvoiceProviderName . '-' . $this->InvoiceProvider->getProviderHash()
-        ]));
+            $this->InvoiceProviderName . '-' . $this->InvoiceProvider->getProviderId()
+        ]);
+        File::maybeCreateDirectory($tempDir);
 
         foreach ($clientTimes as $clientId => $entries) {
             $name = $clientNames[$clientId];
             $summary = $this->getBillableSummary($entries->BillableAmount, $entries->BillableHours);
 
-            if (!($invClient = $invClients[$name] ?? null)) {
+            $invClient = $invClients[$name] ?? null;
+            if ($invClient === null) {
                 Console::error("Skipping $name (not found in {$this->InvoiceProviderName}):", $summary);
                 continue;
             }
@@ -124,7 +125,7 @@ class GenerateInvoices extends Command
                 fn(TimeEntry $t) => [$t->Project->Id ?? null, $t->BillableRate]
             );
 
-            if (Env::dryRun()) {
+            if ($this->Env->dryRun()) {
                 foreach ($entries as $entry) {
                     printf(
                         "==> \$%.2f (%.2f hours):\n  %s\n\n",
@@ -138,8 +139,7 @@ class GenerateInvoices extends Command
 
             $markInvoiced = [];
 
-            /** @var Invoice */
-            $invoice = $this->app()->get(Invoice::class);
+            $invoice = $this->App->get(Invoice::class);
             $invoice->Number = $next ? $prefix . ($next++) : null;
             $invoice->Date = new DateTimeImmutable('today');
             $invoice->DueDate = new DateTimeImmutable('today +7 days');
@@ -147,13 +147,13 @@ class GenerateInvoices extends Command
             $invoice->LineItems = [];
 
             foreach ($entries as $entry) {
-                /** @var InvoiceLineItem */
-                $item = $invoice->LineItems[] = $this->app()->get(InvoiceLineItem::class);
+                $item = $this->App->get(InvoiceLineItem::class);
                 $item->Description = $entry->Description;
                 $item->Quantity = $entry->getBillableHours();
                 $item->UnitAmount = $entry->BillableRate;
-                $item->ItemCode = Env::get('invoice_item_code', '') ?: null;
-                $item->AccountCode = Env::get('invoice_account_code', '') ?: null;
+                $item->ItemCode = $this->Env->getNullable('invoice_item_code', null);
+                $item->AccountCode = $this->Env->getNullable('invoice_account_code', null);
+                $invoice->LineItems[] = $item;
 
                 array_push($markInvoiced, ...($entry->getMerged() ?: [$entry]));
             }
@@ -180,6 +180,7 @@ class GenerateInvoices extends Command
             Console::info('Marking ' . Convert::plural(
                 count($markInvoiced), 'time entry', 'time entries', true
             ) . ' as invoiced in', $this->TimeEntryProviderName);
+
             $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced);
         }
     }

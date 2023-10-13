@@ -1,0 +1,48 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "PHP: lk-time, with optional arguments",
+            "type": "php",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/lk-time",
+            "cwd": "${workspaceFolder}",
+            "port": 0,
+            "runtimeExecutable": "bash",
+            "runtimeArgs": [
+                "-c",
+                "eval \"args=(${*: -1})\" && php \"${@:1:$#-1}\" \"${args[@]}\"",
+                "bash",
+                "-dzend_extension=xdebug.so",
+                "-dxdebug.start_with_request=yes"
+            ],
+            "env": {
+                "XDEBUG_MODE": "debug,develop",
+                "XDEBUG_CONFIG": "client_port=${port}"
+            },
+            "xdebugSettings": {
+                "max_children": 10000,
+                "show_hidden": 1,
+                "max_data": 10000000
+            },
+            "skipFiles": [
+                "!**/vendor/lkrms/**",
+                "**/vendor/**"
+            ],
+            "args": [
+                "${input:lkTimeArgs}"
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "lkTimeArgs",
+            "type": "command",
+            "command": "memento.promptString",
+            "args": {
+                "id": "lkTimeArgs",
+                "description": "Command line arguments"
+            }
+        }
+    ]
+}

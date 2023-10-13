@@ -3,10 +3,10 @@
 namespace Lkrms\Time\Command;
 
 use Lkrms\Facade\Console;
-use Lkrms\Facade\Convert;
-use Lkrms\Time\Concept\Command;
-use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Support\TimeEntryCollection;
+use Lkrms\Time\Sync\Entity\TimeEntry;
+use Lkrms\Utility\Convert;
 
 class ListTimeEntries extends Command
 {

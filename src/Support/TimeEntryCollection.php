@@ -3,12 +3,13 @@
 namespace Lkrms\Time\Support;
 
 use Lkrms\Concept\TypedCollection;
+use Lkrms\Container\Container;
 use Lkrms\Contract\IContainer;
-use Lkrms\Contract\ReturnsContainer;
+use Lkrms\Contract\ReceivesContainer;
 use Lkrms\Facade\Compute;
-use Lkrms\Facade\Convert;
-use Lkrms\Facade\Env;
-use Lkrms\Time\Entity\TimeEntry;
+use Lkrms\Time\Sync\Entity\TimeEntry;
+use Lkrms\Utility\Convert;
+use Lkrms\Utility\Env;
 use Lkrms\Utility\Test;
 use UnexpectedValueException;
 
@@ -17,32 +18,20 @@ use UnexpectedValueException;
  * @property-read float $BillableHours
  *
  * @extends TypedCollection<array-key,TimeEntry>
- * @implements ReturnsContainer<IContainer>
  */
-final class TimeEntryCollection extends TypedCollection implements ReturnsContainer
+final class TimeEntryCollection extends TypedCollection implements ReceivesContainer
 {
     protected const ITEM_CLASS = TimeEntry::class;
 
     /**
-     * @var IContainer
+     * @var IContainer|null
      */
-    private $Container;
+    private $App;
 
-    public function __construct(IContainer $container)
+    public function setContainer(IContainer $container)
     {
-        parent::__construct();
-
-        $this->Container = $container;
-    }
-
-    public function app(): IContainer
-    {
-        return $this->Container;
-    }
-
-    public function container(): IContainer
-    {
-        return $this->Container;
+        $this->App = $container;
+        return $this;
     }
 
     /**
@@ -54,16 +43,12 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
     {
         // Sort entries by start time if possible
         if ($a->Start && $b->Start) {
-            if ($a->Start < $b->Start) {
-                return -1;
-            } elseif ($a->Start > $b->Start) {
-                return 1;
-            }
+            return $a->Start <=> $b->Start;
         }
 
         // If not, sort by ID if both entries have integer IDs
         if (Test::isIntValue($a->Id) && Test::isIntValue($b->Id)) {
-            return ((int) $a->Id) - ((int) $b->Id);
+            return (int) $a->Id <=> (int) $b->Id;
         }
 
         // Otherwise leave them as-is
@@ -73,12 +58,12 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
     /**
      * Sort and merge time entries based on the values being displayed and used
      *
-     * @param int $show A bitmask of `TimeEntry::*` values. Passed to
+     * @param int-mask-of<TimeEntry::*> $show Passed to
      * {@see TimeEntry::getSummary()} when populating the `Description` of
      * merged entries.
-     * @param callable|null $callback A callback to return values other entries
-     * must match--in addition to the display values enabled by `$show`--to
-     * merge with the given entry.
+     * @param (callable(TimeEntry): mixed[])|null $callback A callback to return
+     * values other entries must match--in addition to the display values
+     * enabled by `$show`--to merge with the given entry.
      *
      * This callback, for example, prevents entries with different project IDs
      * or billable rates being merged:
@@ -89,8 +74,8 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
      * @return TimeEntryCollection
      */
     public function groupBy(
-        $show = TimeEntry::ALL,
-        callable $callback = null,
+        int $show = TimeEntry::ALL,
+        ?callable $callback = null,
         bool $markdown = false
     ): TimeEntryCollection {
         $dateFormat = Env::get('time_entry_date_format', 'd/m/Y');
@@ -109,7 +94,7 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
                 $markdown
             );
 
-            $groupBy = !is_null($callback) ? $callback($t) : [];
+            $groupBy = $callback !== null ? $callback($t) : [];
             $groupBy[] = $summary;
             $groupBy = Compute::hash(...$groupBy);
 
@@ -122,22 +107,26 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
             $groupTime[$groupBy] = $groupTime[$groupBy]->mergeWith($t);
         }
 
-        /** @var TimeEntryCollection */
+        [$separator, $marker] = $markdown ? ["\n\n", '*'] : ["\n", null];
+
         $grouped = $this->app()->get(static::class);
-        list($separator, $marker) = $markdown ? ["\n\n", '*'] : ["\n", null];
         foreach ($groupTime as $groupBy => $time) {
             $time->Description = Convert::sparseToString($separator, [
                 $groupSummary[$groupBy],
                 $show & TimeEntry::DESCRIPTION
-                    ? $time->getDescription($separator, $marker)
+                    ? $time->description($separator, $marker)
                     : null,
             ]);
+
             $grouped[] = $time;
         }
 
         return $grouped;
     }
 
+    /**
+     * @return mixed
+     */
     public function __get(string $name)
     {
         switch ($name) {
@@ -158,5 +147,11 @@ final class TimeEntryCollection extends TypedCollection implements ReturnsContai
             default:
                 throw new UnexpectedValueException("Undefined property: $name");
         }
+    }
+
+    private function app(): IContainer
+    {
+        return $this->App
+            ?: ($this->App = Container::getGlobalContainer());
     }
 }
