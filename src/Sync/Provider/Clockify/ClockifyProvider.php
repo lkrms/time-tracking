@@ -18,6 +18,7 @@ use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Sync\Support\SyncContext;
+use Lkrms\Time\Sync\Contract\ProvidesTenant;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Project;
@@ -33,7 +34,8 @@ use UnexpectedValueException;
 
 final class ClockifyProvider extends HttpSyncProvider implements
     IServiceSingleton,
-    BillableTimeProvider
+    BillableTimeProvider,
+    ProvidesTenant
 {
     /**
      * Entity => input key => property
