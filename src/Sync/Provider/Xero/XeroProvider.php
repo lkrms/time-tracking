@@ -131,7 +131,8 @@ final class XeroProvider extends HttpSyncProvider implements
             return $listener->withProxy(
                 $proxyHost,
                 $proxyPort,
-                $this->Env->getNullableBool('app_proxy_tls', null)
+                $this->Env->getNullableBool('app_proxy_tls', null),
+                $this->Env->getNullable('app_proxy_base_path', null),
             );
         }
 
