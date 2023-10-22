@@ -25,16 +25,16 @@ abstract class Command extends CliCommand
 
     protected ?string $ProjectId;
 
-    protected ?bool $Billable;
+    protected ?bool $Billable = null;
 
-    protected ?bool $Unbilled;
+    protected ?bool $Unbilled = null;
 
     /**
      * @var string[]|null
      */
-    protected ?array $Hide;
+    protected ?array $Hide = null;
 
-    protected ?bool $Force;
+    protected ?bool $Force = null;
 
     // --
 
