@@ -76,6 +76,7 @@ abstract class Command extends CliCommand
     /**
      * Get standard options for TimeEntry-related commands
      *
+     * @param array<CliOption|CliOptionBuilder> $customOptions
      * @return array<CliOption|CliOptionBuilder>
      */
     protected function getTimeEntryOptions(
@@ -84,7 +85,8 @@ abstract class Command extends CliCommand
         bool $addForceOption = true,
         bool $addHideOption = false,
         bool $addBillableOption = false,
-        bool $addUnbilledOption = false
+        bool $addUnbilledOption = false,
+        array $customOptions = []
     ): array {
         $options = [
             CliOption::build()
@@ -154,6 +156,8 @@ abstract class Command extends CliCommand
                     ->defaultValue(['time', 'user'])
                     ->bindTo($this->Hide);
         }
+
+        array_push($options, ...$customOptions);
 
         if ($addForceOption) {
             $options[] =
