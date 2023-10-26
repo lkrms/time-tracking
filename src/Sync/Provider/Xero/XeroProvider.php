@@ -35,6 +35,12 @@ use RuntimeException;
 use UnexpectedValueException;
 
 /**
+ * @method Invoice createInvoice(ISyncContext $ctx, Invoice $invoice)
+ * @method Invoice getInvoice(ISyncContext $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Invoice> getInvoices(ISyncContext $ctx)
+ * @method Client getClient(ISyncContext $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Client> getClients(ISyncContext $ctx)
+ *
  * @property-read string $TenantIdKey
  */
 final class XeroProvider extends HttpSyncProvider implements
@@ -189,18 +195,18 @@ final class XeroProvider extends HttpSyncProvider implements
         );
     }
 
-    public function checkHeartbeat(int $ttl = 300)
+    protected function getHeartbeat()
     {
-        $connections = $this->getConnections($ttl);
-        $count = count($connections);
+        $connections = $this->getConnections();
 
+        $count = count($connections);
         Console::debug(sprintf(
             'Connected to Xero with %d %s:',
             $count,
             Convert::plural($count, 'tenant connection')
         ), $this->formatTenantList($connections, false));
 
-        return $this;
+        return $connections;
     }
 
     protected function buildCurler(CurlerBuilder $curlerB): CurlerBuilder
@@ -315,10 +321,10 @@ final class XeroProvider extends HttpSyncProvider implements
     /**
      * @return array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>
      */
-    private function getConnections(int $ttl = -1): array
+    private function getConnections(): array
     {
         // See https://developer.xero.com/documentation/guides/oauth2/tenants
-        return $this->getCurler('/connections', $ttl)->get();
+        return $this->getCurler('/connections')->get();
     }
 
     /**

@@ -10,7 +10,7 @@ use Lkrms\Utility\Env;
 
 class MarkTimeEntriesInvoiced extends Command
 {
-    private ?bool $MarkUninvoiced;
+    protected ?bool $MarkUninvoiced;
 
     public function description(): string
     {

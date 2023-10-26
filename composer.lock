@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6c64233513b59f59bf65052db0e3eb9e",
+    "content-hash": "a4a88e649cb9d6affb1b82c6904dffdf",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -509,16 +509,16 @@
         },
         {
             "name": "lkrms/util",
-            "version": "v0.20.75",
+            "version": "v0.20.80",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lkrms/php-util.git",
-                "reference": "d63fec57d2051d8d3868a8416d339167ffcbe261"
+                "reference": "f40ed10d4a9bd6044680654770efe57ba2f514ad"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/php-util/zipball/d63fec57d2051d8d3868a8416d339167ffcbe261",
-                "reference": "d63fec57d2051d8d3868a8416d339167ffcbe261",
+                "url": "https://api.github.com/repos/lkrms/php-util/zipball/f40ed10d4a9bd6044680654770efe57ba2f514ad",
+                "reference": "f40ed10d4a9bd6044680654770efe57ba2f514ad",
                 "shasum": ""
             },
             "require": {
@@ -534,7 +534,7 @@
                 "clue/phar-composer": "^1",
                 "firebase/php-jwt": "^6",
                 "league/oauth2-client": "^2",
-                "lkrms/pretty-php": "^0.4.40",
+                "lkrms/pretty-php": "0.4.41",
                 "phpstan/extension-installer": "^1",
                 "phpstan/phpstan": "^1",
                 "phpstan/phpstan-deprecation-rules": "^1",
@@ -575,9 +575,9 @@
             "description": "A lightweight PHP toolkit for expressive backend/CLI apps",
             "support": {
                 "issues": "https://github.com/lkrms/php-util/issues",
-                "source": "https://github.com/lkrms/php-util/tree/v0.20.75"
+                "source": "https://github.com/lkrms/php-util/tree/v0.20.80"
             },
-            "time": "2023-10-22T04:53:12+00:00"
+            "time": "2023-10-26T04:16:58+00:00"
         },
         {
             "name": "paragonie/random_compat",
