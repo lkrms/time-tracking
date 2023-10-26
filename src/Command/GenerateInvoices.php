@@ -2,6 +2,7 @@
 
 namespace Lkrms\Time\Command;
 
+use Lkrms\Cli\CliOption;
 use Lkrms\Facade\Console;
 use Lkrms\Facade\File;
 use Lkrms\Time\Command\Concept\Command;
@@ -15,6 +16,8 @@ use DateTimeImmutable;
 
 class GenerateInvoices extends Command
 {
+    protected ?bool $NoMarkInvoiced;
+
     public function description(): string
     {
         return 'Create invoices for unbilled time entries';
@@ -22,7 +25,21 @@ class GenerateInvoices extends Command
 
     protected function getOptionList(): array
     {
-        return $this->getTimeEntryOptions('Create an invoice', false, true, true);
+        return $this->getTimeEntryOptions(
+            'Create an invoice',
+            false,
+            true,
+            true,
+            false,
+            false,
+            [
+                CliOption::build()
+                    ->long('no-mark-invoiced')
+                    ->short('u')
+                    ->description('Do not mark time entries as invoiced')
+                    ->bindTo($this->NoMarkInvoiced),
+            ]
+        );
     }
 
     protected function run(string ...$params)
@@ -31,7 +48,7 @@ class GenerateInvoices extends Command
             $this->Env->dryRun(true);
         }
 
-        Console::info('Retrieving unbilled time from', $this->TimeEntryProviderName);
+        Console::info("Retrieving unbilled time from {$this->TimeEntryProviderName}");
 
         $times = $this->getTimeEntries(true, false);
 
@@ -55,7 +72,7 @@ class GenerateInvoices extends Command
             return;
         }
 
-        Console::info('Retrieving clients from', $this->InvoiceProviderName);
+        Console::info("Retrieving clients from {$this->InvoiceProviderName}");
         $invClients = Convert::listToMap(
             $this->InvoiceProvider
                  ->with(Client::class)
@@ -107,6 +124,17 @@ class GenerateInvoices extends Command
         ]);
         File::maybeCreateDirectory($tempDir);
 
+        $invoices = 0;
+        $billableAmount = 0;
+        $billableHours = 0;
+
+        /** @var array<string,float> */
+        $subTotal = [];
+        /** @var array<string,float> */
+        $totalTax = [];
+        /** @var array<string,float> */
+        $total = [];
+
         foreach ($clientTimes as $clientId => $entries) {
             $name = $clientNames[$clientId];
             $summary = $this->getBillableSummary($entries->BillableAmount, $entries->BillableHours);
@@ -117,6 +145,10 @@ class GenerateInvoices extends Command
                 continue;
             }
             Console::info("Invoicing $name:", $summary);
+
+            $invoices++;
+            $billableAmount += $entries->BillableAmount;
+            $billableHours += $entries->BillableHours;
 
             $entries = $entries->groupBy(
                 $show,
@@ -158,7 +190,6 @@ class GenerateInvoices extends Command
                 array_push($markInvoiced, ...($entry->getMerged() ?: [$entry]));
             }
 
-            /** @var Invoice $invoice */
             $invoice = $this->InvoiceProvider->with(Invoice::class)->create($invoice);
             Console::log(
                 "Invoice created in {$this->InvoiceProviderName}:",
@@ -169,19 +200,61 @@ class GenerateInvoices extends Command
                     $invoice->SubTotal,
                     $invoice->TotalTax,
                     $invoice->Currency,
-                    $invoice->Total
+                    $invoice->Total,
                 )
             );
+
+            $currency = $invoice->Currency;
+            $subTotal[$currency] = ($subTotal[$currency] ?? 0.0) + $invoice->SubTotal;
+            $totalTax[$currency] = ($totalTax[$currency] ?? 0.0) + $invoice->TotalTax;
+            $total[$currency] = ($total[$currency] ?? 0.0) + $invoice->Total;
 
             // TODO: something better with this data
             file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));
             file_put_contents($tempDir . "/{$invoice->Number}-timeEntries.json", json_encode($markInvoiced));
 
-            Console::info('Marking ' . Convert::plural(
-                count($markInvoiced), 'time entry', 'time entries', true
-            ) . ' as invoiced in', $this->TimeEntryProviderName);
+            $count = Convert::plural(count($markInvoiced), 'time entry', 'time entries', true);
 
+            if ($this->NoMarkInvoiced) {
+                Console::error("Not marking $count as invoiced in {$this->TimeEntryProviderName}", null, null, false);
+                continue;
+            }
+
+            Console::info("Marking $count as invoiced in {$this->TimeEntryProviderName}");
             $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced);
         }
+
+        $count = Convert::plural($invoices, 'invoice', null, true);
+
+        if ($this->Env->dryRun()) {
+            Console::info(
+                "$count would be created in {$this->InvoiceProviderName}:",
+                $this->getBillableSummary($billableAmount, $billableHours),
+            );
+            return;
+        }
+
+        if (!$total) {
+            Console::summary('Invoice run completed');
+            return;
+        }
+
+        $totals = [];
+        foreach ($total as $currency => $currencyTotal) {
+            $totals[] = sprintf(
+                '%.2f + %.2f tax = %s %.2f',
+                $subTotal[$currency],
+                $totalTax[$currency],
+                $currency,
+                $currencyTotal,
+            );
+        }
+
+        Console::summary(sprintf(
+            '%s created in %s (%s)',
+            $count,
+            $this->InvoiceProviderName,
+            implode(', ', $totals),
+        ), '');
     }
 }

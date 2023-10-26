@@ -22,13 +22,13 @@ class ListInvoices extends Command
 
     protected function run(string ...$params)
     {
-        Console::info('Retrieving invoices from', $this->InvoiceProviderName);
+        Console::info("Retrieving invoices from {$this->InvoiceProviderName}");
 
         $query = [
             '$orderby' => 'date desc',
             '!status' => 'DELETED',
         ];
-        if ($prefix = Env::get('invoice_number_prefix', null)) {
+        if ($prefix = $this->Env->get('invoice_number_prefix', null)) {
             $query['number'] = "{$prefix}*";
         }
         $invoices = $this->InvoiceProvider->with(Invoice::class)->getList($query);

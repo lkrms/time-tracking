@@ -44,10 +44,10 @@ class MarkTimeEntriesInvoiced extends Command
     protected function run(string ...$params)
     {
         if (!$this->Force) {
-            Env::dryRun(true);
+            $this->Env->dryRun(true);
         }
 
-        Console::info('Retrieving time entries from', $this->TimeEntryProviderName);
+        Console::info("Retrieving time entries from {$this->TimeEntryProviderName}");
 
         $state = $this->MarkUninvoiced ? 'uninvoiced' : 'invoiced';
 
@@ -63,24 +63,27 @@ class MarkTimeEntriesInvoiced extends Command
         $count = Convert::plural(count($markInvoiced), 'time entry', 'time entries', true);
         $total = $this->getBillableSummary($totalAmount, $totalHours);
 
-        if (Env::dryRun()) {
-            foreach ($markInvoiced as $entry) {
-                printf(
-                    "Would mark %s as %s: %.2f hours on %s ('%s', %s)\n",
-                    $entry->Id,
-                    $state,
-                    $entry->getBillableHours(),
-                    $entry->Start->format('d/m/Y'),
-                    $entry->Project->Name ?? '<no project>',
-                    $entry->Project->Client->Name ?? '<no client>'
-                );
-            }
-            Console::info("$count would be marked as $state:", $total);
+        foreach ($markInvoiced as $entry) {
+            printf(
+                "%s %s as %s: %.2f hours on %s ('%s', %s)\n",
+                $this->Env->dryRun() ? 'Would mark' : 'Marking',
+                $entry->Id,
+                $state,
+                $entry->getBillableHours(),
+                $entry->Start->format('d/m/Y'),
+                $entry->Project->Name ?? '<no project>',
+                $entry->Project->Client->Name ?? '<no client>',
+            );
+        }
 
+        if ($this->Env->dryRun()) {
+            Console::info("$count would be marked as $state:", $total);
             return;
         }
 
-        Console::info("Marking $count in " . $this->TimeEntryProviderName . " as $state:", $total);
+        Console::info("Marking $count in {$this->TimeEntryProviderName} as $state:", $total);
         $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced, $this->MarkUninvoiced);
+
+        Console::summary("$count marked as $state");
     }
 }
