@@ -20,7 +20,7 @@ class ListClients extends Command
 
     protected function run(string ...$params)
     {
-        Console::info('Retrieving clients from', $this->TimeEntryProviderName);
+        Console::info("Retrieving clients from {$this->TimeEntryProviderName}");
 
         $clients = $this->TimeEntryProvider->with(Client::class)->getList();
 

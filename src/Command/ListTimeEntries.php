@@ -22,7 +22,7 @@ class ListTimeEntries extends Command
 
     protected function run(string ...$params)
     {
-        Console::info('Retrieving time entries from', $this->TimeEntryProviderName);
+        Console::info("Retrieving time entries from {$this->TimeEntryProviderName}");
 
         /** @var TimeEntryCollection */
         $times = $this->app()->get(TimeEntryCollection::class);

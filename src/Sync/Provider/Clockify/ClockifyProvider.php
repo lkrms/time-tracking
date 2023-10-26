@@ -134,12 +134,12 @@ final class ClockifyProvider extends HttpSyncProvider implements
     protected function getBaseUrl(?string $path = null): string
     {
         if ($path && strpos($path, '/reports/') !== false) {
-            return Env::get(
+            return $this->Env->get(
                 'clockify_reports_api_base_url', 'https://reports.api.clockify.me/v1'
             );
         }
 
-        return Env::get(
+        return $this->Env->get(
             'clockify_api_base_url', 'https://api.clockify.me/api/v1'
         );
     }
@@ -151,7 +151,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     {
         return
             CurlerHeaders::create()
-                ->setHeader('X-Api-Key', Env::get('clockify_api_key'));
+                ->setHeader('X-Api-Key', $this->Env->get('clockify_api_key'));
     }
 
     /**
@@ -159,7 +159,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getExpiry(?string $path): ?int
     {
-        return Env::getInt('clockify_cache_expiry', null);
+        return $this->Env->getInt('clockify_cache_expiry', null);
     }
 
     /**
@@ -501,7 +501,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
     private function workspaceId(): string
     {
-        return Env::get('clockify_workspace_id');
+        return $this->Env->get('clockify_workspace_id');
     }
 
     /**
