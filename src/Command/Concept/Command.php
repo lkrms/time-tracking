@@ -4,15 +4,24 @@ namespace Lkrms\Time\Command\Concept;
 
 use Lkrms\Cli\Catalog\CliOptionType;
 use Lkrms\Cli\Catalog\CliOptionValueType;
+use Lkrms\Cli\Exception\CliInvalidArgumentsException;
 use Lkrms\Cli\CliApplication;
 use Lkrms\Cli\CliCommand;
 use Lkrms\Cli\CliOption;
 use Lkrms\Cli\CliOptionBuilder;
+use Lkrms\Facade\Console;
 use Lkrms\Iterator\Contract\FluentIteratorInterface;
+use Lkrms\Sync\Contract\ISyncContext;
+use Lkrms\Sync\Contract\ISyncEntity;
+use Lkrms\Sync\Contract\ISyncProvider;
+use Lkrms\Sync\Exception\SyncEntityNotFoundException;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
+use Lkrms\Time\Sync\Entity\Client;
+use Lkrms\Time\Sync\Entity\Project;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Utility\Convert;
+use Lkrms\Utility\Test;
 use DateTimeImmutable;
 
 abstract class Command extends CliCommand
@@ -25,16 +34,16 @@ abstract class Command extends CliCommand
 
     protected ?string $ProjectId;
 
-    protected ?bool $Billable;
+    protected ?bool $Billable = null;
 
-    protected ?bool $Unbilled;
+    protected ?bool $Unbilled = null;
 
     /**
      * @var string[]|null
      */
-    protected ?array $Hide;
+    protected ?array $Hide = null;
 
-    protected ?bool $Force;
+    protected ?bool $Force = null;
 
     // --
 
@@ -45,6 +54,16 @@ abstract class Command extends CliCommand
     protected string $TimeEntryProviderName;
 
     protected string $InvoiceProviderName;
+
+    /**
+     * @var int|string|null
+     */
+    private $ResolvedClientId;
+
+    /**
+     * @var int|string|null
+     */
+    private $ResolvedProjectId;
 
     public function __construct(
         CliApplication $container,
@@ -76,6 +95,7 @@ abstract class Command extends CliCommand
     /**
      * Get standard options for TimeEntry-related commands
      *
+     * @param array<CliOption|CliOptionBuilder> $customOptions
      * @return array<CliOption|CliOptionBuilder>
      */
     protected function getTimeEntryOptions(
@@ -84,7 +104,8 @@ abstract class Command extends CliCommand
         bool $addForceOption = true,
         bool $addHideOption = false,
         bool $addBillableOption = false,
-        bool $addUnbilledOption = false
+        bool $addUnbilledOption = false,
+        array $customOptions = []
     ): array {
         $options = [
             CliOption::build()
@@ -110,14 +131,14 @@ abstract class Command extends CliCommand
             CliOption::build()
                 ->long('client')
                 ->short('c')
-                ->valueName('client_id')
+                ->valueName('client')
                 ->description("$action for a particular client")
                 ->optionType(CliOptionType::VALUE)
                 ->bindTo($this->ClientId),
             CliOption::build()
                 ->long('project')
                 ->short('p')
-                ->valueName('project_id')
+                ->valueName('project')
                 ->description("$action for a particular project")
                 ->optionType(CliOptionType::VALUE)
                 ->bindTo($this->ProjectId),
@@ -155,6 +176,8 @@ abstract class Command extends CliCommand
                     ->bindTo($this->Hide);
         }
 
+        array_push($options, ...$customOptions);
+
         if ($addForceOption) {
             $options[] =
                 CliOption::build()
@@ -175,8 +198,8 @@ abstract class Command extends CliCommand
         ?bool $billed = null
     ): FluentIteratorInterface {
         $filter = [
-            'client_id' => $this->ClientId,
-            'project_id' => $this->ProjectId,
+            'client_id' => $this->getClientId(),
+            'project_id' => $this->getProjectId(),
             'start_date' => $this->StartDate,
             'end_date' => $this->EndDate,
             'billable' => Convert::coalesce($billable, $this->Billable ?: null),
@@ -218,5 +241,89 @@ abstract class Command extends CliCommand
     protected function getBillableSummary($amount, $hours): string
     {
         return sprintf('$%.2f (%.2f hours)', $amount, $hours);
+    }
+
+    /**
+     * @return int|string|null
+     */
+    protected function getClientId()
+    {
+        if ($this->ResolvedClientId !== null) {
+            return $this->ResolvedClientId;
+        }
+
+        return $this->ResolvedClientId = $this->getEntityId($this->ClientId, Client::class);
+    }
+
+    /**
+     * @return int|string|null
+     */
+    protected function getProjectId()
+    {
+        if ($this->ResolvedProjectId !== null) {
+            return $this->ResolvedProjectId;
+        }
+
+        $clientId = $this->getClientId();
+        if ($clientId !== null) {
+            return $this->ResolvedProjectId =
+                $this->getEntityId(
+                    $this->ProjectId,
+                    Project::class,
+                    $this->TimeEntryProvider
+                         ->getContext()
+                         ->withValue('client_id', $clientId),
+                );
+        }
+
+        return $this->ResolvedProjectId =
+            $this->getEntityId(
+                $this->ProjectId,
+                Project::class,
+            );
+    }
+
+    /**
+     * @param class-string<ISyncEntity> $entity
+     * @param ISyncProvider|ISyncContext|null $providerOrContext
+     * @param string $propertyName
+     * @return int|string|null
+     */
+    protected function getEntityId(
+        ?string $nameOrId,
+        string $entity,
+        $providerOrContext = null,
+        ?string $propertyName = null
+    ) {
+        if (Test::isIntValue($nameOrId)) {
+            $nameOrId = (int) $nameOrId;
+        }
+
+        $uncertainty = null;
+        try {
+            $id = [$entity, 'idFromNameOrId'](
+                $nameOrId,
+                $providerOrContext ?: $this->TimeEntryProvider,
+                null,
+                $propertyName,
+                $uncertainty,
+            );
+        } catch (SyncEntityNotFoundException $ex) {
+            throw new CliInvalidArgumentsException($ex->getMessage());
+        }
+
+        if ($id === $nameOrId) {
+            return $id;
+        }
+
+        Console::debug(sprintf(
+            "'%s' resolved to %s '%s' with uncertainty %.2f",
+            $nameOrId,
+            Convert::classToBasename($entity),
+            $id,
+            $uncertainty,
+        ));
+
+        return $id;
     }
 }

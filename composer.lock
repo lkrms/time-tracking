@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8e5a4663a9973bf090d0d55b59d4f21e",
+    "content-hash": "a4a88e649cb9d6affb1b82c6904dffdf",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -509,16 +509,16 @@
         },
         {
             "name": "lkrms/util",
-            "version": "v0.20.71",
+            "version": "v0.20.80",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lkrms/php-util.git",
-                "reference": "627c75ec353c56e56d4ba7c263f72d7a368aa6d3"
+                "reference": "f40ed10d4a9bd6044680654770efe57ba2f514ad"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/php-util/zipball/627c75ec353c56e56d4ba7c263f72d7a368aa6d3",
-                "reference": "627c75ec353c56e56d4ba7c263f72d7a368aa6d3",
+                "url": "https://api.github.com/repos/lkrms/php-util/zipball/f40ed10d4a9bd6044680654770efe57ba2f514ad",
+                "reference": "f40ed10d4a9bd6044680654770efe57ba2f514ad",
                 "shasum": ""
             },
             "require": {
@@ -534,7 +534,7 @@
                 "clue/phar-composer": "^1",
                 "firebase/php-jwt": "^6",
                 "league/oauth2-client": "^2",
-                "lkrms/pretty-php": "0.4.36",
+                "lkrms/pretty-php": "0.4.41",
                 "phpstan/extension-installer": "^1",
                 "phpstan/phpstan": "^1",
                 "phpstan/phpstan-deprecation-rules": "^1",
@@ -575,9 +575,9 @@
             "description": "A lightweight PHP toolkit for expressive backend/CLI apps",
             "support": {
                 "issues": "https://github.com/lkrms/php-util/issues",
-                "source": "https://github.com/lkrms/php-util/tree/v0.20.71"
+                "source": "https://github.com/lkrms/php-util/tree/v0.20.80"
             },
-            "time": "2023-10-12T06:31:46+00:00"
+            "time": "2023-10-26T04:16:58+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -1347,16 +1347,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "1.10.38",
+            "version": "1.10.39",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "5302bb402c57f00fb3c2c015bac86e0827e4b691"
+                "reference": "d9dedb0413f678b4d03cbc2279a48f91592c97c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/5302bb402c57f00fb3c2c015bac86e0827e4b691",
-                "reference": "5302bb402c57f00fb3c2c015bac86e0827e4b691",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/d9dedb0413f678b4d03cbc2279a48f91592c97c4",
+                "reference": "d9dedb0413f678b4d03cbc2279a48f91592c97c4",
                 "shasum": ""
             },
             "require": {
@@ -1405,7 +1405,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-10-06T14:19:14+00:00"
+            "time": "2023-10-17T15:46:26+00:00"
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",

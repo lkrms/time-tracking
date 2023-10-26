@@ -18,6 +18,7 @@ use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Sync\Support\SyncContext;
+use Lkrms\Time\Sync\Contract\ProvidesTenant;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Project;
@@ -31,9 +32,25 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use UnexpectedValueException;
 
+/**
+ * @method TimeEntry getTimeEntry(ISyncContext $ctx, int|string|null $id)
+ * @method TimeEntry updateTimeEntry(ISyncContext $ctx, TimeEntry $timeEntry)
+ * @method FluentIteratorInterface<array-key,TimeEntry> getTimeEntries(ISyncContext $ctx)
+ * @method Client getClient(ISyncContext $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Client> getClients(ISyncContext $ctx)
+ * @method Project getProject(ISyncContext $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Project> getProjects(ISyncContext $ctx)
+ * @method Task getTask(ISyncContext $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Task> getTasks(ISyncContext $ctx)
+ * @method User getUser(ISyncContext $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,User> getUsers(ISyncContext $ctx)
+ * @method Tenant getTenant(ISyncContext $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Tenant> getTenants(ISyncContext $ctx)
+ */
 final class ClockifyProvider extends HttpSyncProvider implements
     IServiceSingleton,
-    BillableTimeProvider
+    BillableTimeProvider,
+    ProvidesTenant
 {
     /**
      * Entity => input key => property
@@ -61,11 +78,6 @@ final class ClockifyProvider extends HttpSyncProvider implements
     ];
 
     private const DATE_FORMAT = 'Y-m-d\TH:i:s.v\Z';
-
-    /**
-     * @var int|null
-     */
-    private $CacheExpiry;
 
     /**
      * @inheritDoc
@@ -99,29 +111,21 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    public function checkHeartbeat(int $ttl = 300)
+    protected function getHeartbeat()
     {
-        $this->CacheExpiry = $ttl ?: null;
+        $user = $this->with(User::class)
+                     ->online()
+                     ->get(null);
 
-        try {
-            $user = $this->with(User::class)
-                         ->online()
-                         ->get(null);
-        } finally {
-            $this->CacheExpiry = null;
-        }
+        Console::debug(sprintf(
+            "Connected to Clockify workspace '%s' (%s) as '%s' (%s)",
+            $user->ActiveTenant->Name,
+            $user->ActiveTenant->Id,
+            $user->Name,
+            $user->Id,
+        ));
 
-        Console::debugOnce(
-            sprintf(
-                "Connected to Clockify workspace '%s' (%s) as '%s' (%s)",
-                $user->ActiveTenant->Name,
-                $user->ActiveTenant->Id,
-                $user->Name,
-                $user->Id,
-            )
-        );
-
-        return $this;
+        return $user;
     }
 
     /**
@@ -155,10 +159,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getExpiry(?string $path): ?int
     {
-        return
-            $this->CacheExpiry !== null
-                ? $this->CacheExpiry
-                : Env::getInt('clockify_cache_expiry', 600);
+        return Env::getInt('clockify_cache_expiry', null);
     }
 
     /**
@@ -232,7 +233,20 @@ final class ClockifyProvider extends HttpSyncProvider implements
                     ->operations([OP::READ, OP::READ_LIST])
                     ->path('/workspaces/:workspaceId/projects')
                     ->query(['hydrated' => true])
-                    ->keyMap(self::ENTITY_PROPERTY_MAP[Project::class]),
+                    ->keyMap(self::ENTITY_PROPERTY_MAP[Project::class])
+                    ->callback(
+                        fn(HttpDef $def, $op, Context $ctx) =>
+                            match ($op) {
+                                OP::READ_LIST =>
+                                    $def->withQuery($def->Query + [
+                                        'clients' =>
+                                            implode(',', (array) $ctx->claimFilter('client'))
+                                    ]),
+
+                                default =>
+                                    $def,
+                            }
+                    ),
 
             Task::class =>
                 $defB
@@ -361,7 +375,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     function normaliseTimeEntry(array $entry): array
     {
         $client =
-            array_key_exists('clientId', $entry)
+            ($entry['clientId'] ?? null) !== null
                 ? [
                     'id' => $entry['clientId'],
                     'name' => $entry['clientName'],
@@ -369,7 +383,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                 : null;
 
         $user =
-            array_key_exists('userId', $entry)
+            ($entry['userId'] ?? null) !== null
                 ? [
                     'id' => $entry['userId'],
                     'name' => $entry['userName'],
@@ -378,7 +392,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                 : null;
 
         $project =
-            array_key_exists('projectId', $entry)
+            ($entry['projectId'] ?? null) !== null
                 ? [
                     'id' => $entry['projectId'],
                     'name' => $entry['projectName'],
@@ -388,7 +402,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                 : null;
 
         $task =
-            array_key_exists('taskId', $entry)
+            ($entry['taskId'] ?? null) !== null
                 ? [
                     'id' => $entry['taskId'],
                     'name' => $entry['taskName'],
@@ -402,19 +416,19 @@ final class ClockifyProvider extends HttpSyncProvider implements
         $entry['start'] = null;
         $entry['end'] = null;
         $entry['seconds'] =
-            array_key_exists('timeInterval', $entry)
+            ($entry['timeInterval'] ?? null) !== null
                 ? $this->getTimeInterval($entry['timeInterval'], $entry['start'], $entry['end'])
                 : null;
 
         $entry['billableRate'] =
-            array_key_exists('hourlyRate', $entry)
+            ($entry['hourlyRate'] ?? null) !== null
                 ? $this->getRate($entry['hourlyRate'])
-                : (array_key_exists('rate', $entry)
+                : (($entry['rate'] ?? null) !== null
                     ? $this->getRate($entry['rate'])
                     : null);
 
         $entry['isInvoiced'] =
-            array_key_exists('invoicingInfo', $entry)
+            ($entry['invoicingInfo'] ?? null) !== null
                 ? (bool) $entry['invoicingInfo']
                 : false;
 
