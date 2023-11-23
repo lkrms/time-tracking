@@ -7,8 +7,8 @@ use Lkrms\Container\Container;
 use Lkrms\Contract\IContainer;
 use Lkrms\Contract\ReceivesContainer;
 use Lkrms\Time\Sync\Entity\TimeEntry;
+use Lkrms\Utility\Arr;
 use Lkrms\Utility\Compute;
-use Lkrms\Utility\Convert;
 use Lkrms\Utility\Env;
 use Lkrms\Utility\Test;
 use UnexpectedValueException;
@@ -111,7 +111,7 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
 
         $grouped = $this->app()->get(static::class);
         foreach ($groupTime as $groupBy => $time) {
-            $time->Description = Convert::sparseToString($separator, [
+            $time->Description = Arr::implode($separator, [
                 $groupSummary[$groupBy],
                 $show & TimeEntry::DESCRIPTION
                     ? $time->description($separator, $marker)

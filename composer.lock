@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a4a88e649cb9d6affb1b82c6904dffdf",
+    "content-hash": "e693fe433d347393f0311e09a51ad682",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -509,16 +509,16 @@
         },
         {
             "name": "lkrms/util",
-            "version": "v0.20.80",
+            "version": "v0.21.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/lkrms/php-util.git",
-                "reference": "f40ed10d4a9bd6044680654770efe57ba2f514ad"
+                "reference": "f373a5379788a98f6c5fd5f66b36bc467a628512"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/php-util/zipball/f40ed10d4a9bd6044680654770efe57ba2f514ad",
-                "reference": "f40ed10d4a9bd6044680654770efe57ba2f514ad",
+                "url": "https://api.github.com/repos/lkrms/php-util/zipball/f373a5379788a98f6c5fd5f66b36bc467a628512",
+                "reference": "f373a5379788a98f6c5fd5f66b36bc467a628512",
                 "shasum": ""
             },
             "require": {
@@ -526,15 +526,19 @@
                 "lkrms/dice": "^4.1.6",
                 "php": ">=7.4",
                 "psr/container": "^2",
+                "psr/event-dispatcher": "^1",
+                "psr/http-message": "^1.1 || ^2",
                 "psr/log": "^1"
             },
+            "provide": {
+                "psr/event-dispatcher-implementation": "^1"
+            },
             "require-dev": {
-                "adodb/adodb-php": "^5.22",
+                "adodb/adodb-php": "^5",
                 "analog/analog": "^1",
                 "clue/phar-composer": "^1",
                 "firebase/php-jwt": "^6",
                 "league/oauth2-client": "^2",
-                "lkrms/pretty-php": "0.4.41",
                 "phpstan/extension-installer": "^1",
                 "phpstan/phpstan": "^1",
                 "phpstan/phpstan-deprecation-rules": "^1",
@@ -552,11 +556,6 @@
                 "bin/lk-util"
             ],
             "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-main": "0.20.x-dev"
-                }
-            },
             "autoload": {
                 "files": [
                     "bootstrap.php"
@@ -575,9 +574,9 @@
             "description": "A lightweight PHP toolkit for expressive backend/CLI apps",
             "support": {
                 "issues": "https://github.com/lkrms/php-util/issues",
-                "source": "https://github.com/lkrms/php-util/tree/v0.20.80"
+                "source": "https://github.com/lkrms/php-util/tree/v0.21.6"
             },
-            "time": "2023-10-26T04:16:58+00:00"
+            "time": "2023-11-22T06:38:41+00:00"
         },
         {
             "name": "paragonie/random_compat",
@@ -681,6 +680,56 @@
                 "source": "https://github.com/php-fig/container/tree/2.0.2"
             },
             "time": "2021-11-05T16:47:00+00:00"
+        },
+        {
+            "name": "psr/event-dispatcher",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/event-dispatcher.git",
+                "reference": "dbefd12671e8a14ec7f180cab83036ed26714bb0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/event-dispatcher/zipball/dbefd12671e8a14ec7f180cab83036ed26714bb0",
+                "reference": "dbefd12671e8a14ec7f180cab83036ed26714bb0",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\EventDispatcher\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "http://www.php-fig.org/"
+                }
+            ],
+            "description": "Standard interfaces for event handling.",
+            "keywords": [
+                "events",
+                "psr",
+                "psr-14"
+            ],
+            "support": {
+                "issues": "https://github.com/php-fig/event-dispatcher/issues",
+                "source": "https://github.com/php-fig/event-dispatcher/tree/1.0.0"
+            },
+            "time": "2019-01-08T18:20:26+00:00"
         },
         {
             "name": "psr/http-client",

@@ -82,7 +82,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    public function name(): ?string
+    public function name(): string
     {
         return sprintf('Clockify { %s }', $this->workspaceId());
     }

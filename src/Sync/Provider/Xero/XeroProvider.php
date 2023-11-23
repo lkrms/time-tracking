@@ -2,13 +2,9 @@
 
 namespace Lkrms\Time\Sync\Provider\Xero;
 
-use League\OAuth2\Client\Token\AccessTokenInterface;
-use Lkrms\Auth\Catalog\OAuth2Flow;
-use Lkrms\Auth\OAuth2Client;
-use Lkrms\Auth\OAuth2Provider;
-use Lkrms\Concern\TReadable;
+use Lkrms\Auth\AccessToken;
+use Lkrms\Auth\OAuth2GrantType;
 use Lkrms\Contract\IDateFormatter;
-use Lkrms\Contract\IReadable;
 use Lkrms\Contract\IServiceSingleton;
 use Lkrms\Curler\Contract\ICurlerHeaders;
 use Lkrms\Curler\Pager\QueryPager;
@@ -17,7 +13,6 @@ use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Facade\Cache;
 use Lkrms\Facade\Console;
 use Lkrms\Support\DateParser\RegexDateParser;
-use Lkrms\Support\Http\HttpServer;
 use Lkrms\Support\DateFormatter;
 use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
@@ -40,16 +35,11 @@ use UnexpectedValueException;
  * @method FluentIteratorInterface<array-key,Invoice> getInvoices(ISyncContext $ctx)
  * @method Client getClient(ISyncContext $ctx, int|string|null $id)
  * @method FluentIteratorInterface<array-key,Client> getClients(ISyncContext $ctx)
- *
- * @property-read string $TenantIdKey
  */
 final class XeroProvider extends HttpSyncProvider implements
-    IReadable,
     IServiceSingleton,
     InvoiceProvider
 {
-    use OAuth2Client, TReadable;
-
     /**
      * Entity => endpoint path
      *
@@ -106,75 +96,25 @@ final class XeroProvider extends HttpSyncProvider implements
     /**
      * OAuth2 scopes required for the provider to perform sync operations
      *
-     * @var string[]
      * @link https://developer.xero.com/documentation/oauth2/scopes
+     *
+     * @var string[]
      */
     private const OAUTH2_SCOPES = [
-        'openid',
-        'email',
-        'profile',
-        'offline_access',
         'accounting.contacts',
         'accounting.transactions',
     ];
 
+    private XeroOAuth2Client $OAuth2Client;
+
+    private string $TenantIdKey;
+
     /**
-     * @var string|null
+     * @var array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>|null
      */
-    private $_TenantIdKey;
+    private ?array $Connections;
 
-    protected function getOAuth2Listener(): ?HttpServer
-    {
-        $listener = new HttpServer(
-            $this->Env->get('app_host', 'localhost'),
-            $this->Env->getInt('app_port', 27755),
-        );
-
-        $proxyHost = $this->Env->getNullable('app_proxy_host', null);
-        $proxyPort = $this->Env->getNullableInt('app_proxy_port', null);
-
-        if ($proxyHost !== null && $proxyPort !== null) {
-            return $listener->withProxy(
-                $proxyHost,
-                $proxyPort,
-                $this->Env->getNullableBool('app_proxy_tls', null),
-                $this->Env->getNullable('app_proxy_base_path', null),
-            );
-        }
-
-        return $listener;
-    }
-
-    protected function getOAuth2Provider(): OAuth2Provider
-    {
-        return new OAuth2Provider([
-            'clientId' => $this->Env->get('xero_app_client_id'),
-            'clientSecret' => $this->Env->get('xero_app_client_secret'),
-            'redirectUri' => $this->OAuth2RedirectUri,
-            'urlAuthorize' => 'https://login.xero.com/identity/connect/authorize',
-            'urlAccessToken' => 'https://identity.xero.com/connect/token',
-            'urlResourceOwnerDetails' => 'https://identity.xero.com/connect/userinfo',
-            'scopes' => self::OAUTH2_SCOPES,
-            'scopeSeparator' => ' ',
-        ]);
-    }
-
-    protected function getOAuth2Flow(): int
-    {
-        return OAuth2Flow::AUTHORIZATION_CODE;
-    }
-
-    protected function getOAuth2JsonWebKeySetUrl(): ?string
-    {
-        return 'https://identity.xero.com/.well-known/openid-configuration/jwks';
-    }
-
-    protected function receiveOAuth2Token(AccessTokenInterface $token): void
-    {
-        Console::debug('Xero access token received');
-    }
-
-    public function name(): ?string
+    public function name(): string
     {
         return sprintf('Xero { %s }', $this->requireTenantId());
     }
@@ -282,7 +222,7 @@ final class XeroProvider extends HttpSyncProvider implements
     {
         if ($path === '/connections') {
             $tenantId = null;
-            $accessToken = $this->getAccessToken(self::OAUTH2_SCOPES);
+            $accessToken = $this->getAccessToken();
         } else {
             $tenantId = $this->getTenantId();
             if ($tenantId === null) {
@@ -292,7 +232,7 @@ final class XeroProvider extends HttpSyncProvider implements
                 );
                 throw new RuntimeException('No tenant ID');
             }
-            $accessToken = $this->getAccessToken(self::OAUTH2_SCOPES);
+            $accessToken = $this->getAccessToken();
         }
 
         $headers =
@@ -306,25 +246,14 @@ final class XeroProvider extends HttpSyncProvider implements
         return $headers;
     }
 
-    protected function _getTenantIdKey(): string
-    {
-        return $this->_TenantIdKey
-            ?? ($this->_TenantIdKey =
-                implode(':', [
-                    static::class,
-                    'tenant',
-                    $this->getBaseUrl(),
-                    'uuid',
-                ]));
-    }
-
     /**
      * @return array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>
      */
     private function getConnections(): array
     {
         // See https://developer.xero.com/documentation/guides/oauth2/tenants
-        return $this->getCurler('/connections')->get();
+        return $this->Connections
+            ?? ($this->Connections = $this->getCurler('/connections')->get());
     }
 
     /**
@@ -350,42 +279,43 @@ final class XeroProvider extends HttpSyncProvider implements
     private function requireTenantId(): string
     {
         $tenantId = $this->getTenantId();
-        if ($tenantId !== null) {
-            return $tenantId;
+        if ($tenantId === null) {
+            throw new RuntimeException('No tenant ID');
         }
-
-        throw new RuntimeException('No tenant ID');
+        return $tenantId;
     }
 
     private function getTenantId(): ?string
     {
         $flushed = false;
 
-        // Flush the token cache to trigger [re-]authorization if a cached or
-        // configured tenant ID isn't in the connections list
-        if (!$this->checkTenantAccess()) {
-            $this->flushAccessToken();
+        $tenantId = $this->Env->getNullable('xero_tenant_id', null);
+        if ($tenantId !== null) {
+            // Remove a previously cached tenant ID if there is a tenant ID in
+            // the environment
             $this->flushTenantId();
             $flushed = true;
+            if ($this->checkTenantAccess($tenantId)) {
+                return $tenantId;
+            }
+        } else {
+            $tenantId = Cache::getString($this->getTenantIdKey());
+            if ($tenantId !== null && $this->checkTenantAccess($tenantId)) {
+                return $tenantId;
+            }
         }
 
-        if ($tenantId = $this->getPreferredTenantId(false)) {
+        // Flush the token cache to trigger [re-]authorization if a cached or
+        // configured tenant ID isn't in the connections list
+        if ($tenantId !== null) {
+            $this->getOAuth2Client()->flushTokens();
             if (!$flushed) {
                 $this->flushTenantId();
             }
-
-            return $tenantId;
         }
 
-        // If there is no tenant ID in the environment, try to get one from the
-        // cache or via authorization
-        $tenantId = Cache::get($this->TenantIdKey);
-        if (is_string($tenantId)) {
-            return $tenantId;
-        }
-
-        $token = $this->authorize();
-        $eventId = $token->Claims['authentication_event_id'];
+        $token = $this->getAccessToken();
+        $eventId = $token->Claims['authentication_event_id'] ?? null;
 
         // If a connection was "newly authorized in the current auth flow", or
         // only one connection exists, we can safely use its tenantId in lieu of
@@ -407,56 +337,37 @@ final class XeroProvider extends HttpSyncProvider implements
 
         $connection = array_pop($connection);
         $tenantId = $connection['tenantId'];
-        Cache::set($this->TenantIdKey, $tenantId);
-
-        return $tenantId;
-    }
-
-    private function checkTenantAccess(?string $tenantId = null): bool
-    {
-        if ($tenantId === null) {
-            $tenantId = $this->getPreferredTenantId();
-        }
-
-        if ($tenantId === null ||
-                array_filter(
-                    $connections = $this->getConnections(),
-                    fn(array $conn) => !strcasecmp($conn['tenantId'], $tenantId),
-                )) {
-            return true;
-        }
-
-        Console::warn(
-            sprintf(
-                "Not connected to Xero tenant '%s'; tenant connections:",
-                $tenantId,
-            ),
-            $this->formatTenantList($connections)
-        );
-
-        return false;
-    }
-
-    private function getPreferredTenantId(bool $allowCache = true): ?string
-    {
-        $tenantId = $this->Env->getNullable('xero_tenant_id', null);
-        if ($tenantId === null && $allowCache) {
-            $tenantId = Cache::get($this->TenantIdKey);
-            return $tenantId === false
-                ? null
-                : $tenantId;
-        }
+        Cache::set($this->getTenantIdKey(), $tenantId);
 
         return $tenantId;
     }
 
     /**
-     * @return $this
+     * False if the current user cannot access the current tenant
+     *
+     * Returns `true` if there is no cached or configured tenant ID.
      */
-    private function flushTenantId()
+    private function checkTenantAccess(string $tenantId): bool
     {
-        Cache::delete($this->TenantIdKey);
-        return $this;
+        $connections = $this->getConnections();
+        if (array_filter(
+            $connections,
+            fn(array $conn) => !strcasecmp($conn['tenantId'], $tenantId)
+        )) {
+            return true;
+        }
+
+        Console::warn(sprintf(
+            "Not connected to Xero tenant '%s'; tenant connections:",
+            $tenantId,
+        ), $this->formatTenantList($connections));
+
+        return false;
+    }
+
+    private function flushTenantId(): void
+    {
+        Cache::delete($this->getTenantIdKey());
     }
 
     /**
@@ -595,5 +506,37 @@ final class XeroProvider extends HttpSyncProvider implements
         }
 
         return $data;
+    }
+
+    private function getAccessToken(): AccessToken
+    {
+        return $this->getOAuth2Client()->getAccessToken(self::OAUTH2_SCOPES);
+    }
+
+    private function getOAuth2Client(): XeroOAuth2Client
+    {
+        return $this->OAuth2Client
+            ?? ($this->OAuth2Client =
+                $this->App
+                     ->get(XeroOAuth2Client::class)
+                     ->withDefaultScopes(self::OAUTH2_SCOPES)
+                     ->withCallback(
+                         function (AccessToken $token, ?array $idToken, string $grantType) {
+                             if ($grantType !== OAuth2GrantType::REFRESH_TOKEN) {
+                                 $this->Connections = null;
+                             }
+                         }
+                     ));
+    }
+
+    private function getTenantIdKey(): string
+    {
+        return $this->TenantIdKey
+            ?? ($this->TenantIdKey = implode(':', [
+                static::class,
+                'tenant',
+                $this->getBaseUrl(),
+                'uuid',
+            ]));
     }
 }

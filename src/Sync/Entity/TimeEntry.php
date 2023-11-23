@@ -4,6 +4,7 @@ namespace Lkrms\Time\Sync\Entity;
 
 use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
+use Lkrms\Utility\Arr;
 use Lkrms\Utility\Convert;
 use DateTimeInterface;
 
@@ -206,7 +207,7 @@ class TimeEntry extends SyncEntity
         }
 
         // Combine properties that can be joined or aggregated
-        $merged->Description = Convert::sparseToString($delimiter, [$merged->Description, $entry->Description]);
+        $merged->Description = Arr::implode($delimiter, [$merged->Description, $entry->Description]);
         $merged->Start = $merged->Start && $entry->Start ? min($merged->Start, $entry->Start) : null;
         $merged->End = null;
         $merged->Seconds = $merged->Seconds !== null && $entry->Seconds !== null ? $merged->Seconds + $entry->Seconds : null;
