@@ -19,7 +19,7 @@
         "php": ">=8.0",
         "firebase/php-jwt": "^6",
         "league/oauth2-client": "^2",
-        "lkrms/util": "^0.20.80"
+        "lkrms/util": "^0.21.8"
     },
     "require-dev": {
         "phpstan/extension-installer": "^1",
