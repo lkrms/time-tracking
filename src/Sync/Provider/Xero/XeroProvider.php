@@ -2,16 +2,15 @@
 
 namespace Lkrms\Time\Sync\Provider\Xero;
 
-use Lkrms\Auth\AccessToken;
-use Lkrms\Auth\OAuth2GrantType;
 use Lkrms\Contract\IDateFormatter;
 use Lkrms\Contract\IServiceSingleton;
-use Lkrms\Curler\Contract\ICurlerHeaders;
 use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Curler\CurlerBuilder;
-use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Facade\Cache;
 use Lkrms\Facade\Console;
+use Lkrms\Http\Auth\AccessToken;
+use Lkrms\Http\Auth\OAuth2GrantType;
+use Lkrms\Http\HttpHeaders;
 use Lkrms\Support\DateParser\RegexDateParser;
 use Lkrms\Support\DateFormatter;
 use Lkrms\Sync\Catalog\SyncOperation as OP;
@@ -185,7 +184,7 @@ final class XeroProvider extends HttpSyncProvider implements
                 $defB
                     ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
                     ->pipelineFromBackend(
-                        $this->pipeline()
+                        $this->pipelineFrom(Invoice::class)
                              ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
                              ->through(
                                  // Discard accounts payable invoices
@@ -196,7 +195,7 @@ final class XeroProvider extends HttpSyncProvider implements
                              )
                     )
                     ->pipelineToBackend(
-                        $this->pipeline()
+                        $this->pipelineTo(Invoice::class)
                              ->after(
                                  fn(Invoice $invoice) =>
                                      $this->generateInvoice($invoice)
@@ -218,7 +217,7 @@ final class XeroProvider extends HttpSyncProvider implements
         return 'https://api.xero.com';
     }
 
-    protected function getHeaders(?string $path): ?ICurlerHeaders
+    protected function getHeaders(?string $path): HttpHeaders
     {
         if ($path === '/connections') {
             $tenantId = null;
@@ -235,12 +234,10 @@ final class XeroProvider extends HttpSyncProvider implements
             $accessToken = $this->getAccessToken();
         }
 
-        $headers =
-            CurlerHeaders::create()
-                ->applyAccessToken($accessToken);
+        $headers = (new HttpHeaders())->authorize($accessToken);
 
         if ($tenantId !== null) {
-            return $headers->setHeader('Xero-Tenant-Id', $tenantId);
+            return $headers->set('Xero-Tenant-Id', $tenantId);
         }
 
         return $headers;

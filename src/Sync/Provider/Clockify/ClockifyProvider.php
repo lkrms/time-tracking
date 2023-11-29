@@ -7,9 +7,9 @@ use Lkrms\Contract\IDateFormatter;
 use Lkrms\Contract\IServiceSingleton;
 use Lkrms\Curler\Catalog\CurlerProperty;
 use Lkrms\Curler\Pager\QueryPager;
-use Lkrms\Curler\CurlerHeaders;
 use Lkrms\Facade\Console;
-use Lkrms\Support\Catalog\HttpRequestMethod;
+use Lkrms\Http\Catalog\HttpRequestMethod;
+use Lkrms\Http\HttpHeaders;
 use Lkrms\Support\DateFormatter;
 use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
@@ -27,7 +27,6 @@ use Lkrms\Time\Sync\Entity\Tenant;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
 use Lkrms\Utility\Convert;
-use Lkrms\Utility\Env;
 use DateTimeImmutable;
 use DateTimeInterface;
 use UnexpectedValueException;
@@ -147,11 +146,10 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    protected function getHeaders(?string $path): CurlerHeaders
+    protected function getHeaders(?string $path): HttpHeaders
     {
-        return
-            CurlerHeaders::create()
-                ->setHeader('X-Api-Key', $this->Env->get('clockify_api_key'));
+        return (new HttpHeaders())
+            ->set('X-Api-Key', $this->Env->get('clockify_api_key'));
     }
 
     /**
@@ -209,7 +207,10 @@ final class ClockifyProvider extends HttpSyncProvider implements
                 $defB
                     ->operations([OP::READ, OP::READ_LIST])
                     ->path('/workspaces/:workspaceId/users')
-                    ->pipelineFromBackend($this->callbackPipeline([$this, 'normaliseUser']))
+                    ->pipelineFromBackend(
+                        $this->pipelineFrom(User::class)
+                             ->throughCallback([$this, 'normaliseUser'])
+                    )
                     ->keyMap(self::ENTITY_PROPERTY_MAP[User::class])
                     ->readFromReadList()
                     ->overrides([
@@ -260,7 +261,10 @@ final class ClockifyProvider extends HttpSyncProvider implements
                         '/workspaces/:workspaceId/time-entries/:id',
                         '/workspaces/:workspaceId/reports/detailed',
                     ])
-                    ->pipelineFromBackend($this->callbackPipeline([$this, 'normaliseTimeEntry']))
+                    ->pipelineFromBackend(
+                        $this->pipelineFrom(TimeEntry::class)
+                             ->throughCallback([$this, 'normaliseTimeEntry'])
+                    )
                     ->callback(
                         fn(HttpDef $def, $op, Context $ctx) =>
                             match ($op) {

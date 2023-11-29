@@ -18,6 +18,7 @@ use Lkrms\Utility\Env;
 require dirname(__DIR__) . '/vendor/autoload.php';
 
 (new CliApplication(dirname(__DIR__)))
+    ->logOutput(null, true)
     ->startCache()
     ->startSync()
     ->services([
