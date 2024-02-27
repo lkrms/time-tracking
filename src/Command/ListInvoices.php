@@ -2,11 +2,11 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Facade\Console;
-use Lkrms\Facade\Format;
 use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Sync\Entity\Invoice;
-use Lkrms\Utility\Env;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Env;
+use Salient\Core\Utility\Format;
 
 class ListInvoices extends Command
 {
@@ -28,7 +28,7 @@ class ListInvoices extends Command
             '$orderby' => 'date desc',
             '!status' => 'DELETED',
         ];
-        if ($prefix = $this->Env->get('invoice_number_prefix', null)) {
+        if ($prefix = Env::get('invoice_number_prefix', null)) {
             $query['number'] = "{$prefix}*";
         }
         $invoices = $this->InvoiceProvider->with(Invoice::class)->getList($query);

@@ -2,9 +2,9 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Facade\Console;
 use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Sync\Entity\Client;
+use Salient\Core\Facade\Console;
 
 class ListClients extends Command
 {

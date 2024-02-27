@@ -2,17 +2,14 @@
 
 namespace Lkrms\Time\Sync\Provider\Xero;
 
-use Lkrms\Contract\IDateFormatter;
-use Lkrms\Contract\IServiceSingleton;
 use Lkrms\Curler\Pager\QueryPager;
 use Lkrms\Curler\CurlerBuilder;
 use Lkrms\Facade\Cache;
-use Lkrms\Facade\Console;
-use Lkrms\Http\Auth\AccessToken;
-use Lkrms\Http\Auth\OAuth2GrantType;
+use Lkrms\Http\OAuth2\AccessToken;
+use Lkrms\Http\OAuth2\OAuth2GrantType;
 use Lkrms\Http\HttpHeaders;
-use Lkrms\Support\DateParser\RegexDateParser;
-use Lkrms\Support\DateFormatter;
+use Lkrms\Support\Date\DateFormatter;
+use Lkrms\Support\Date\DotNetDateParser;
 use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
 use Lkrms\Sync\Contract\ISyncContext as Context;
@@ -22,7 +19,10 @@ use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
-use Lkrms\Utility\Convert;
+use Salient\Container\Contract\SingletonInterface;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Env;
+use Salient\Core\Utility\Inflect;
 use Closure;
 use DateTimeInterface;
 use RuntimeException;
@@ -36,7 +36,7 @@ use UnexpectedValueException;
  * @method FluentIteratorInterface<array-key,Client> getClients(ISyncContext $ctx)
  */
 final class XeroProvider extends HttpSyncProvider implements
-    IServiceSingleton,
+    SingletonInterface,
     InvoiceProvider
 {
     /**
@@ -125,12 +125,12 @@ final class XeroProvider extends HttpSyncProvider implements
         ];
     }
 
-    protected function getDateFormatter(?string $path = null): IDateFormatter
+    protected function getDateFormatter(?string $path = null): DateFormatter
     {
         return new DateFormatter(
             DateTimeInterface::ATOM,
             null,
-            RegexDateParser::dotNet(),
+            new DotNetDateParser(),
         );
     }
 
@@ -138,11 +138,9 @@ final class XeroProvider extends HttpSyncProvider implements
     {
         $connections = $this->getConnections();
 
-        $count = count($connections);
-        Console::debug(sprintf(
-            'Connected to Xero with %d %s:',
-            $count,
-            Convert::plural($count, 'tenant connection')
+        Console::debug(Inflect::format(
+            $connections,
+            'Connected to Xero with {{#}} tenant {{#:connection}}:'
         ), $this->formatTenantList($connections, false));
 
         return $connections;
@@ -286,7 +284,7 @@ final class XeroProvider extends HttpSyncProvider implements
     {
         $flushed = false;
 
-        $tenantId = $this->Env->getNullable('xero_tenant_id', null);
+        $tenantId = Env::getNullable('xero_tenant_id', null);
         if ($tenantId !== null) {
             // Remove a previously cached tenant ID if there is a tenant ID in
             // the environment

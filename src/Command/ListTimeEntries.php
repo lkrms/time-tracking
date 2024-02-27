@@ -2,11 +2,11 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Facade\Console;
 use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Time\Sync\Entity\TimeEntry;
-use Lkrms\Utility\Convert;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Inflect;
 
 class ListTimeEntries extends Command
 {
@@ -44,7 +44,7 @@ class ListTimeEntries extends Command
             printf("%s\n\n", $entry->Description);
         }
 
-        $count = Convert::plural($billableCount, 'time entry is', 'time entries are', true);
+        $count = Inflect::format($billableCount, '{{#}} time {{#:entry}} {{#:is}}');
         $total = $this->getBillableSummary($billableAmount, $billableHours);
         Console::info("$count unbilled:", $total);
     }

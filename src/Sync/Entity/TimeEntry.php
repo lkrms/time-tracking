@@ -4,8 +4,8 @@ namespace Lkrms\Time\Sync\Entity;
 
 use Lkrms\Support\Catalog\RelationshipType;
 use Lkrms\Sync\Concept\SyncEntity;
-use Lkrms\Utility\Arr;
-use Lkrms\Utility\Convert;
+use Salient\Core\Utility\Arr;
+use Salient\Core\Utility\Str;
 use DateTimeInterface;
 
 class TimeEntry extends SyncEntity
@@ -173,7 +173,7 @@ class TimeEntry extends SyncEntity
 
     public function description(string $separator = "\n", ?string $marker = null): string
     {
-        return Convert::linesToLists(
+        return Str::mergeLists(
             $this->Description,
             $separator,
             $marker,

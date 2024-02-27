@@ -2,22 +2,19 @@
 
 namespace Lkrms\Time\Sync\Provider\Clockify;
 
-use Lkrms\Contract\IContainer;
-use Lkrms\Contract\IDateFormatter;
-use Lkrms\Contract\IServiceSingleton;
 use Lkrms\Curler\Catalog\CurlerProperty;
 use Lkrms\Curler\Pager\QueryPager;
-use Lkrms\Facade\Console;
 use Lkrms\Http\Catalog\HttpRequestMethod;
 use Lkrms\Http\HttpHeaders;
-use Lkrms\Support\DateFormatter;
+use Lkrms\Support\Date\DateFormatter;
+use Lkrms\Support\Date\DateFormatterInterface;
 use Lkrms\Sync\Catalog\SyncOperation as OP;
 use Lkrms\Sync\Concept\HttpSyncProvider;
+use Lkrms\Sync\Contract\ISyncContext;
 use Lkrms\Sync\Contract\ISyncContext as Context;
 use Lkrms\Sync\Contract\ISyncEntity;
 use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
 use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
-use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Sync\Contract\ProvidesTenant;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\Entity\Client;
@@ -26,7 +23,12 @@ use Lkrms\Time\Sync\Entity\Task;
 use Lkrms\Time\Sync\Entity\Tenant;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
-use Lkrms\Utility\Convert;
+use Salient\Container\Contract\SingletonInterface;
+use Salient\Container\ContainerInterface;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Date;
+use Salient\Core\Utility\Env;
+use Closure;
 use DateTimeImmutable;
 use DateTimeInterface;
 use UnexpectedValueException;
@@ -47,7 +49,7 @@ use UnexpectedValueException;
  * @method FluentIteratorInterface<array-key,Tenant> getTenants(ISyncContext $ctx)
  */
 final class ClockifyProvider extends HttpSyncProvider implements
-    IServiceSingleton,
+    SingletonInterface,
     BillableTimeProvider,
     ProvidesTenant
 {
@@ -89,7 +91,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    public function getContext(?IContainer $container = null): SyncContext
+    public function getContext(?ContainerInterface $container = null): Context
     {
         return
             parent::getContext($container)
@@ -133,12 +135,12 @@ final class ClockifyProvider extends HttpSyncProvider implements
     protected function getBaseUrl(?string $path = null): string
     {
         if ($path && strpos($path, '/reports/') !== false) {
-            return $this->Env->get(
+            return Env::get(
                 'clockify_reports_api_base_url', 'https://reports.api.clockify.me/v1'
             );
         }
 
-        return $this->Env->get(
+        return Env::get(
             'clockify_api_base_url', 'https://api.clockify.me/api/v1'
         );
     }
@@ -149,7 +151,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     protected function getHeaders(?string $path): HttpHeaders
     {
         return (new HttpHeaders())
-            ->set('X-Api-Key', $this->Env->get('clockify_api_key'));
+            ->set('X-Api-Key', Env::get('clockify_api_key'));
     }
 
     /**
@@ -157,19 +159,21 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getExpiry(?string $path): ?int
     {
-        return $this->Env->getInt('clockify_cache_expiry', null);
+        return Env::getInt('clockify_cache_expiry', null);
     }
 
     /**
      * @inheritDoc
      */
-    protected function getDateFormatter(?string $path = null): IDateFormatter
+    protected function getDateFormatter(?string $path = null): DateFormatterInterface
     {
         static $pending = false;
 
-        $cached = $this->getCachedDateFormatter();
-        if ($cached) {
-            return $cached;
+        // The purpose of the following hijinks is to return a user-specific
+        // date formatter while returning a generic one if necessary to service
+        // the user endpoint request
+        if ($this->hasDateFormatter()) {
+            return $this->dateFormatter();
         }
 
         if ($pending) {
@@ -178,13 +182,12 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
         $pending = true;
         try {
-            return
-                new DateFormatter(
-                    self::DATE_FORMAT,
-                    $this->with(User::class)
-                         ->get(null)
-                         ->Settings['timeZone'],
-                );
+            return new DateFormatter(
+                self::DATE_FORMAT,
+                $this->with(User::class)
+                     ->get(null)
+                     ->Settings['timeZone'],
+            );
         } finally {
             $pending = false;
         }
@@ -209,7 +212,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                     ->path('/workspaces/:workspaceId/users')
                     ->pipelineFromBackend(
                         $this->pipelineFrom(User::class)
-                             ->throughCallback([$this, 'normaliseUser'])
+                             ->throughClosure(Closure::fromCallable([$this, 'normaliseUser']))
                     )
                     ->keyMap(self::ENTITY_PROPERTY_MAP[User::class])
                     ->readFromReadList()
@@ -263,7 +266,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                     ])
                     ->pipelineFromBackend(
                         $this->pipelineFrom(TimeEntry::class)
-                             ->throughCallback([$this, 'normaliseTimeEntry'])
+                             ->throughClosure(Closure::fromCallable([$this, 'normaliseTimeEntry']))
                     )
                     ->callback(
                         fn(HttpDef $def, $op, Context $ctx) =>
@@ -329,7 +332,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
         }
 
         if (is_string($duration)) {
-            return Convert::intervalToSeconds($duration);
+            return Date::duration($duration);
         }
 
         throw new UnexpectedValueException(
@@ -505,7 +508,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
     private function workspaceId(): string
     {
-        return $this->Env->get('clockify_workspace_id');
+        return Env::get('clockify_workspace_id');
     }
 
     /**

@@ -1,7 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-use Lkrms\Cli\CliApplication;
 use Lkrms\Sync\Command\CheckSyncProviderHeartbeat;
 use Lkrms\Sync\Command\GetSyncEntities;
 use Lkrms\Time\Command\GenerateInvoices;
@@ -13,7 +12,8 @@ use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Provider\Clockify\ClockifyProvider;
 use Lkrms\Time\Sync\Provider\Xero\XeroProvider;
-use Lkrms\Utility\Env;
+use Salient\Cli\CliApplication;
+use Salient\Core\Utility\Env;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -21,11 +21,11 @@ require dirname(__DIR__) . '/vendor/autoload.php';
     ->logOutput(null, true)
     ->startCache()
     ->startSync()
-    ->services([
+    ->providers([
         BillableTimeProvider::class => Env::get('billable_time_provider'),
         InvoiceProvider::class => Env::get('invoice_provider'),
-        ClockifyProvider::class,
-        XeroProvider::class,
+        ClockifyProvider::class => ClockifyProvider::class,
+        XeroProvider::class => XeroProvider::class,
     ])
     ->command(['client', 'list'], ListClients::class)
     ->command(['entry', 'list'], ListTimeEntries::class)

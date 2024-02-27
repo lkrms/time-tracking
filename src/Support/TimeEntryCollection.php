@@ -3,14 +3,14 @@
 namespace Lkrms\Time\Support;
 
 use Lkrms\Concept\TypedCollection;
-use Lkrms\Container\Container;
-use Lkrms\Contract\IContainer;
-use Lkrms\Contract\ReceivesContainer;
 use Lkrms\Time\Sync\Entity\TimeEntry;
-use Lkrms\Utility\Arr;
-use Lkrms\Utility\Compute;
-use Lkrms\Utility\Env;
-use Lkrms\Utility\Test;
+use Salient\Container\Contract\ContainerAwareInterface;
+use Salient\Container\Container;
+use Salient\Container\ContainerInterface;
+use Salient\Core\Utility\Arr;
+use Salient\Core\Utility\Env;
+use Salient\Core\Utility\Get;
+use Salient\Core\Utility\Test;
 use UnexpectedValueException;
 
 /**
@@ -19,19 +19,15 @@ use UnexpectedValueException;
  *
  * @extends TypedCollection<array-key,TimeEntry>
  */
-final class TimeEntryCollection extends TypedCollection implements ReceivesContainer
+final class TimeEntryCollection extends TypedCollection implements ContainerAwareInterface
 {
     protected const ITEM_CLASS = TimeEntry::class;
 
-    /**
-     * @var IContainer|null
-     */
-    private $App;
+    private ?ContainerInterface $App = null;
 
-    public function setContainer(IContainer $container)
+    public function setContainer(ContainerInterface $container): void
     {
         $this->App = $container;
-        return $this;
     }
 
     /**
@@ -96,7 +92,7 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
 
             $groupBy = $callback !== null ? $callback($t) : [];
             $groupBy[] = $summary;
-            $groupBy = Compute::hash(...$groupBy);
+            $groupBy = Get::hash(implode("\0", $groupBy));
 
             if (!array_key_exists($groupBy, $groupTime)) {
                 $groupTime[$groupBy] = $t;
@@ -149,9 +145,9 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
         }
     }
 
-    private function app(): IContainer
+    private function app(): ContainerInterface
     {
         return $this->App
-            ?: ($this->App = Container::getGlobalContainer());
+            ??= Container::getGlobalContainer();
     }
 }

@@ -2,14 +2,6 @@
 
 namespace Lkrms\Time\Command\Concept;
 
-use Lkrms\Cli\Catalog\CliOptionType;
-use Lkrms\Cli\Catalog\CliOptionValueType;
-use Lkrms\Cli\Exception\CliInvalidArgumentsException;
-use Lkrms\Cli\CliApplication;
-use Lkrms\Cli\CliCommand;
-use Lkrms\Cli\CliOption;
-use Lkrms\Cli\CliOptionBuilder;
-use Lkrms\Facade\Console;
 use Lkrms\Iterator\Contract\FluentIteratorInterface;
 use Lkrms\Sync\Contract\ISyncContext;
 use Lkrms\Sync\Contract\ISyncEntity;
@@ -20,8 +12,16 @@ use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Project;
 use Lkrms\Time\Sync\Entity\TimeEntry;
-use Lkrms\Utility\Convert;
-use Lkrms\Utility\Test;
+use Salient\Cli\Catalog\CliOptionType;
+use Salient\Cli\Catalog\CliOptionValueType;
+use Salient\Cli\Exception\CliInvalidArgumentsException;
+use Salient\Cli\CliApplication;
+use Salient\Cli\CliCommand;
+use Salient\Cli\CliOption;
+use Salient\Cli\CliOptionBuilder;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Get;
+use Salient\Core\Utility\Test;
 use DateTimeImmutable;
 
 abstract class Command extends CliCommand
@@ -74,22 +74,12 @@ abstract class Command extends CliCommand
 
         $this->TimeEntryProvider = $timeEntryProvider;
         $this->InvoiceProvider = $invoiceProvider;
-        $this->TimeEntryProviderName = Convert::classToBasename(
+        $this->TimeEntryProviderName = Get::basename(
             get_class($timeEntryProvider), 'Provider'
         );
-        $this->InvoiceProviderName = Convert::classToBasename(
+        $this->InvoiceProviderName = Get::basename(
             get_class($invoiceProvider), 'Provider'
         );
-    }
-
-    protected function getLongDescription(): ?string
-    {
-        return null;
-    }
-
-    protected function getHelpSections(): ?array
-    {
-        return null;
     }
 
     /**
@@ -202,8 +192,8 @@ abstract class Command extends CliCommand
             'project_id' => $this->getProjectId(),
             'start_date' => $this->StartDate,
             'end_date' => $this->EndDate,
-            'billable' => Convert::coalesce($billable, $this->Billable ?: null),
-            'billed' => Convert::coalesce($billed, $this->Unbilled ? false : null),
+            'billable' => Get::coalesce($billable, $this->Billable ?: null),
+            'billed' => Get::coalesce($billed, $this->Unbilled ? false : null),
         ];
 
         return $this->TimeEntryProvider
@@ -319,7 +309,7 @@ abstract class Command extends CliCommand
         Console::debug(sprintf(
             "'%s' resolved to %s '%s' with uncertainty %.2f",
             $nameOrId,
-            Convert::classToBasename($entity),
+            Get::basename($entity),
             $id,
             $uncertainty,
         ));

@@ -2,16 +2,19 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Cli\CliOption;
-use Lkrms\Facade\Console;
 use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
 use Lkrms\Time\Sync\Entity\InvoiceLineItem;
 use Lkrms\Time\Sync\Entity\TimeEntry;
-use Lkrms\Utility\Convert;
-use Lkrms\Utility\File;
+use Salient\Cli\CliOption;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Arr;
+use Salient\Core\Utility\Env;
+use Salient\Core\Utility\File;
+use Salient\Core\Utility\Get;
+use Salient\Core\Utility\Inflect;
 use DateTimeImmutable;
 
 class GenerateInvoices extends Command
@@ -45,7 +48,7 @@ class GenerateInvoices extends Command
     protected function run(string ...$params)
     {
         if (!$this->Force) {
-            $this->Env->dryRun(true);
+            Env::dryRun(true);
         }
 
         Console::info("Retrieving unbilled time from {$this->TimeEntryProviderName}");
@@ -73,28 +76,25 @@ class GenerateInvoices extends Command
         }
 
         Console::info("Retrieving clients from {$this->InvoiceProviderName}");
-        $invClients = Convert::listToMap(
+        $invClients = Arr::toMap(
             $this->InvoiceProvider
                  ->with(Client::class)
                  ->getListA(['name' => $clientNames]),
             'Name'
         );
 
-        $count = count($clientTimes);
-        Console::log(sprintf(
-            'Preparing %d %s for %d %s',
-            $count,
-            Convert::plural($count, 'client invoice'),
-            $timeEntryCount,
-            Convert::plural($timeEntryCount, 'time entry', 'time entries'),
+        Console::log(Inflect::format(
+            $clientTimes,
+            'Preparing {{#}} client {{#:invoice}} for %s',
+            Inflect::format($timeEntryCount, '{{#}} time {{#:entry}}'),
         ));
 
         $show = $this->getTimeEntryMask();
         $next = null;
 
-        $prefix = $this->Env->getNullable('invoice_number_prefix', null);
+        $prefix = Env::getNullable('invoice_number_prefix', null);
         if ($prefix !== null) {
-            $next = $this->Env->getInt('invoice_number_next', 1);
+            $next = Env::getInt('invoice_number_next', 1);
 
             /** @var iterable<Invoice> $invoices */
             $invoices =
@@ -119,7 +119,7 @@ class GenerateInvoices extends Command
 
         $tempDir = implode('/', [
             $this->App->getTempPath(),
-            Convert::classToBasename(self::class),
+            Get::basename(self::class),
             $this->InvoiceProviderName . '-' . $this->InvoiceProvider->getProviderId()
         ]);
         File::createDir($tempDir);
@@ -157,7 +157,7 @@ class GenerateInvoices extends Command
                 fn(TimeEntry $t) => [$t->Project->Id ?? null, $t->BillableRate]
             );
 
-            if ($this->Env->dryRun()) {
+            if (Env::dryRun()) {
                 foreach ($entries as $entry) {
                     printf(
                         "==> \$%.2f (%.2f hours):\n  %s\n\n",
@@ -183,8 +183,8 @@ class GenerateInvoices extends Command
                 $item->Description = $entry->Description;
                 $item->Quantity = $entry->getBillableHours();
                 $item->UnitAmount = $entry->BillableRate;
-                $item->ItemCode = $this->Env->getNullable('invoice_item_code', null);
-                $item->AccountCode = $this->Env->getNullable('invoice_account_code', null);
+                $item->ItemCode = Env::getNullable('invoice_item_code', null);
+                $item->AccountCode = Env::getNullable('invoice_account_code', null);
                 $invoice->LineItems[] = $item;
 
                 array_push($markInvoiced, ...($entry->getMerged() ?: [$entry]));
@@ -213,7 +213,7 @@ class GenerateInvoices extends Command
             file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));
             file_put_contents($tempDir . "/{$invoice->Number}-timeEntries.json", json_encode($markInvoiced));
 
-            $count = Convert::plural(count($markInvoiced), 'time entry', 'time entries', true);
+            $count = Inflect::format($markInvoiced, '{{#}} time {{#:entry}}');
 
             if ($this->NoMarkInvoiced) {
                 Console::error("Not marking $count as invoiced in {$this->TimeEntryProviderName}", null, null, false);
@@ -224,9 +224,9 @@ class GenerateInvoices extends Command
             $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced);
         }
 
-        $count = Convert::plural($invoices, 'invoice', null, true);
+        $count = Inflect::format($invoices, '{{#}} {{#:invoice}}');
 
-        if ($this->Env->dryRun()) {
+        if (Env::dryRun()) {
             Console::info(
                 "$count would be created in {$this->InvoiceProviderName}:",
                 $this->getBillableSummary($billableAmount, $billableHours),
