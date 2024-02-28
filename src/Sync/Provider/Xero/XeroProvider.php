@@ -115,13 +115,13 @@ final class XeroProvider extends HttpSyncProvider implements
 
     public function name(): string
     {
-        return sprintf('Xero { %s }', $this->requireTenantId());
+        return sprintf('Xero { %s }', $this->requireTenantId(false));
     }
 
     public function getBackendIdentifier(): array
     {
         return [
-            $this->requireTenantId(),
+            $this->requireTenantId(false),
         ];
     }
 
@@ -271,16 +271,16 @@ final class XeroProvider extends HttpSyncProvider implements
             ));
     }
 
-    private function requireTenantId(): string
+    private function requireTenantId(bool $verify = true): string
     {
-        $tenantId = $this->getTenantId();
+        $tenantId = $this->getTenantId($verify);
         if ($tenantId === null) {
             throw new RuntimeException('No tenant ID');
         }
         return $tenantId;
     }
 
-    private function getTenantId(): ?string
+    private function getTenantId(bool $verify = true): ?string
     {
         $flushed = false;
 
@@ -290,7 +290,7 @@ final class XeroProvider extends HttpSyncProvider implements
             // the environment
             $this->flushTenantId();
             $flushed = true;
-            if ($this->checkTenantAccess($tenantId)) {
+            if (!$verify || $this->checkTenantAccess($tenantId)) {
                 return $tenantId;
             }
         } else {
