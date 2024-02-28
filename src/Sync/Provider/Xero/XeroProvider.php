@@ -2,38 +2,38 @@
 
 namespace Lkrms\Time\Sync\Provider\Xero;
 
-use Lkrms\Curler\Pager\QueryPager;
-use Lkrms\Curler\CurlerBuilder;
-use Lkrms\Facade\Cache;
-use Lkrms\Http\OAuth2\AccessToken;
-use Lkrms\Http\OAuth2\OAuth2GrantType;
-use Lkrms\Http\HttpHeaders;
-use Lkrms\Support\Date\DateFormatter;
-use Lkrms\Support\Date\DotNetDateParser;
-use Lkrms\Sync\Catalog\SyncOperation as OP;
-use Lkrms\Sync\Concept\HttpSyncProvider;
-use Lkrms\Sync\Contract\ISyncContext as Context;
-use Lkrms\Sync\Contract\ISyncEntity;
-use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
-use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
-use Salient\Container\Contract\SingletonInterface;
+use Salient\Catalog\Sync\SyncOperation as OP;
+use Salient\Contract\Container\SingletonInterface;
+use Salient\Contract\Sync\SyncContextInterface as Context;
+use Salient\Contract\Sync\SyncEntityInterface;
+use Salient\Core\Facade\Cache;
 use Salient\Core\Facade\Console;
 use Salient\Core\Utility\Env;
 use Salient\Core\Utility\Inflect;
+use Salient\Core\DateFormatter;
+use Salient\Core\DotNetDateParser;
+use Salient\Curler\Pager\QueryPager;
+use Salient\Curler\CurlerBuilder;
+use Salient\Http\OAuth2\AccessToken;
+use Salient\Http\OAuth2\OAuth2GrantType;
+use Salient\Http\HttpHeaders;
+use Salient\Sync\HttpSyncDefinition as HttpDef;
+use Salient\Sync\HttpSyncDefinitionBuilder as HttpDefB;
+use Salient\Sync\HttpSyncProvider;
 use Closure;
 use DateTimeInterface;
 use RuntimeException;
 use UnexpectedValueException;
 
 /**
- * @method Invoice createInvoice(ISyncContext $ctx, Invoice $invoice)
- * @method Invoice getInvoice(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Invoice> getInvoices(ISyncContext $ctx)
- * @method Client getClient(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Client> getClients(ISyncContext $ctx)
+ * @method Invoice createInvoice(SyncContextInterface $ctx, Invoice $invoice)
+ * @method Invoice getInvoice(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Invoice> getInvoices(SyncContextInterface $ctx)
+ * @method Client getClient(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Client> getClients(SyncContextInterface $ctx)
  */
 final class XeroProvider extends HttpSyncProvider implements
     SingletonInterface,
@@ -42,7 +42,7 @@ final class XeroProvider extends HttpSyncProvider implements
     /**
      * Entity => endpoint path
      *
-     * @var array<class-string<ISyncEntity>,string>
+     * @var array<class-string<SyncEntityInterface>,string>
      */
     private const ENTITY_PATH_MAP = [
         Client::class => 'Contacts',
@@ -51,7 +51,7 @@ final class XeroProvider extends HttpSyncProvider implements
     /**
      * Entity => result selector
      *
-     * @var array<class-string<ISyncEntity>,string>
+     * @var array<class-string<SyncEntityInterface>,string>
      */
     private const ENTITY_SELECTOR_MAP = [
         Client::class => 'Contacts',
@@ -60,7 +60,7 @@ final class XeroProvider extends HttpSyncProvider implements
     /**
      * Entity => [ provider key => entity property ]
      *
-     * @var array<class-string<ISyncEntity>,array<string,string>>
+     * @var array<class-string<SyncEntityInterface>,array<string,string>>
      */
     private const ENTITY_KEY_MAPS = [
         Client::class => [
@@ -76,7 +76,7 @@ final class XeroProvider extends HttpSyncProvider implements
     /**
      * Entity => [ snake_case filter => provider search term ]
      *
-     * @var array<class-string<ISyncEntity>,array<string,string>>
+     * @var array<class-string<SyncEntityInterface>,array<string,string>>
      */
     private const ENTITY_QUERY_MAPS = [
         Client::class => [

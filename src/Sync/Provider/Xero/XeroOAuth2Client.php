@@ -3,16 +3,16 @@
 namespace Lkrms\Time\Sync\Provider\Xero;
 
 use League\OAuth2\Client\Provider\GenericProvider;
-use Lkrms\Http\OAuth2\AccessToken;
-use Lkrms\Http\OAuth2\OAuth2Client;
-use Lkrms\Http\OAuth2\OAuth2Flow;
-use Lkrms\Http\OAuth2\OAuth2GrantType;
-use Lkrms\Http\HttpServer;
+use Salient\Contract\Core\Immutable;
 use Salient\Core\Concern\HasImmutableProperties;
-use Salient\Core\Contract\Immutable;
 use Salient\Core\Facade\Console;
 use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Env;
+use Salient\Http\OAuth2\AccessToken;
+use Salient\Http\OAuth2\OAuth2Client;
+use Salient\Http\OAuth2\OAuth2Flow;
+use Salient\Http\OAuth2\OAuth2GrantType;
+use Salient\Http\HttpServer;
 
 final class XeroOAuth2Client extends OAuth2Client implements Immutable
 {

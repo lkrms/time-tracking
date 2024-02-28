@@ -2,10 +2,10 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Lkrms\Support\Catalog\RelationshipType;
-use Lkrms\Sync\Concept\SyncEntity;
+use Salient\Catalog\Core\Cardinality;
+use Salient\Sync\AbstractSyncEntity;
 
-class Project extends SyncEntity
+class Project extends AbstractSyncEntity
 {
     /**
      * @var int|string|null
@@ -55,8 +55,8 @@ class Project extends SyncEntity
     public static function getRelationships(): array
     {
         return [
-            'Tasks' => [RelationshipType::ONE_TO_MANY => Task::class],
-            'Client' => [RelationshipType::ONE_TO_ONE => Client::class],
+            'Tasks' => [Cardinality::ONE_TO_MANY => Task::class],
+            'Client' => [Cardinality::ONE_TO_ONE => Client::class],
         ];
     }
 }

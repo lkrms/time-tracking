@@ -2,10 +2,10 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Lkrms\Support\Catalog\RelationshipType;
-use Lkrms\Sync\Concept\SyncEntity;
+use Salient\Catalog\Core\Cardinality;
+use Salient\Sync\AbstractSyncEntity;
 
-class User extends SyncEntity
+class User extends AbstractSyncEntity
 {
     /**
      * @var int|string|null
@@ -45,7 +45,7 @@ class User extends SyncEntity
     public static function getRelationships(): array
     {
         return [
-            'ActiveTenant' => [RelationshipType::ONE_TO_ONE => Tenant::class],
+            'ActiveTenant' => [Cardinality::ONE_TO_ONE => Tenant::class],
         ];
     }
 }

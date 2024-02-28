@@ -1,8 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-use Lkrms\Sync\Command\CheckSyncProviderHeartbeat;
-use Lkrms\Sync\Command\GetSyncEntities;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\Command\ListInvoices;
@@ -14,6 +12,8 @@ use Lkrms\Time\Sync\Provider\Clockify\ClockifyProvider;
 use Lkrms\Time\Sync\Provider\Xero\XeroProvider;
 use Salient\Cli\CliApplication;
 use Salient\Core\Utility\Env;
+use Salient\Sync\Command\CheckSyncProviderHeartbeat;
+use Salient\Sync\Command\GetSyncEntities;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 

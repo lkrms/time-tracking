@@ -2,26 +2,26 @@
 
 namespace Lkrms\Time\Command\Concept;
 
-use Lkrms\Iterator\Contract\FluentIteratorInterface;
-use Lkrms\Sync\Contract\ISyncContext;
-use Lkrms\Sync\Contract\ISyncEntity;
-use Lkrms\Sync\Contract\ISyncProvider;
-use Lkrms\Sync\Exception\SyncEntityNotFoundException;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Project;
 use Lkrms\Time\Sync\Entity\TimeEntry;
-use Salient\Cli\Catalog\CliOptionType;
-use Salient\Cli\Catalog\CliOptionValueType;
+use Salient\Catalog\Cli\CliOptionType;
+use Salient\Catalog\Cli\CliOptionValueType;
 use Salient\Cli\Exception\CliInvalidArgumentsException;
 use Salient\Cli\CliApplication;
 use Salient\Cli\CliCommand;
 use Salient\Cli\CliOption;
 use Salient\Cli\CliOptionBuilder;
+use Salient\Contract\Iterator\FluentIteratorInterface;
+use Salient\Contract\Sync\SyncContextInterface;
+use Salient\Contract\Sync\SyncEntityInterface;
+use Salient\Contract\Sync\SyncProviderInterface;
 use Salient\Core\Facade\Console;
 use Salient\Core\Utility\Get;
 use Salient\Core\Utility\Test;
+use Salient\Sync\Exception\SyncEntityNotFoundException;
 use DateTimeImmutable;
 
 abstract class Command extends CliCommand
@@ -274,8 +274,8 @@ abstract class Command extends CliCommand
     }
 
     /**
-     * @param class-string<ISyncEntity> $entity
-     * @param ISyncProvider|ISyncContext|null $providerOrContext
+     * @param class-string<SyncEntityInterface> $entity
+     * @param SyncProviderInterface|SyncContextInterface|null $providerOrContext
      * @param string $propertyName
      * @return int|string|null
      */

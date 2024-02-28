@@ -2,13 +2,13 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Lkrms\Support\Catalog\RelationshipType;
-use Lkrms\Sync\Concept\SyncEntity;
+use Salient\Catalog\Core\Cardinality;
 use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Str;
+use Salient\Sync\AbstractSyncEntity;
 use DateTimeInterface;
 
-class TimeEntry extends SyncEntity
+class TimeEntry extends AbstractSyncEntity
 {
     public const DATE = 1;
     public const TIME = 2;
@@ -80,9 +80,9 @@ class TimeEntry extends SyncEntity
     public static function getRelationships(): array
     {
         return [
-            'User' => [RelationshipType::ONE_TO_ONE => User::class],
-            'Task' => [RelationshipType::ONE_TO_ONE => Task::class],
-            'Project' => [RelationshipType::ONE_TO_ONE => Project::class],
+            'User' => [Cardinality::ONE_TO_ONE => User::class],
+            'Task' => [Cardinality::ONE_TO_ONE => Task::class],
+            'Project' => [Cardinality::ONE_TO_ONE => Project::class],
         ];
     }
 

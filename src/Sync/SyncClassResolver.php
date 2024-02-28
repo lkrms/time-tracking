@@ -2,7 +2,7 @@
 
 namespace Lkrms\Time\Sync;
 
-use Lkrms\Sync\Contract\ISyncClassResolver;
+use Salient\Contract\Sync\SyncClassResolverInterface;
 
 /**
  * Maps entities in the Lkrms\Time\Sync namespace to and from their provider
@@ -12,7 +12,7 @@ use Lkrms\Sync\Contract\ISyncClassResolver;
  * at the same location in `Lkrms\Time\Sync\Contract` with the name
  * `Provides<Entity>`.
  */
-class SyncClassResolver implements ISyncClassResolver
+class SyncClassResolver implements SyncClassResolverInterface
 {
     public static function entityToProvider(string $entity): string
     {

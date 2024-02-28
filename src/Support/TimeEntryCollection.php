@@ -2,11 +2,11 @@
 
 namespace Lkrms\Time\Support;
 
-use Lkrms\Concept\TypedCollection;
 use Lkrms\Time\Sync\Entity\TimeEntry;
-use Salient\Container\Contract\ContainerAwareInterface;
+use Salient\Collection\AbstractTypedCollection;
 use Salient\Container\Container;
-use Salient\Container\ContainerInterface;
+use Salient\Contract\Container\ContainerAwareInterface;
+use Salient\Contract\Container\ContainerInterface;
 use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Env;
 use Salient\Core\Utility\Get;
@@ -17,9 +17,9 @@ use UnexpectedValueException;
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
  *
- * @extends TypedCollection<array-key,TimeEntry>
+ * @extends AbstractTypedCollection<array-key,TimeEntry>
  */
-final class TimeEntryCollection extends TypedCollection implements ContainerAwareInterface
+final class TimeEntryCollection extends AbstractTypedCollection implements ContainerAwareInterface
 {
     protected const ITEM_CLASS = TimeEntry::class;
 

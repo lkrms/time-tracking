@@ -2,19 +2,6 @@
 
 namespace Lkrms\Time\Sync\Provider\Clockify;
 
-use Lkrms\Curler\Catalog\CurlerProperty;
-use Lkrms\Curler\Pager\QueryPager;
-use Lkrms\Http\Catalog\HttpRequestMethod;
-use Lkrms\Http\HttpHeaders;
-use Lkrms\Support\Date\DateFormatter;
-use Lkrms\Support\Date\DateFormatterInterface;
-use Lkrms\Sync\Catalog\SyncOperation as OP;
-use Lkrms\Sync\Concept\HttpSyncProvider;
-use Lkrms\Sync\Contract\ISyncContext;
-use Lkrms\Sync\Contract\ISyncContext as Context;
-use Lkrms\Sync\Contract\ISyncEntity;
-use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
-use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
 use Lkrms\Time\Sync\Contract\ProvidesTenant;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\Entity\Client;
@@ -23,30 +10,43 @@ use Lkrms\Time\Sync\Entity\Task;
 use Lkrms\Time\Sync\Entity\Tenant;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
-use Salient\Container\Contract\SingletonInterface;
-use Salient\Container\ContainerInterface;
+use Salient\Catalog\Http\HttpRequestMethod;
+use Salient\Catalog\Sync\SyncOperation as OP;
+use Salient\Contract\Container\ContainerInterface;
+use Salient\Contract\Container\SingletonInterface;
+use Salient\Contract\Core\DateFormatterInterface;
+use Salient\Contract\Sync\SyncContextInterface;
+use Salient\Contract\Sync\SyncContextInterface as Context;
+use Salient\Contract\Sync\SyncEntityInterface;
 use Salient\Core\Facade\Console;
 use Salient\Core\Utility\Date;
 use Salient\Core\Utility\Env;
+use Salient\Core\DateFormatter;
+use Salient\Curler\Catalog\CurlerProperty;
+use Salient\Curler\Pager\QueryPager;
+use Salient\Http\HttpHeaders;
+use Salient\Sync\HttpSyncDefinition as HttpDef;
+use Salient\Sync\HttpSyncDefinitionBuilder as HttpDefB;
+use Salient\Sync\HttpSyncProvider;
 use Closure;
 use DateTimeImmutable;
 use DateTimeInterface;
 use UnexpectedValueException;
 
 /**
- * @method TimeEntry getTimeEntry(ISyncContext $ctx, int|string|null $id)
- * @method TimeEntry updateTimeEntry(ISyncContext $ctx, TimeEntry $timeEntry)
- * @method FluentIteratorInterface<array-key,TimeEntry> getTimeEntries(ISyncContext $ctx)
- * @method Client getClient(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Client> getClients(ISyncContext $ctx)
- * @method Project getProject(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Project> getProjects(ISyncContext $ctx)
- * @method Task getTask(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Task> getTasks(ISyncContext $ctx)
- * @method User getUser(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,User> getUsers(ISyncContext $ctx)
- * @method Tenant getTenant(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Tenant> getTenants(ISyncContext $ctx)
+ * @method TimeEntry getTimeEntry(SyncContextInterface $ctx, int|string|null $id)
+ * @method TimeEntry updateTimeEntry(SyncContextInterface $ctx, TimeEntry $timeEntry)
+ * @method FluentIteratorInterface<array-key,TimeEntry> getTimeEntries(SyncContextInterface $ctx)
+ * @method Client getClient(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Client> getClients(SyncContextInterface $ctx)
+ * @method Project getProject(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Project> getProjects(SyncContextInterface $ctx)
+ * @method Task getTask(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Task> getTasks(SyncContextInterface $ctx)
+ * @method User getUser(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,User> getUsers(SyncContextInterface $ctx)
+ * @method Tenant getTenant(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Tenant> getTenants(SyncContextInterface $ctx)
  */
 final class ClockifyProvider extends HttpSyncProvider implements
     SingletonInterface,
@@ -56,7 +56,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * Entity => input key => property
      *
-     * @var array<class-string<ISyncEntity>,array<string,string>>
+     * @var array<class-string<SyncEntityInterface>,array<string,string>>
      */
     private const ENTITY_PROPERTY_MAP = [
         Client::class => [

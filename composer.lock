@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ecedf970e33d98d0ed88718deaaa33bb",
+    "content-hash": "608d269a4baddae16c2f62ee58e1f5ea",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -508,82 +508,6 @@
             "time": "2024-02-05T09:28:28+00:00"
         },
         {
-            "name": "lkrms/util",
-            "version": "v0.21.47",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/lkrms/php-util.git",
-                "reference": "d1bdedf600dd82fd1d92be2aecc20f6418f5c5c6"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/lkrms/php-util/zipball/d1bdedf600dd82fd1d92be2aecc20f6418f5c5c6",
-                "reference": "d1bdedf600dd82fd1d92be2aecc20f6418f5c5c6",
-                "shasum": ""
-            },
-            "require": {
-                "composer-runtime-api": "^2.2",
-                "lkrms/dice": "^4.1.9",
-                "php": ">=7.4",
-                "psr/container": "^2",
-                "psr/event-dispatcher": "^1",
-                "psr/http-factory": "^1",
-                "psr/http-message": "^1.1 || ^2",
-                "psr/log": "^1"
-            },
-            "provide": {
-                "psr/event-dispatcher-implementation": "^1"
-            },
-            "require-dev": {
-                "adodb/adodb-php": "^5",
-                "analog/analog": "^1",
-                "clue/phar-composer": "^1",
-                "ergebnis/phpunit-slow-test-detector": "^2",
-                "firebase/php-jwt": "^6",
-                "league/oauth2-client": "^2",
-                "php-http/psr7-integration-tests": "^1.3",
-                "phpstan/extension-installer": "^1",
-                "phpstan/phpstan": "^1",
-                "phpstan/phpstan-deprecation-rules": "^1",
-                "phpstan/phpstan-phpunit": "^1",
-                "phpunit/phpunit": "^9",
-                "sebastian/diff": "^4 || ^5"
-            },
-            "suggest": {
-                "adodb/adodb-php": "Required for access to databases",
-                "analog/analog": "Allows Analog handlers to be used as console message targets",
-                "clue/phar-composer": "Simplifies creation of phar archives",
-                "firebase/php-jwt": "Required for validation of OAuth 2.0 access tokens",
-                "league/oauth2-client": "Required for integration with OAuth 2.0 service providers"
-            },
-            "bin": [
-                "bin/lk-util"
-            ],
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "bootstrap.php"
-                ],
-                "psr-4": {
-                    "Lkrms\\": "src/Util/",
-                    "Salient\\": "src/Toolkit/"
-                },
-                "classmap": [
-                    "stubs/"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "A lightweight PHP toolkit for expressive backend/CLI apps",
-            "support": {
-                "issues": "https://github.com/lkrms/php-util/issues",
-                "source": "https://github.com/lkrms/php-util/tree/v0.21.47"
-            },
-            "time": "2024-02-23T05:13:20+00:00"
-        },
-        {
             "name": "paragonie/random_compat",
             "version": "v9.99.100",
             "source": {
@@ -989,6 +913,90 @@
                 "source": "https://github.com/ralouphie/getallheaders/tree/develop"
             },
             "time": "2019-03-08T08:55:37+00:00"
+        },
+        {
+            "name": "salient/toolkit",
+            "version": "v0.99.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/salient-labs/toolkit.git",
+                "reference": "e5b7096d6955976cf7a3ab81a89c0bebf5b49a65"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/salient-labs/toolkit/zipball/e5b7096d6955976cf7a3ab81a89c0bebf5b49a65",
+                "reference": "e5b7096d6955976cf7a3ab81a89c0bebf5b49a65",
+                "shasum": ""
+            },
+            "require": {
+                "composer-runtime-api": "^2.2",
+                "lkrms/dice": "^4.1.9",
+                "php": ">=7.4",
+                "psr/container": "^2",
+                "psr/event-dispatcher": "^1",
+                "psr/http-factory": "^1",
+                "psr/http-message": "^1.1 || ^2",
+                "psr/log": "^1"
+            },
+            "conflict": {
+                "lkrms/util": "*"
+            },
+            "provide": {
+                "psr/event-dispatcher-implementation": "^1"
+            },
+            "require-dev": {
+                "adodb/adodb-php": "^5",
+                "analog/analog": "^1",
+                "clue/phar-composer": "^1",
+                "ergebnis/phpunit-slow-test-detector": "^2",
+                "firebase/php-jwt": "^6",
+                "league/oauth2-client": "^2",
+                "php-http/psr7-integration-tests": "^1.3",
+                "phpstan/extension-installer": "^1",
+                "phpstan/phpstan": "^1",
+                "phpstan/phpstan-deprecation-rules": "^1",
+                "phpstan/phpstan-phpunit": "^1",
+                "phpunit/phpunit": "^9",
+                "sebastian/diff": "^4 || ^5"
+            },
+            "suggest": {
+                "adodb/adodb-php": "Required for access to databases",
+                "analog/analog": "Allows Analog handlers to be used as console message targets",
+                "clue/phar-composer": "Simplifies creation of phar archives",
+                "firebase/php-jwt": "Required for validation of OAuth 2.0 access tokens",
+                "league/oauth2-client": "Required for integration with OAuth 2.0 service providers"
+            },
+            "bin": [
+                "bin/sli"
+            ],
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Salient\\": "src/Toolkit/"
+                },
+                "classmap": [
+                    "stubs/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Luke Arms",
+                    "email": "luke@linacreative.com"
+                }
+            ],
+            "description": "A lightweight PHP toolkit for expressive backend/CLI apps",
+            "support": {
+                "issues": "https://github.com/salient-labs/toolkit/issues",
+                "source": "https://github.com/salient-labs/toolkit"
+            },
+            "time": "2024-02-28T05:37:07+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",

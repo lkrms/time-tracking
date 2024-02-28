@@ -2,11 +2,11 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Lkrms\Support\Catalog\RelationshipType;
-use Lkrms\Sync\Concept\SyncEntity;
+use Salient\Catalog\Core\Cardinality;
+use Salient\Sync\AbstractSyncEntity;
 use DateTimeInterface;
 
-class Invoice extends SyncEntity
+class Invoice extends AbstractSyncEntity
 {
     /**
      * @var int|string|null
@@ -70,8 +70,8 @@ class Invoice extends SyncEntity
     public static function getRelationships(): array
     {
         return [
-            'Client' => [RelationshipType::ONE_TO_ONE => Client::class],
-            'LineItems' => [RelationshipType::ONE_TO_MANY => InvoiceLineItem::class],
+            'Client' => [Cardinality::ONE_TO_ONE => Client::class],
+            'LineItems' => [Cardinality::ONE_TO_MANY => InvoiceLineItem::class],
         ];
     }
 }
