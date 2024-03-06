@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "010aca24f391a5550ae9247068df5a89",
+    "content-hash": "4d5555bb69db0f5de5df0f09453ea43f",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -916,16 +916,16 @@
         },
         {
             "name": "salient/toolkit",
-            "version": "v0.99.9",
+            "version": "v0.99.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/salient-labs/toolkit.git",
-                "reference": "f901360a1f5aa78a24585751fa1b3b807eaa2ebd"
+                "reference": "7e97d970dc09a72456851e746f7d7671ab2f9984"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/salient-labs/toolkit/zipball/f901360a1f5aa78a24585751fa1b3b807eaa2ebd",
-                "reference": "f901360a1f5aa78a24585751fa1b3b807eaa2ebd",
+                "url": "https://api.github.com/repos/salient-labs/toolkit/zipball/7e97d970dc09a72456851e746f7d7671ab2f9984",
+                "reference": "7e97d970dc09a72456851e746f7d7671ab2f9984",
                 "shasum": ""
             },
             "require": {
@@ -996,7 +996,7 @@
                 "issues": "https://github.com/salient-labs/toolkit/issues",
                 "source": "https://github.com/salient-labs/toolkit"
             },
-            "time": "2024-03-06T05:05:24+00:00"
+            "time": "2024-03-06T17:41:46+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -1198,16 +1198,16 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v5.0.1",
+            "version": "v5.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "2218c2252c874a4624ab2f613d86ac32d227bc69"
+                "reference": "139676794dc1e9231bf7bcd123cfc0c99182cb13"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/2218c2252c874a4624ab2f613d86ac32d227bc69",
-                "reference": "2218c2252c874a4624ab2f613d86ac32d227bc69",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/139676794dc1e9231bf7bcd123cfc0c99182cb13",
+                "reference": "139676794dc1e9231bf7bcd123cfc0c99182cb13",
                 "shasum": ""
             },
             "require": {
@@ -1250,9 +1250,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v5.0.1"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.0.2"
             },
-            "time": "2024-02-21T19:24:10+00:00"
+            "time": "2024-03-05T20:51:40+00:00"
         },
         {
             "name": "phar-io/manifest",
