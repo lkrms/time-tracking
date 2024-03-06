@@ -70,7 +70,9 @@ class MarkTimeEntriesInvoiced extends Command
                 $entry->Id,
                 $state,
                 $entry->getBillableHours(),
-                $entry->Start->format('d/m/Y'),
+                $entry->Start
+                    ? $entry->Start->format('d/m/Y')
+                    : '<no date>',
                 $entry->Project->Name ?? '<no project>',
                 $entry->Project->Client->Name ?? '<no client>',
             );
@@ -82,7 +84,7 @@ class MarkTimeEntriesInvoiced extends Command
         }
 
         Console::info("Marking $count in {$this->TimeEntryProviderName} as $state:", $total);
-        $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced, $this->MarkUninvoiced);
+        $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced, (bool) $this->MarkUninvoiced);
 
         Console::summary("$count marked as $state");
     }

@@ -2,7 +2,7 @@
 
 namespace Lkrms\Time\Support;
 
-use Lkrms\Time\Sync\Entity\TimeEntry;
+use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Collection\AbstractTypedCollection;
 use Salient\Container\Container;
 use Salient\Contract\Container\ContainerAwareInterface;
@@ -33,7 +33,6 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
     /**
      * @param TimeEntry $a
      * @param TimeEntry $b
-     * @return int
      */
     protected function compareItems($a, $b, bool $strict = false): int
     {
@@ -67,7 +66,6 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
      * ```php
      * fn(TimeEntry $entry) => [$entry->Project->Id ?? null, $entry->BillableRate]
      * ```
-     * @return TimeEntryCollection
      */
     public function groupBy(
         int $show = TimeEntry::ALL,
@@ -84,7 +82,8 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
         $groupSummary = [];
         foreach ($times as $t) {
             $summary = $t->getSummary(
-                $show & ~TimeEntry::DESCRIPTION,
+                // `& TimeEntry::ALL` is to satisfy PHPStan
+                $show & ~TimeEntry::DESCRIPTION & TimeEntry::ALL,
                 $dateFormat,
                 $timeFormat,
                 $markdown

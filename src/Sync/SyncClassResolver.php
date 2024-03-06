@@ -3,6 +3,9 @@
 namespace Lkrms\Time\Sync;
 
 use Salient\Contract\Sync\SyncClassResolverInterface;
+use Salient\Contract\Sync\SyncEntityInterface;
+use Salient\Contract\Sync\SyncProviderInterface;
+use Salient\Core\Utility\Pcre;
 
 /**
  * Maps entities in the Lkrms\Time\Sync namespace to and from their provider
@@ -14,18 +17,28 @@ use Salient\Contract\Sync\SyncClassResolverInterface;
  */
 class SyncClassResolver implements SyncClassResolverInterface
 {
+    /**
+     * @inheritDoc
+     */
     public static function entityToProvider(string $entity): string
     {
-        return preg_replace(
+        /** @var class-string<SyncProviderInterface> */
+        $provider = Pcre::replace(
             ['/(?<=^Lkrms\\\\Time\\\\Sync\\\\)Entity(?=\\\\)/', '/(?<=\\\\)([^\\\\]+)$/'],
             ['Contract', 'Provides$1'],
             $entity
         );
+
+        return $provider;
     }
 
+    /**
+     * @inheritDoc
+     */
     public static function providerToEntity(string $provider): array
     {
-        $entity = preg_replace(
+        /** @var class-string<SyncEntityInterface> */
+        $entity = Pcre::replace(
             ['/(?<=^Lkrms\\\\Time\\\\Sync\\\\)Contract(?=\\\\)/', '/(?<=\\\\)Provides([^\\\\]+)$/'],
             ['Entity', '$1'],
             $provider,

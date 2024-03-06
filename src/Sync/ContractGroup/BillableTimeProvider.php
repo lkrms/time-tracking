@@ -23,7 +23,6 @@ interface BillableTimeProvider extends
      * Mark or unmark time entries as invoiced
      *
      * @param iterable<TimeEntry> $timeEntries
-     * @param bool $unmark
      */
     public function markTimeEntriesInvoiced(iterable $timeEntries, bool $unmark = false): void;
 }

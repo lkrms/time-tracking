@@ -7,6 +7,7 @@ use Lkrms\Time\Sync\Entity\Invoice;
 use Salient\Core\Facade\Console;
 use Salient\Core\Utility\Env;
 use Salient\Core\Utility\Format;
+use Salient\Core\Utility\Get;
 
 class ListInvoices extends Command
 {
@@ -31,6 +32,7 @@ class ListInvoices extends Command
         if ($prefix = Env::get('invoice_number_prefix', null)) {
             $query['number'] = "{$prefix}*";
         }
+        /** @var iterable<Invoice> */
         $invoices = $this->InvoiceProvider->with(Invoice::class)->getList($query);
 
         $count = 0;
@@ -39,8 +41,8 @@ class ListInvoices extends Command
                 "==> %s for \$%.2f\n  date: %s\n  client: %s\n\n",
                 $invoice->Number,
                 $invoice->Total,
-                Format::date($invoice->Date),
-                $invoice->Client->Name,
+                Format::date(Get::notNull($invoice->Date)),
+                $invoice->Client->Name ?? '<unknown>',
             );
             $count++;
         }

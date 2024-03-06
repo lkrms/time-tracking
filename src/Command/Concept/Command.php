@@ -6,15 +6,14 @@ use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Project;
-use Lkrms\Time\Sync\Entity\TimeEntry;
-use Salient\Catalog\Cli\CliOptionType;
-use Salient\Catalog\Cli\CliOptionValueType;
+use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Cli\Exception\CliInvalidArgumentsException;
 use Salient\Cli\CliApplication;
 use Salient\Cli\CliCommand;
 use Salient\Cli\CliOption;
 use Salient\Cli\CliOptionBuilder;
-use Salient\Contract\Iterator\FluentIteratorInterface;
+use Salient\Contract\Cli\CliOptionType;
+use Salient\Contract\Cli\CliOptionValueType;
 use Salient\Contract\Sync\SyncContextInterface;
 use Salient\Contract\Sync\SyncEntityInterface;
 use Salient\Contract\Sync\SyncProviderInterface;
@@ -181,12 +180,12 @@ abstract class Command extends CliCommand
     }
 
     /**
-     * @return FluentIteratorInterface<array-key,TimeEntry>
+     * @return iterable<array-key,TimeEntry>
      */
     protected function getTimeEntries(
         ?bool $billable = null,
         ?bool $billed = null
-    ): FluentIteratorInterface {
+    ): iterable {
         $filter = [
             'client_id' => $this->getClientId(),
             'project_id' => $this->getProjectId(),
@@ -217,11 +216,12 @@ abstract class Command extends CliCommand
             'description' => TimeEntry::DESCRIPTION,
         ];
 
-        return array_reduce(
-            $this->Hide,
-            fn(int $prev, string $value) => $prev & ~$showMap[$value],
-            TimeEntry::ALL
-        );
+        $mask = 0;
+        foreach ($this->Hide ?? [] as $value) {
+            $mask |= $showMap[$value];
+        }
+
+        return ~$mask & TimeEntry::ALL;
     }
 
     /**
@@ -276,7 +276,6 @@ abstract class Command extends CliCommand
     /**
      * @param class-string<SyncEntityInterface> $entity
      * @param SyncProviderInterface|SyncContextInterface|null $providerOrContext
-     * @param string $propertyName
      * @return int|string|null
      */
     protected function getEntityId(

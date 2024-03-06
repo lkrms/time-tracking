@@ -10,17 +10,20 @@ use Lkrms\Time\Sync\Entity\Task;
 use Lkrms\Time\Sync\Entity\Tenant;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
-use Salient\Catalog\Http\HttpRequestMethod;
-use Salient\Catalog\Sync\SyncOperation as OP;
 use Salient\Contract\Container\ContainerInterface;
 use Salient\Contract\Container\SingletonInterface;
 use Salient\Contract\Core\DateFormatterInterface;
+use Salient\Contract\Http\HttpRequestMethod;
 use Salient\Contract\Sync\SyncContextInterface;
 use Salient\Contract\Sync\SyncContextInterface as Context;
 use Salient\Contract\Sync\SyncEntityInterface;
+use Salient\Contract\Sync\SyncOperation as OP;
+use Salient\Core\Exception\UnexpectedValueException;
 use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Date;
 use Salient\Core\Utility\Env;
+use Salient\Core\Utility\Get;
 use Salient\Core\DateFormatter;
 use Salient\Curler\Catalog\CurlerProperty;
 use Salient\Curler\Pager\QueryPager;
@@ -31,7 +34,6 @@ use Salient\Sync\HttpSyncProvider;
 use Closure;
 use DateTimeImmutable;
 use DateTimeInterface;
-use UnexpectedValueException;
 
 /**
  * @method TimeEntry getTimeEntry(SyncContextInterface $ctx, int|string|null $id)
@@ -120,8 +122,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
         Console::debug(sprintf(
             "Connected to Clockify workspace '%s' (%s) as '%s' (%s)",
-            $user->ActiveTenant->Name,
-            $user->ActiveTenant->Id,
+            $user->ActiveTenant->Name ?? '<unknown>',
+            $user->ActiveTenant->Id ?? '<unknown>',
             $user->Name,
             $user->Id,
         ));
@@ -182,11 +184,13 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
         $pending = true;
         try {
+            /** @var array{timeZone:string} */
+            $settings = $this->with(User::class)
+                             ->get(null)
+                             ->Settings;
             return new DateFormatter(
                 self::DATE_FORMAT,
-                $this->with(User::class)
-                     ->get(null)
-                     ->Settings['timeZone'],
+                $settings['timeZone'],
             );
         } finally {
             $pending = false;
@@ -218,12 +222,15 @@ final class ClockifyProvider extends HttpSyncProvider implements
                     ->readFromReadList()
                     ->overrides([
                         OP::READ =>
-                            fn(HttpDef $def, $op, Context $ctx, $id = null, ...$args) =>
-                                ($id === null
-                                        ? $def->withPath('/user')
-                                              ->withReadFromReadList(false)
-                                        : $def)
-                                    ->getFallbackClosure($op)($ctx, $id, ...$args)
+                            $defB->bindOverride(
+                                fn(HttpDef $def, $op, Context $ctx, $id = null, ...$args) =>
+                                    Get::notNull((
+                                        $id === null
+                                            ? $def->withPath('/user')
+                                                  ->withReadFromReadList(false)
+                                            : $def
+                                    )->getFallbackClosure($op))($ctx, ...[$id, ...$args])
+                            )
                     ]),
 
             Client::class =>
@@ -305,7 +312,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param array<string,mixed>|null $value
+     * @param array{start?:string,end?:string,duration?:int|string}|null $value
      */
     private function getTimeInterval(
         $value,
@@ -331,13 +338,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
             return $duration;
         }
 
-        if (is_string($duration)) {
-            return Date::duration($duration);
-        }
-
-        throw new UnexpectedValueException(
-            sprintf('Invalid duration: %s', $duration)
-        );
+        return Date::duration($duration);
     }
 
     /**
@@ -376,8 +377,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param array<string,mixed> $entry
-     * @return array<string,mixed>
+     * @param mixed[] $entry
+     * @return mixed[]
      */
     function normaliseTimeEntry(array $entry): array
     {
@@ -466,8 +467,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param array<string,mixed> $user
-     * @return array<string,mixed>
+     * @param mixed[] $user
+     * @return mixed[]
      */
     public function normaliseUser(array $user): array
     {
@@ -483,7 +484,6 @@ final class ClockifyProvider extends HttpSyncProvider implements
      * Mark time entries as invoiced
      *
      * @param iterable<TimeEntry> $timeEntries
-     * @param bool $unmark
      */
     public function markTimeEntriesInvoiced(
         iterable $timeEntries,
@@ -512,7 +512,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param string|string[]|null $value
+     * @param mixed $value
      * @return array<string,string|string[]>|null
      */
     private function reportFilter($value): ?array
@@ -521,15 +521,19 @@ final class ClockifyProvider extends HttpSyncProvider implements
             return null;
         }
 
-        return [
-            'ids' => (array) $value,
-            'contains' => 'CONTAINS',
-            'status' => 'ALL',
-        ];
+        if (is_string($value) || Arr::ofString($value)) {
+            return [
+                'ids' => (array) $value,
+                'contains' => 'CONTAINS',
+                'status' => 'ALL',
+            ];
+        }
+
+        throw new UnexpectedValueException('Invalid report filter value');
     }
 
     /**
-     * @param DateTimeInterface|string|null $value
+     * @param mixed $value
      */
     private function dateTime($value): ?DateTimeInterface
     {
@@ -541,6 +545,10 @@ final class ClockifyProvider extends HttpSyncProvider implements
             return $value;
         }
 
-        return new DateTimeImmutable($value);
+        if (is_string($value)) {
+            return new DateTimeImmutable($value);
+        }
+
+        throw new UnexpectedValueException('Invalid date and time value');
     }
 }

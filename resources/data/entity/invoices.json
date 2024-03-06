@@ -1,0 +1,14 @@
+{
+  "id": "243216c5-369e-4056-ac67-05388f86dc81",
+  "number": "OIT00546",
+  "date": "/Date(1518685950940+0000)/",
+  "dueDate": "/Date(1518685950940+0000)/",
+  "clientId": "025867f1-d741-4d6b-b1af-9ac774b59ba7",
+  "lineItems": [],
+  "status": "AUTHORISED",
+  "currency": "NZD",
+  "sent": true,
+  "subTotal": 1800.00,
+  "totalTax": 225.00,
+  "total": 2025.00
+}

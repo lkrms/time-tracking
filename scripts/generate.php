@@ -3,13 +3,15 @@
 
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
+use Lkrms\Time\Sync\Entity\InvoiceLineItem;
 use Lkrms\Time\Sync\Entity\Project;
 use Lkrms\Time\Sync\Entity\Task;
 use Lkrms\Time\Sync\Entity\Tenant;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
-use Salient\Catalog\Core\MessageLevel as Level;
 use Salient\Cli\CliApplication;
+use Salient\Contract\Core\MessageLevel as Level;
+use Salient\Core\Exception\FilesystemErrorException;
 use Salient\Core\Facade\Console;
 use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Env;
@@ -25,7 +27,17 @@ use Salient\Sli\Command\Generate\GenerateSyncProvider;
 $loader = require dirname(__DIR__) . '/vendor/autoload.php';
 $loader->addPsr4('Salient\\Sli\\', Package::packagePath('salient/toolkit') . '/src/Sli/');
 
-$entities = [];
+// Entity => [ name, provider|null, endpoint|null, ...args ]
+$entities = [
+    Client::class => ['clients', null, null],
+    Invoice::class => ['invoices', null, null, '--one', 'Client=Client', '--many', 'LineItems=InvoiceLineItem'],
+    InvoiceLineItem::class => ['line_items', null, null, '--trim', 'InvoiceLineItem,LineItem'],
+    Project::class => ['projects', null, null, '--one', 'Client=Client', '--many', 'Tasks=Task'],
+    Task::class => ['tasks', null, null, '--one', 'Project=Project'],
+    Tenant::class => ['workspaces', null, null, '--many', 'Users=User'],
+    TimeEntry::class => ['time_entries', null, null, '--one', 'User=User,Task=Task,Project=Project'],
+    User::class => ['users', null, null, '--one', 'ActiveTenant=Tenant'],
+];
 
 $providers = [
     Client::class => ['--op', 'get,get-list'],
@@ -83,7 +95,11 @@ foreach ($entities as $class => $entityArgs) {
     $save = false;
     if (is_file($file)) {
         array_unshift($entityArgs, '--json', $file);
-        generated($file);
+        if ($provider !== null) {
+            generated($file);
+        }
+    } elseif ($provider === null) {
+        throw new FilesystemErrorException(sprintf('File not found: %s', $file));
     } else {
         array_unshift($entityArgs, '--provider', $provider, '--endpoint', $endpoint);
         $save = true;

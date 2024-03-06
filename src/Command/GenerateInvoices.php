@@ -7,8 +7,9 @@ use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
 use Lkrms\Time\Sync\Entity\InvoiceLineItem;
-use Lkrms\Time\Sync\Entity\TimeEntry;
+use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Cli\CliOption;
+use Salient\Core\Exception\UnexpectedValueException;
 use Salient\Core\Facade\Console;
 use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Env;
@@ -61,11 +62,22 @@ class GenerateInvoices extends Command
         $timeEntryCount = 0;
 
         foreach ($times as $time) {
-            $clientId = $time->Project->Client->Id;
+            $clientId = $time->Project->Client->Id ?? null;
+            $clientName = $time->Project->Client->Name ?? null;
+            if ($clientId === null) {
+                Console::warn('Skipping time entry with no client:', $time->getSummary());
+                continue;
+            }
+            if ($clientName === null) {
+                throw new UnexpectedValueException(sprintf(
+                    'Client has no name: %s',
+                    $clientId,
+                ));
+            }
             $entries = $clientTimes[$clientId]
-                ?? ($clientTimes[$clientId] = $this->App->get(TimeEntryCollection::class));
+                ??= $this->App->get(TimeEntryCollection::class);
             $entries[] = $time;
-            $clientNames[$clientId] = $time->Project->Client->Name;
+            $clientNames[$clientId] = $clientName;
             $timeEntryCount++;
         }
 
@@ -108,7 +120,7 @@ class GenerateInvoices extends Command
 
             $seen = 0;
             foreach ($invoices as $invoice) {
-                $next = max((int) substr($invoice->Number, strlen($prefix)) + 1, $next, 1);
+                $next = max((int) substr((string) $invoice->Number, strlen($prefix)) + 1, $next, 1);
                 if ($seen++ === 99) {
                     break;
                 }
@@ -163,7 +175,7 @@ class GenerateInvoices extends Command
                         "==> \$%.2f (%.2f hours):\n  %s\n\n",
                         $entry->getBillableAmount(),
                         $entry->getBillableHours(),
-                        str_replace("\n", "\n  ", $entry->Description)
+                        str_replace("\n", "\n  ", (string) $entry->Description)
                     );
                 }
                 continue;
@@ -196,7 +208,7 @@ class GenerateInvoices extends Command
                 sprintf(
                     '%s for %s (%.2f + %.2f tax = %s %.2f)',
                     $invoice->Number,
-                    $invoice->Client->Name,
+                    $invoice->Client->Name ?? '<unknown>',
                     $invoice->SubTotal,
                     $invoice->TotalTax,
                     $invoice->Currency,

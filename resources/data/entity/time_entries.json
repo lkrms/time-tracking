@@ -1,0 +1,14 @@
+{
+  "id": "54m377ddd3fcab07cfbb432w",
+  "description": "This is a sample time entry description.",
+  "userId": "string",
+  "billable": true,
+  "taskId": "54m377ddd3fcab07cfbb432w",
+  "projectId": "25b687e29ae1f428e7ebe123",
+  "start": "2020-01-01T00:00:00Z",
+  "end": "2021-01-01T00:00:00Z",
+  "seconds": 8000,
+  "billableRate": 105.00,
+  "isInvoiced": true,
+  "isLocked": false
+}

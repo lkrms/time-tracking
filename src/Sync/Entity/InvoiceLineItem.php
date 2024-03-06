@@ -4,6 +4,11 @@ namespace Lkrms\Time\Sync\Entity;
 
 use Salient\Sync\AbstractSyncEntity;
 
+/**
+ * Represents the state of an InvoiceLineItem entity in a backend
+ *
+ * @generated
+ */
 class InvoiceLineItem extends AbstractSyncEntity
 {
     /**
@@ -37,12 +42,15 @@ class InvoiceLineItem extends AbstractSyncEntity
     public $AccountCode;
 
     /**
-     * @var array<string,string>|null
+     * @internal
+     *
+     * @return string[]
      */
-    public $Tracking;
-
-    protected static function getRemovablePrefixes(): ?array
+    protected static function getRemovablePrefixes(): array
     {
-        return ['LineItem', 'InvoiceLineItem'];
+        return [
+            'InvoiceLineItem',
+            'LineItem',
+        ];
     }
 }

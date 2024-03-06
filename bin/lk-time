@@ -8,8 +8,10 @@ use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
+use Lkrms\Time\Sync\Entity\TimeEntry as BaseTimeEntry;
 use Lkrms\Time\Sync\Provider\Clockify\ClockifyProvider;
 use Lkrms\Time\Sync\Provider\Xero\XeroProvider;
+use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Cli\CliApplication;
 use Salient\Core\Utility\Env;
 use Salient\Sync\Command\CheckSyncProviderHeartbeat;
@@ -22,11 +24,12 @@ require dirname(__DIR__) . '/vendor/autoload.php';
     ->startCache()
     ->startSync()
     ->providers([
-        BillableTimeProvider::class => Env::get('billable_time_provider'),
-        InvoiceProvider::class => Env::get('invoice_provider'),
+        BillableTimeProvider::class => Env::getClass('billable_time_provider', BillableTimeProvider::class),
+        InvoiceProvider::class => Env::getClass('invoice_provider', InvoiceProvider::class),
         ClockifyProvider::class => ClockifyProvider::class,
         XeroProvider::class => XeroProvider::class,
     ])
+    ->bind(BaseTimeEntry::class, TimeEntry::class)
     ->command(['client', 'list'], ListClients::class)
     ->command(['entry', 'list'], ListTimeEntries::class)
     ->command(['invoice', 'list'], ListInvoices::class)

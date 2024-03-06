@@ -2,10 +2,17 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Salient\Catalog\Core\Cardinality;
+use Salient\Contract\Core\Cardinality;
+use Salient\Sync\Support\DeferredEntity;
+use Salient\Sync\Support\DeferredRelationship;
 use Salient\Sync\AbstractSyncEntity;
 use DateTimeInterface;
 
+/**
+ * Represents the state of an Invoice entity in a backend
+ *
+ * @generated
+ */
 class Invoice extends AbstractSyncEntity
 {
     /**
@@ -19,21 +26,22 @@ class Invoice extends AbstractSyncEntity
     public $Number;
 
     /**
-     * @var string|null
+     * @var DateTimeInterface|null
      */
-    public $Reference;
-
-    public ?DateTimeInterface $Date;
-
-    public ?DateTimeInterface $DueDate;
+    public $Date;
 
     /**
-     * @var Client|null
+     * @var DateTimeInterface|null
+     */
+    public $DueDate;
+
+    /**
+     * @var Client|DeferredEntity<Client>|null
      */
     public $Client;
 
     /**
-     * @var InvoiceLineItem[]|null
+     * @var array<InvoiceLineItem|DeferredEntity<InvoiceLineItem>>|DeferredRelationship<InvoiceLineItem>|null
      */
     public $LineItems;
 
@@ -50,7 +58,7 @@ class Invoice extends AbstractSyncEntity
     /**
      * @var bool|null
      */
-    public $SentToContact;
+    public $Sent;
 
     /**
      * @var float|null
@@ -67,6 +75,9 @@ class Invoice extends AbstractSyncEntity
      */
     public $Total;
 
+    /**
+     * @internal
+     */
     public static function getRelationships(): array
     {
         return [

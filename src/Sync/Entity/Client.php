@@ -4,6 +4,11 @@ namespace Lkrms\Time\Sync\Entity;
 
 use Salient\Sync\AbstractSyncEntity;
 
+/**
+ * Represents the state of a Client entity in a backend
+ *
+ * @generated
+ */
 class Client extends AbstractSyncEntity
 {
     /**
@@ -19,7 +24,12 @@ class Client extends AbstractSyncEntity
     /**
      * @var string|null
      */
-    public $Description;
+    public $FirstName;
+
+    /**
+     * @var string|null
+     */
+    public $LastName;
 
     /**
      * @var string|null

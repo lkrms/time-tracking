@@ -2,9 +2,16 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Salient\Catalog\Core\Cardinality;
+use Salient\Contract\Core\Cardinality;
+use Salient\Sync\Support\DeferredEntity;
+use Salient\Sync\Support\DeferredRelationship;
 use Salient\Sync\AbstractSyncEntity;
 
+/**
+ * Represents the state of a Tenant entity in a backend
+ *
+ * @generated
+ */
 class Tenant extends AbstractSyncEntity
 {
     /**
@@ -23,7 +30,7 @@ class Tenant extends AbstractSyncEntity
     public $LogoUrl;
 
     /**
-     * @var User[]|null
+     * @var array<User|DeferredEntity<User>>|DeferredRelationship<User>|null
      */
     public $Users;
 
@@ -32,6 +39,9 @@ class Tenant extends AbstractSyncEntity
      */
     public $Settings;
 
+    /**
+     * @internal
+     */
     public static function getRelationships(): array
     {
         return [

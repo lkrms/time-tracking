@@ -5,14 +5,16 @@ namespace Lkrms\Time\Sync\Provider\Xero;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
-use Salient\Catalog\Sync\SyncOperation as OP;
 use Salient\Contract\Container\SingletonInterface;
 use Salient\Contract\Sync\SyncContextInterface as Context;
 use Salient\Contract\Sync\SyncEntityInterface;
+use Salient\Contract\Sync\SyncOperation as OP;
 use Salient\Core\Facade\Cache;
 use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Env;
 use Salient\Core\Utility\Inflect;
+use Salient\Core\Utility\Pcre;
 use Salient\Core\DateFormatter;
 use Salient\Core\DotNetDateParser;
 use Salient\Curler\Pager\QueryPager;
@@ -85,7 +87,6 @@ final class XeroProvider extends HttpSyncProvider implements
         ],
         Invoice::class => [
             'number' => 'InvoiceNumber',
-            'reference' => 'Reference',
             'date' => 'Date',
             'due_date' => 'DueDate',
             'status' => 'Status',
@@ -203,7 +204,22 @@ final class XeroProvider extends HttpSyncProvider implements
             Client::class =>
                 $defB
                     ->operations([OP::READ, OP::READ_LIST])
-                    ->keyMap(self::ENTITY_KEY_MAPS[$entity]),
+                    ->pipelineFromBackend(
+                        $this->pipelineFrom(Client::class)
+                             ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
+                             ->through(
+                                 function (array $payload, Closure $next) {
+                                     if (
+                                         $payload['IsCustomer'] === false &&
+                                         $payload['IsSupplier'] === true
+                                     ) {
+                                         return null;
+                                     }
+                                     $payload['Archived'] = $payload['ContactStatus'] !== 'ACTIVE';
+                                     return $next($payload);
+                                 }
+                             )
+                    ),
 
             default =>
                 $defB,
@@ -247,8 +263,13 @@ final class XeroProvider extends HttpSyncProvider implements
     private function getConnections(): array
     {
         // See https://developer.xero.com/documentation/guides/oauth2/tenants
-        return $this->Connections
-            ?? ($this->Connections = $this->getCurler('/connections')->get());
+        if (!isset($this->Connections)) {
+            /** @var array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}> */
+            $connections = $this->getCurler('/connections')->get();
+            return $this->Connections = $connections;
+        }
+
+        return $this->Connections;
     }
 
     /**
@@ -380,11 +401,11 @@ final class XeroProvider extends HttpSyncProvider implements
         $where = [];
         foreach ($fieldMap as $filterField => $field) {
             $_filterField = $filterField;
-            $values = $ctx->claimFilter($_filterField);
+            $values = $ctx->claimFilterStringList($_filterField);
 
             if ($values === null) {
                 $_filterField = "!$filterField";
-                $values = $ctx->claimFilter($_filterField);
+                $values = $ctx->claimFilterStringList($_filterField);
 
                 if ($values === null) {
                     continue;
@@ -422,7 +443,7 @@ final class XeroProvider extends HttpSyncProvider implements
                     }
                     return $expr;
                 },
-                (array) $values
+                $values
             );
             $where[$field]['__glue'] = $glue;
         }
@@ -444,12 +465,12 @@ final class XeroProvider extends HttpSyncProvider implements
         }
 
         // Add an "order" parameter if an "$orderby" filter is provided
-        $orderby = $ctx->claimFilter('$orderby');
+        $orderby = $ctx->claimFilterString('$orderby');
         if ($orderby !== null) {
             $parts = [];
             // Format: "<field_name>[ (ASC|DESC)][,...]"
             foreach (explode(',', $orderby) as $expr) {
-                $expr = preg_split('/\h+/', trim($expr));
+                $expr = Pcre::split('/\h+/', trim($expr));
                 if (count($expr) > 2) {
                     throw new UnexpectedValueException(
                         sprintf('Invalid $orderby value: %s', $orderby)
@@ -474,33 +495,31 @@ final class XeroProvider extends HttpSyncProvider implements
      */
     private function generateInvoice(Invoice $invoice): array
     {
+        if (!isset($invoice->Client->Id)) {
+            throw new UnexpectedValueException('Invoice has no client');
+        }
+
         $data = [];
         $data['Type'] = 'ACCREC';
         $data['Contact'] = ['ContactID' => $invoice->Client->Id];
         $data['InvoiceNumber'] = $invoice->Number;
-        $data['Reference'] = $invoice->Reference;
         $data['Date'] = $invoice->Date;
         $data['DueDate'] = $invoice->DueDate;
         $data['LineItems'] = [];
         $data['Status'] = $invoice->Status;
 
-        $data = array_filter($data, fn($value) => $value !== null);
-
-        foreach ($invoice->LineItems as $lineItem) {
+        foreach ($invoice->LineItems ?? [] as $lineItem) {
             $line = [];
             $line['Description'] = $lineItem->Description;
             $line['Quantity'] = $lineItem->Quantity;
             $line['UnitAmount'] = $lineItem->UnitAmount;
             $line['ItemCode'] = $lineItem->ItemCode;
             $line['AccountCode'] = $lineItem->AccountCode;
-            $line['Tracking'] = $lineItem->Tracking;
 
-            $line = array_filter($line, fn($value) => $value !== null);
-
-            $data['LineItems'][] = $line;
+            $data['LineItems'][] = Arr::whereNotNull($line);
         }
 
-        return $data;
+        return Arr::whereNotNull($data);
     }
 
     private function getAccessToken(): AccessToken
@@ -511,8 +530,7 @@ final class XeroProvider extends HttpSyncProvider implements
     private function getOAuth2Client(): XeroOAuth2Client
     {
         return $this->OAuth2Client
-            ?? ($this->OAuth2Client =
-                $this->App
+            ??= $this->App
                      ->get(XeroOAuth2Client::class)
                      ->withDefaultScopes(self::OAUTH2_SCOPES)
                      ->withCallback(
@@ -521,17 +539,17 @@ final class XeroProvider extends HttpSyncProvider implements
                                  $this->Connections = null;
                              }
                          }
-                     ));
+                     );
     }
 
     private function getTenantIdKey(): string
     {
         return $this->TenantIdKey
-            ?? ($this->TenantIdKey = implode(':', [
+            ??= implode(':', [
                 static::class,
                 'tenant',
                 $this->getBaseUrl(),
                 'uuid',
-            ]));
+            ]);
     }
 }

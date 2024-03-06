@@ -2,9 +2,16 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Salient\Catalog\Core\Cardinality;
+use Salient\Contract\Core\Cardinality;
+use Salient\Sync\Support\DeferredEntity;
+use Salient\Sync\Support\DeferredRelationship;
 use Salient\Sync\AbstractSyncEntity;
 
+/**
+ * Represents the state of a Project entity in a backend
+ *
+ * @generated
+ */
 class Project extends AbstractSyncEntity
 {
     /**
@@ -28,12 +35,12 @@ class Project extends AbstractSyncEntity
     public $Billable;
 
     /**
-     * @var Task[]|null
+     * @var array<Task|DeferredEntity<Task>>|DeferredRelationship<Task>|null
      */
     public $Tasks;
 
     /**
-     * @var Client|null
+     * @var Client|DeferredEntity<Client>|null
      */
     public $Client;
 
@@ -52,6 +59,9 @@ class Project extends AbstractSyncEntity
      */
     public $Archived;
 
+    /**
+     * @internal
+     */
     public static function getRelationships(): array
     {
         return [

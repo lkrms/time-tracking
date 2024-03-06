@@ -1,14 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time\Sync\Entity;
+namespace Lkrms\Time\Sync\TimeEntity;
 
-use Salient\Catalog\Core\Cardinality;
+use Lkrms\Time\Sync\Entity\TimeEntry as BaseTimeEntry;
 use Salient\Core\Utility\Arr;
 use Salient\Core\Utility\Str;
-use Salient\Sync\AbstractSyncEntity;
-use DateTimeInterface;
 
-class TimeEntry extends AbstractSyncEntity
+class TimeEntry extends BaseTimeEntry
 {
     public const DATE = 1;
     public const TIME = 2;
@@ -19,84 +17,21 @@ class TimeEntry extends AbstractSyncEntity
     public const ALL = TimeEntry::DATE | TimeEntry::TIME | TimeEntry::PROJECT | TimeEntry::TASK | TimeEntry::USER | TimeEntry::DESCRIPTION;
 
     /**
-     * @var int|string|null
-     */
-    public $Id;
-
-    /**
-     * @var string|null
-     */
-    public $Description;
-
-    /**
-     * @var User|null
-     */
-    public $User;
-
-    /**
-     * @var bool|null
-     */
-    public $Billable;
-
-    /**
-     * @var Task|null
-     */
-    public $Task;
-
-    /**
-     * @var Project|null
-     */
-    public $Project;
-
-    public ?DateTimeInterface $Start = null;
-
-    public ?DateTimeInterface $End = null;
-
-    /**
-     * @var int|null
-     */
-    public $Seconds;
-
-    /**
-     * @var float|null
-     */
-    public $BillableRate;
-
-    /**
-     * @var bool|null
-     */
-    public $IsInvoiced;
-
-    /**
-     * @var bool|null
-     */
-    public $IsLocked;
-
-    /**
      * @var TimeEntry[]|null
      */
     private $Merged;
 
-    public static function getRelationships(): array
-    {
-        return [
-            'User' => [Cardinality::ONE_TO_ONE => User::class],
-            'Task' => [Cardinality::ONE_TO_ONE => Task::class],
-            'Project' => [Cardinality::ONE_TO_ONE => Project::class],
-        ];
-    }
-
     public function getBillableAmount(): float
     {
         return $this->Billable
-            ? round(($this->BillableRate ?? 0) * ($this->Seconds ?? 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            ? round(($this->BillableRate ?? 0) * ($this->Seconds ?? 0) / 3600, 2, \PHP_ROUND_HALF_UP)
             : 0;
     }
 
     public function getBillableHours(): float
     {
         return $this->Billable
-            ? round(($this->Seconds ?? 0) / 3600, 2, PHP_ROUND_HALF_UP)
+            ? round(($this->Seconds ?? 0) / 3600, 2, \PHP_ROUND_HALF_UP)
             : 0;
     }
 
@@ -143,10 +78,10 @@ class TimeEntry extends AbstractSyncEntity
         }
 
         // "<project> - <task>" => $parts2
-        if (($show & self::PROJECT) && ($this->Project->Name ?? null)) {
+        if (($show & self::PROJECT) && isset($this->Project->Name)) {
             $parts1[] = $this->enclose($this->Project->Name, $tag[self::PROJECT]);
         }
-        if (($show & self::TASK) && ($this->Task->Name ?? null)) {
+        if (($show & self::TASK) && isset($this->Task->Name)) {
             $parts1[] = $this->enclose($this->Task->Name, $tag[self::TASK]);
         }
         if ($parts1) {
@@ -155,7 +90,7 @@ class TimeEntry extends AbstractSyncEntity
         }
 
         // "(<user>)" => $parts2
-        if (($show & self::USER) && ($this->User->Name ?? null)) {
+        if (($show & self::USER) && isset($this->User->Name)) {
             $parts2[] = $this->enclose("({$this->User->Name})", $tag[self::USER]);
         }
 
@@ -174,7 +109,7 @@ class TimeEntry extends AbstractSyncEntity
     public function description(string $separator = "\n", ?string $marker = null): string
     {
         return Str::mergeLists(
-            $this->Description,
+            (string) $this->Description,
             $separator,
             $marker,
             '/^(?<indent>\h*[-*] )/',
