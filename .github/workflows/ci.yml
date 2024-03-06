@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  pull_request:
+
+  workflow_dispatch:
+
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check generated files and formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: get-composer-cache
+        shell: bash
+        run: printf 'cache_dir=%s\n' "$(composer config cache-files-dir)" >>"$GITHUB_OUTPUT"
+
+      - name: Cache PHP dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.get-composer-cache.outputs.cache_dir }}
+          key: composer-cache-${{ runner.os }}-${{ hashFiles('**/composer.json', '**/composer.lock') }}
+          restore-keys: composer-cache-${{ runner.os }}-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Check generated files
+        run: scripts/generate.php --check
+
+      - name: Run PHP CS Fixer
+        run: tools/php-cs-fixer check --diff --verbose
+
+      - name: Run pretty-php
+        run: tools/pretty-php --diff
+
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    needs: check
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - "8.3"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: get-composer-cache
+        shell: bash
+        run: printf 'cache_dir=%s\n' "$(composer config cache-files-dir)" >>"$GITHUB_OUTPUT"
+
+      - name: Cache PHP dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.get-composer-cache.outputs.cache_dir }}
+          key: composer-cache-${{ runner.os }}-${{ hashFiles('**/composer.json', '**/composer.lock') }}
+          restore-keys: composer-cache-${{ runner.os }}-
+
+      - name: Persist PHPStan cache
+        uses: actions/cache@v4
+        with:
+          path: build/cache/phpstan
+          key: phpstan-cache-${{ runner.os }}-${{ matrix.php-version }}-${{ github.run_id }}
+          restore-keys: phpstan-cache-${{ runner.os }}-${{ matrix.php-version }}-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan
+
+  unit-tests:
+    name: PHPUnit tests
+    needs: check
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        php-version:
+          - "8.3"
+        include:
+          - os: ubuntu-latest
+            php-version: "8.2"
+          - os: ubuntu-latest
+            php-version: "8.1"
+          - os: ubuntu-latest
+            php-version: "8.0"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: sqlite3
+          coverage: pcov
+
+      - name: Get Composer cache directory
+        id: get-composer-cache
+        shell: bash
+        run: printf 'cache_dir=%s\n' "$(composer config cache-files-dir)" >>"$GITHUB_OUTPUT"
+
+      - name: Cache PHP dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.get-composer-cache.outputs.cache_dir }}
+          key: composer-cache-${{ runner.os }}-${{ hashFiles('**/composer.json', '**/composer.lock') }}
+          restore-keys: composer-cache-${{ runner.os }}-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Run PHPUnit tests and generate code coverage report
+        run: vendor/bin/phpunit --no-coverage --coverage-clover=coverage.xml
+
+      - name: Upload code coverage report to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

@@ -7,7 +7,7 @@ Time entry automation.
 This project uses time entry services like [Clockify][clockify] to automate
 tasks like creating invoices for billable time in services like [Xero][xero].
 
-It is written in PHP and relies heavily on [`lkrms/util`][lkrms/util].
+It is written in PHP and relies heavily on [`salient/toolkit`][salient/toolkit].
 
 ## Installation
 
@@ -22,5 +22,5 @@ To use it anyway (at your own risk, of course):
 Then, run `./bin/lk-time help` for next steps.
 
 [clockify]: https://clockify.me
-[lkrms/util]: https://github.com/lkrms/php-util
+[salient/toolkit]: https://github.com/salient-labs/toolkit
 [xero]: https://www.xero.com
