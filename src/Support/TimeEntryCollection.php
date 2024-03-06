@@ -2,42 +2,37 @@
 
 namespace Lkrms\Time\Support;
 
-use Lkrms\Concept\TypedCollection;
-use Lkrms\Container\Container;
-use Lkrms\Contract\IContainer;
-use Lkrms\Contract\ReceivesContainer;
-use Lkrms\Time\Sync\Entity\TimeEntry;
-use Lkrms\Utility\Arr;
-use Lkrms\Utility\Compute;
-use Lkrms\Utility\Env;
-use Lkrms\Utility\Test;
+use Lkrms\Time\Sync\TimeEntity\TimeEntry;
+use Salient\Collection\AbstractTypedCollection;
+use Salient\Container\Container;
+use Salient\Contract\Container\ContainerAwareInterface;
+use Salient\Contract\Container\ContainerInterface;
+use Salient\Core\Utility\Arr;
+use Salient\Core\Utility\Env;
+use Salient\Core\Utility\Get;
+use Salient\Core\Utility\Test;
 use UnexpectedValueException;
 
 /**
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
  *
- * @extends TypedCollection<array-key,TimeEntry>
+ * @extends AbstractTypedCollection<array-key,TimeEntry>
  */
-final class TimeEntryCollection extends TypedCollection implements ReceivesContainer
+final class TimeEntryCollection extends AbstractTypedCollection implements ContainerAwareInterface
 {
     protected const ITEM_CLASS = TimeEntry::class;
 
-    /**
-     * @var IContainer|null
-     */
-    private $App;
+    private ?ContainerInterface $App = null;
 
-    public function setContainer(IContainer $container)
+    public function setContainer(ContainerInterface $container): void
     {
         $this->App = $container;
-        return $this;
     }
 
     /**
      * @param TimeEntry $a
      * @param TimeEntry $b
-     * @return int
      */
     protected function compareItems($a, $b, bool $strict = false): int
     {
@@ -71,7 +66,6 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
      * ```php
      * fn(TimeEntry $entry) => [$entry->Project->Id ?? null, $entry->BillableRate]
      * ```
-     * @return TimeEntryCollection
      */
     public function groupBy(
         int $show = TimeEntry::ALL,
@@ -88,7 +82,8 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
         $groupSummary = [];
         foreach ($times as $t) {
             $summary = $t->getSummary(
-                $show & ~TimeEntry::DESCRIPTION,
+                // `& TimeEntry::ALL` is to satisfy PHPStan
+                $show & ~TimeEntry::DESCRIPTION & TimeEntry::ALL,
                 $dateFormat,
                 $timeFormat,
                 $markdown
@@ -96,7 +91,7 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
 
             $groupBy = $callback !== null ? $callback($t) : [];
             $groupBy[] = $summary;
-            $groupBy = Compute::hash(...$groupBy);
+            $groupBy = Get::hash(implode("\0", $groupBy));
 
             if (!array_key_exists($groupBy, $groupTime)) {
                 $groupTime[$groupBy] = $t;
@@ -149,9 +144,9 @@ final class TimeEntryCollection extends TypedCollection implements ReceivesConta
         }
     }
 
-    private function app(): IContainer
+    private function app(): ContainerInterface
     {
         return $this->App
-            ?: ($this->App = Container::getGlobalContainer());
+            ??= Container::getGlobalContainer();
     }
 }

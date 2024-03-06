@@ -1,0 +1,23 @@
+{
+	"Class file": {
+		"scope": "php",
+		"prefix": "<?php",
+		"body": [
+			"<?php declare(strict_types=1);",
+			"",
+			"namespace ${TM_DIRECTORY/^.*\\\\/(src|(tests\\\\/(?:unit|fixtures)))|\\\\/([a-zA-Z0-9]+)/${1:+Lkrms\\\\Time}${2:+\\\\Tests}${3:+\\\\}$3/g};",
+			"",
+			"${RELATIVE_FILEPATH/(?:.*(?:(\\\\/Contract\\\\/.*|Interface\\.php$)|(\\\\/Concern\\\\/.*|Trait\\.php$))|(^(?:.(?!\\\\/(?:Contract|Concern)\\\\/|(?:Interface|Trait)\\.php$))*$))/${1:+interface}${2:+trait}${3:+class}/} ${TM_FILENAME_BASE/[^a-zA-Z0-9]+//g} {",
+			"    $0",
+			"}",
+			""
+		]
+	},
+	"Namespace": {
+		"scope": "php",
+		"prefix": "namespace",
+		"body": [
+			"namespace ${TM_DIRECTORY/^.*\\\\/(src|(tests\\\\/(?:unit|fixtures)))|\\\\/([a-zA-Z0-9]+)/${1:+Lkrms\\\\Time}${2:+\\\\Tests}${3:+\\\\}$3/g};"
+		]
+	}
+}

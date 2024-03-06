@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-use Lkrms\Facade\Event;
-use Lkrms\Sync\Event\SyncStoreLoadedEvent;
 use Lkrms\Time\Sync\SyncClassResolver;
+use Salient\Core\Facade\Event;
+use Salient\Sync\Event\SyncStoreLoadedEvent;
 
 Event::listen(
     fn(SyncStoreLoadedEvent $event) =>

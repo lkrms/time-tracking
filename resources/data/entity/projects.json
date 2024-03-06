@@ -1,0 +1,11 @@
+{
+  "id": "5b641568b07987035750505e",
+  "name": "Software Development",
+  "description": "This is a sample note for the project.",
+  "billable": true,
+  "tasks": [],
+  "clientId": "025867f1-d741-4d6b-b1af-9ac774b59ba7",
+  "billableRate": 105.00,
+  "colour": "#000000",
+  "archived": false
+}

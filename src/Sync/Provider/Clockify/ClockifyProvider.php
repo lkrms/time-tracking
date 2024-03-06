@@ -2,22 +2,6 @@
 
 namespace Lkrms\Time\Sync\Provider\Clockify;
 
-use Lkrms\Contract\IContainer;
-use Lkrms\Contract\IDateFormatter;
-use Lkrms\Contract\IServiceSingleton;
-use Lkrms\Curler\Catalog\CurlerProperty;
-use Lkrms\Curler\Pager\QueryPager;
-use Lkrms\Facade\Console;
-use Lkrms\Http\Catalog\HttpRequestMethod;
-use Lkrms\Http\HttpHeaders;
-use Lkrms\Support\DateFormatter;
-use Lkrms\Sync\Catalog\SyncOperation as OP;
-use Lkrms\Sync\Concept\HttpSyncProvider;
-use Lkrms\Sync\Contract\ISyncContext as Context;
-use Lkrms\Sync\Contract\ISyncEntity;
-use Lkrms\Sync\Support\HttpSyncDefinition as HttpDef;
-use Lkrms\Sync\Support\HttpSyncDefinitionBuilder as HttpDefB;
-use Lkrms\Sync\Support\SyncContext;
 use Lkrms\Time\Sync\Contract\ProvidesTenant;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\Entity\Client;
@@ -26,35 +10,55 @@ use Lkrms\Time\Sync\Entity\Task;
 use Lkrms\Time\Sync\Entity\Tenant;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
-use Lkrms\Utility\Convert;
+use Salient\Contract\Container\ContainerInterface;
+use Salient\Contract\Container\SingletonInterface;
+use Salient\Contract\Core\DateFormatterInterface;
+use Salient\Contract\Http\HttpRequestMethod;
+use Salient\Contract\Sync\SyncContextInterface;
+use Salient\Contract\Sync\SyncContextInterface as Context;
+use Salient\Contract\Sync\SyncEntityInterface;
+use Salient\Contract\Sync\SyncOperation as OP;
+use Salient\Core\Exception\UnexpectedValueException;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Arr;
+use Salient\Core\Utility\Date;
+use Salient\Core\Utility\Env;
+use Salient\Core\Utility\Get;
+use Salient\Core\DateFormatter;
+use Salient\Curler\Catalog\CurlerProperty;
+use Salient\Curler\Pager\QueryPager;
+use Salient\Http\HttpHeaders;
+use Salient\Sync\HttpSyncDefinition as HttpDef;
+use Salient\Sync\HttpSyncDefinitionBuilder as HttpDefB;
+use Salient\Sync\HttpSyncProvider;
+use Closure;
 use DateTimeImmutable;
 use DateTimeInterface;
-use UnexpectedValueException;
 
 /**
- * @method TimeEntry getTimeEntry(ISyncContext $ctx, int|string|null $id)
- * @method TimeEntry updateTimeEntry(ISyncContext $ctx, TimeEntry $timeEntry)
- * @method FluentIteratorInterface<array-key,TimeEntry> getTimeEntries(ISyncContext $ctx)
- * @method Client getClient(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Client> getClients(ISyncContext $ctx)
- * @method Project getProject(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Project> getProjects(ISyncContext $ctx)
- * @method Task getTask(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Task> getTasks(ISyncContext $ctx)
- * @method User getUser(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,User> getUsers(ISyncContext $ctx)
- * @method Tenant getTenant(ISyncContext $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Tenant> getTenants(ISyncContext $ctx)
+ * @method TimeEntry getTimeEntry(SyncContextInterface $ctx, int|string|null $id)
+ * @method TimeEntry updateTimeEntry(SyncContextInterface $ctx, TimeEntry $timeEntry)
+ * @method FluentIteratorInterface<array-key,TimeEntry> getTimeEntries(SyncContextInterface $ctx)
+ * @method Client getClient(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Client> getClients(SyncContextInterface $ctx)
+ * @method Project getProject(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Project> getProjects(SyncContextInterface $ctx)
+ * @method Task getTask(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Task> getTasks(SyncContextInterface $ctx)
+ * @method User getUser(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,User> getUsers(SyncContextInterface $ctx)
+ * @method Tenant getTenant(SyncContextInterface $ctx, int|string|null $id)
+ * @method FluentIteratorInterface<array-key,Tenant> getTenants(SyncContextInterface $ctx)
  */
 final class ClockifyProvider extends HttpSyncProvider implements
-    IServiceSingleton,
+    SingletonInterface,
     BillableTimeProvider,
     ProvidesTenant
 {
     /**
      * Entity => input key => property
      *
-     * @var array<class-string<ISyncEntity>,array<string,string>>
+     * @var array<class-string<SyncEntityInterface>,array<string,string>>
      */
     private const ENTITY_PROPERTY_MAP = [
         Client::class => [
@@ -89,7 +93,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    public function getContext(?IContainer $container = null): SyncContext
+    public function getContext(?ContainerInterface $container = null): Context
     {
         return
             parent::getContext($container)
@@ -118,8 +122,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
         Console::debug(sprintf(
             "Connected to Clockify workspace '%s' (%s) as '%s' (%s)",
-            $user->ActiveTenant->Name,
-            $user->ActiveTenant->Id,
+            $user->ActiveTenant->Name ?? '<unknown>',
+            $user->ActiveTenant->Id ?? '<unknown>',
             $user->Name,
             $user->Id,
         ));
@@ -133,12 +137,12 @@ final class ClockifyProvider extends HttpSyncProvider implements
     protected function getBaseUrl(?string $path = null): string
     {
         if ($path && strpos($path, '/reports/') !== false) {
-            return $this->Env->get(
+            return Env::get(
                 'clockify_reports_api_base_url', 'https://reports.api.clockify.me/v1'
             );
         }
 
-        return $this->Env->get(
+        return Env::get(
             'clockify_api_base_url', 'https://api.clockify.me/api/v1'
         );
     }
@@ -149,7 +153,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     protected function getHeaders(?string $path): HttpHeaders
     {
         return (new HttpHeaders())
-            ->set('X-Api-Key', $this->Env->get('clockify_api_key'));
+            ->set('X-Api-Key', Env::get('clockify_api_key'));
     }
 
     /**
@@ -157,19 +161,21 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getExpiry(?string $path): ?int
     {
-        return $this->Env->getInt('clockify_cache_expiry', null);
+        return Env::getInt('clockify_cache_expiry', null);
     }
 
     /**
      * @inheritDoc
      */
-    protected function getDateFormatter(?string $path = null): IDateFormatter
+    protected function getDateFormatter(?string $path = null): DateFormatterInterface
     {
         static $pending = false;
 
-        $cached = $this->getCachedDateFormatter();
-        if ($cached) {
-            return $cached;
+        // The purpose of the following hijinks is to return a user-specific
+        // date formatter while returning a generic one if necessary to service
+        // the user endpoint request
+        if ($this->hasDateFormatter()) {
+            return $this->dateFormatter();
         }
 
         if ($pending) {
@@ -178,13 +184,14 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
         $pending = true;
         try {
-            return
-                new DateFormatter(
-                    self::DATE_FORMAT,
-                    $this->with(User::class)
-                         ->get(null)
-                         ->Settings['timeZone'],
-                );
+            /** @var array{timeZone:string} */
+            $settings = $this->with(User::class)
+                             ->get(null)
+                             ->Settings;
+            return new DateFormatter(
+                self::DATE_FORMAT,
+                $settings['timeZone'],
+            );
         } finally {
             $pending = false;
         }
@@ -209,18 +216,21 @@ final class ClockifyProvider extends HttpSyncProvider implements
                     ->path('/workspaces/:workspaceId/users')
                     ->pipelineFromBackend(
                         $this->pipelineFrom(User::class)
-                             ->throughCallback([$this, 'normaliseUser'])
+                             ->throughClosure(Closure::fromCallable([$this, 'normaliseUser']))
                     )
                     ->keyMap(self::ENTITY_PROPERTY_MAP[User::class])
                     ->readFromReadList()
                     ->overrides([
                         OP::READ =>
-                            fn(HttpDef $def, $op, Context $ctx, $id = null, ...$args) =>
-                                ($id === null
-                                        ? $def->withPath('/user')
-                                              ->withReadFromReadList(false)
-                                        : $def)
-                                    ->getFallbackClosure($op)($ctx, $id, ...$args)
+                            $defB->bindOverride(
+                                fn(HttpDef $def, $op, Context $ctx, $id = null, ...$args) =>
+                                    Get::notNull((
+                                        $id === null
+                                            ? $def->withPath('/user')
+                                                  ->withReadFromReadList(false)
+                                            : $def
+                                    )->getFallbackClosure($op))($ctx, ...[$id, ...$args])
+                            )
                     ]),
 
             Client::class =>
@@ -263,7 +273,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                     ])
                     ->pipelineFromBackend(
                         $this->pipelineFrom(TimeEntry::class)
-                             ->throughCallback([$this, 'normaliseTimeEntry'])
+                             ->throughClosure(Closure::fromCallable([$this, 'normaliseTimeEntry']))
                     )
                     ->callback(
                         fn(HttpDef $def, $op, Context $ctx) =>
@@ -302,7 +312,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param array<string,mixed>|null $value
+     * @param array{start?:string,end?:string,duration?:int|string}|null $value
      */
     private function getTimeInterval(
         $value,
@@ -328,13 +338,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
             return $duration;
         }
 
-        if (is_string($duration)) {
-            return Convert::intervalToSeconds($duration);
-        }
-
-        throw new UnexpectedValueException(
-            sprintf('Invalid duration: %s', $duration)
-        );
+        return Date::duration($duration);
     }
 
     /**
@@ -373,8 +377,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param array<string,mixed> $entry
-     * @return array<string,mixed>
+     * @param mixed[] $entry
+     * @return mixed[]
      */
     function normaliseTimeEntry(array $entry): array
     {
@@ -463,8 +467,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * @param array<string,mixed> $user
-     * @return array<string,mixed>
+     * @param mixed[] $user
+     * @return mixed[]
      */
     public function normaliseUser(array $user): array
     {
@@ -480,7 +484,6 @@ final class ClockifyProvider extends HttpSyncProvider implements
      * Mark time entries as invoiced
      *
      * @param iterable<TimeEntry> $timeEntries
-     * @param bool $unmark
      */
     public function markTimeEntriesInvoiced(
         iterable $timeEntries,
@@ -505,11 +508,11 @@ final class ClockifyProvider extends HttpSyncProvider implements
 
     private function workspaceId(): string
     {
-        return $this->Env->get('clockify_workspace_id');
+        return Env::get('clockify_workspace_id');
     }
 
     /**
-     * @param string|string[]|null $value
+     * @param mixed $value
      * @return array<string,string|string[]>|null
      */
     private function reportFilter($value): ?array
@@ -518,15 +521,19 @@ final class ClockifyProvider extends HttpSyncProvider implements
             return null;
         }
 
-        return [
-            'ids' => (array) $value,
-            'contains' => 'CONTAINS',
-            'status' => 'ALL',
-        ];
+        if (is_string($value) || Arr::ofString($value)) {
+            return [
+                'ids' => (array) $value,
+                'contains' => 'CONTAINS',
+                'status' => 'ALL',
+            ];
+        }
+
+        throw new UnexpectedValueException('Invalid report filter value');
     }
 
     /**
-     * @param DateTimeInterface|string|null $value
+     * @param mixed $value
      */
     private function dateTime($value): ?DateTimeInterface
     {
@@ -538,6 +545,10 @@ final class ClockifyProvider extends HttpSyncProvider implements
             return $value;
         }
 
-        return new DateTimeImmutable($value);
+        if (is_string($value)) {
+            return new DateTimeImmutable($value);
+        }
+
+        throw new UnexpectedValueException('Invalid date and time value');
     }
 }

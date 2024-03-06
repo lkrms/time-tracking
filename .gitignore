@@ -1,15 +1,18 @@
 /vendor
 composer.phar
 
+.env
+*.log
+/var
+
+/build
+/docs/api
+
+/.ci
+
 phpstan.neon
 
 phpunit.xml
 .phpunit.*
 
-.env
-*.log
-/var
-
-/.ci
-/build
-/docs/api
+.php-cs-fixer.cache

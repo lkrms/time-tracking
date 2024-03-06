@@ -3,19 +3,20 @@
 namespace Lkrms\Time\Sync\Provider\Xero;
 
 use League\OAuth2\Client\Provider\GenericProvider;
-use Lkrms\Concern\Immutable;
-use Lkrms\Contract\IImmutable;
-use Lkrms\Facade\Console;
-use Lkrms\Http\Auth\AccessToken;
-use Lkrms\Http\Auth\OAuth2Client;
-use Lkrms\Http\Auth\OAuth2Flow;
-use Lkrms\Http\Auth\OAuth2GrantType;
-use Lkrms\Http\HttpServer;
-use Lkrms\Utility\Arr;
+use Salient\Contract\Core\Immutable;
+use Salient\Core\Concern\HasImmutableProperties;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Arr;
+use Salient\Core\Utility\Env;
+use Salient\Http\OAuth2\AccessToken;
+use Salient\Http\OAuth2\OAuth2Client;
+use Salient\Http\OAuth2\OAuth2Flow;
+use Salient\Http\OAuth2\OAuth2GrantType;
+use Salient\Http\HttpServer;
 
-final class XeroOAuth2Client extends OAuth2Client implements IImmutable
+final class XeroOAuth2Client extends OAuth2Client implements Immutable
 {
-    use Immutable;
+    use HasImmutableProperties;
 
     private const MANDATORY_SCOPES = [
         'openid',
@@ -61,19 +62,19 @@ final class XeroOAuth2Client extends OAuth2Client implements IImmutable
     protected function getListener(): ?HttpServer
     {
         $listener = new HttpServer(
-            $this->Env->get('app_host', 'localhost'),
-            $this->Env->getInt('app_port', 27755),
+            Env::get('app_host', 'localhost'),
+            Env::getInt('app_port', 27755),
         );
 
-        $proxyHost = $this->Env->getNullable('app_proxy_host', null);
-        $proxyPort = $this->Env->getNullableInt('app_proxy_port', null);
+        $proxyHost = Env::getNullable('app_proxy_host', null);
+        $proxyPort = Env::getNullableInt('app_proxy_port', null);
 
         if ($proxyHost !== null && $proxyPort !== null) {
             return $listener->withProxy(
                 $proxyHost,
                 $proxyPort,
-                $this->Env->getNullableBool('app_proxy_tls', null),
-                $this->Env->getNullable('app_proxy_base_path', null),
+                Env::getNullableBool('app_proxy_tls', null),
+                Env::getNullable('app_proxy_base_path', null),
             );
         }
 
@@ -88,8 +89,8 @@ final class XeroOAuth2Client extends OAuth2Client implements IImmutable
     protected function getProvider(): GenericProvider
     {
         return new GenericProvider([
-            'clientId' => $this->Env->get('xero_app_client_id'),
-            'clientSecret' => $this->Env->get('xero_app_client_secret'),
+            'clientId' => Env::get('xero_app_client_id'),
+            'clientSecret' => Env::get('xero_app_client_secret'),
             'redirectUri' => $this->getRedirectUri(),
             'urlAuthorize' => 'https://login.xero.com/identity/connect/authorize',
             'urlAccessToken' => 'https://identity.xero.com/connect/token',

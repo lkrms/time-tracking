@@ -1,9 +1,6 @@
 #!/usr/bin/env php
 <?php
 
-use Lkrms\Cli\CliApplication;
-use Lkrms\Sync\Command\CheckSyncProviderHeartbeat;
-use Lkrms\Sync\Command\GetSyncEntities;
 use Lkrms\Time\Command\GenerateInvoices;
 use Lkrms\Time\Command\ListClients;
 use Lkrms\Time\Command\ListInvoices;
@@ -11,9 +8,14 @@ use Lkrms\Time\Command\ListTimeEntries;
 use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
+use Lkrms\Time\Sync\Entity\TimeEntry as BaseTimeEntry;
 use Lkrms\Time\Sync\Provider\Clockify\ClockifyProvider;
 use Lkrms\Time\Sync\Provider\Xero\XeroProvider;
-use Lkrms\Utility\Env;
+use Lkrms\Time\Sync\TimeEntity\TimeEntry;
+use Salient\Cli\CliApplication;
+use Salient\Core\Utility\Env;
+use Salient\Sync\Command\CheckSyncProviderHeartbeat;
+use Salient\Sync\Command\GetSyncEntities;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -21,12 +23,13 @@ require dirname(__DIR__) . '/vendor/autoload.php';
     ->logOutput(null, true)
     ->startCache()
     ->startSync()
-    ->services([
-        BillableTimeProvider::class => Env::get('billable_time_provider'),
-        InvoiceProvider::class => Env::get('invoice_provider'),
-        ClockifyProvider::class,
-        XeroProvider::class,
+    ->providers([
+        BillableTimeProvider::class => Env::getClass('billable_time_provider', BillableTimeProvider::class),
+        InvoiceProvider::class => Env::getClass('invoice_provider', InvoiceProvider::class),
+        ClockifyProvider::class => ClockifyProvider::class,
+        XeroProvider::class => XeroProvider::class,
     ])
+    ->bind(BaseTimeEntry::class, TimeEntry::class)
     ->command(['client', 'list'], ListClients::class)
     ->command(['entry', 'list'], ListTimeEntries::class)
     ->command(['invoice', 'list'], ListInvoices::class)

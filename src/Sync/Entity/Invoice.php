@@ -2,11 +2,18 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Lkrms\Support\Catalog\RelationshipType;
-use Lkrms\Sync\Concept\SyncEntity;
+use Salient\Contract\Core\Cardinality;
+use Salient\Sync\Support\DeferredEntity;
+use Salient\Sync\Support\DeferredRelationship;
+use Salient\Sync\AbstractSyncEntity;
 use DateTimeInterface;
 
-class Invoice extends SyncEntity
+/**
+ * Represents the state of an Invoice entity in a backend
+ *
+ * @generated
+ */
+class Invoice extends AbstractSyncEntity
 {
     /**
      * @var int|string|null
@@ -19,21 +26,22 @@ class Invoice extends SyncEntity
     public $Number;
 
     /**
-     * @var string|null
+     * @var DateTimeInterface|null
      */
-    public $Reference;
-
-    public ?DateTimeInterface $Date;
-
-    public ?DateTimeInterface $DueDate;
+    public $Date;
 
     /**
-     * @var Client|null
+     * @var DateTimeInterface|null
+     */
+    public $DueDate;
+
+    /**
+     * @var Client|DeferredEntity<Client>|null
      */
     public $Client;
 
     /**
-     * @var InvoiceLineItem[]|null
+     * @var array<InvoiceLineItem|DeferredEntity<InvoiceLineItem>>|DeferredRelationship<InvoiceLineItem>|null
      */
     public $LineItems;
 
@@ -50,7 +58,7 @@ class Invoice extends SyncEntity
     /**
      * @var bool|null
      */
-    public $SentToContact;
+    public $Sent;
 
     /**
      * @var float|null
@@ -67,11 +75,14 @@ class Invoice extends SyncEntity
      */
     public $Total;
 
+    /**
+     * @internal
+     */
     public static function getRelationships(): array
     {
         return [
-            'Client' => [RelationshipType::ONE_TO_ONE => Client::class],
-            'LineItems' => [RelationshipType::ONE_TO_MANY => InvoiceLineItem::class],
+            'Client' => [Cardinality::ONE_TO_ONE => Client::class],
+            'LineItems' => [Cardinality::ONE_TO_MANY => InvoiceLineItem::class],
         ];
     }
 }

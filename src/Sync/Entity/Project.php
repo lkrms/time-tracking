@@ -2,10 +2,17 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Lkrms\Support\Catalog\RelationshipType;
-use Lkrms\Sync\Concept\SyncEntity;
+use Salient\Contract\Core\Cardinality;
+use Salient\Sync\Support\DeferredEntity;
+use Salient\Sync\Support\DeferredRelationship;
+use Salient\Sync\AbstractSyncEntity;
 
-class Project extends SyncEntity
+/**
+ * Represents the state of a Project entity in a backend
+ *
+ * @generated
+ */
+class Project extends AbstractSyncEntity
 {
     /**
      * @var int|string|null
@@ -28,12 +35,12 @@ class Project extends SyncEntity
     public $Billable;
 
     /**
-     * @var Task[]|null
+     * @var array<Task|DeferredEntity<Task>>|DeferredRelationship<Task>|null
      */
     public $Tasks;
 
     /**
-     * @var Client|null
+     * @var Client|DeferredEntity<Client>|null
      */
     public $Client;
 
@@ -52,11 +59,14 @@ class Project extends SyncEntity
      */
     public $Archived;
 
+    /**
+     * @internal
+     */
     public static function getRelationships(): array
     {
         return [
-            'Tasks' => [RelationshipType::ONE_TO_MANY => Task::class],
-            'Client' => [RelationshipType::ONE_TO_ONE => Client::class],
+            'Tasks' => [Cardinality::ONE_TO_MANY => Task::class],
+            'Client' => [Cardinality::ONE_TO_ONE => Client::class],
         ];
     }
 }

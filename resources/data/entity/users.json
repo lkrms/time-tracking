@@ -1,0 +1,12 @@
+{
+  "id": "5a0ab5acb07987125438b60f",
+  "name": "John Doe",
+  "email": "johndoe@example.com",
+  "photoUrl": "https://www.url.com/profile-picture1234567890.png",
+  "isActive": true,
+  "activeTenantId": "64a687e29ae1f428e7ebe303",
+  "settings": {
+    "alerts": true,
+    "timeZone": "Asia/Aden"
+  }
+}

@@ -2,11 +2,11 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Cli\CliOption;
-use Lkrms\Facade\Console;
 use Lkrms\Time\Command\Concept\Command;
-use Lkrms\Utility\Convert;
-use Lkrms\Utility\Env;
+use Salient\Cli\CliOption;
+use Salient\Core\Facade\Console;
+use Salient\Core\Utility\Env;
+use Salient\Core\Utility\Inflect;
 
 class MarkTimeEntriesInvoiced extends Command
 {
@@ -44,7 +44,7 @@ class MarkTimeEntriesInvoiced extends Command
     protected function run(string ...$params)
     {
         if (!$this->Force) {
-            $this->Env->dryRun(true);
+            Env::dryRun(true);
         }
 
         Console::info("Retrieving time entries from {$this->TimeEntryProviderName}");
@@ -60,29 +60,31 @@ class MarkTimeEntriesInvoiced extends Command
             $totalHours += $entry->getBillableHours();
         }
 
-        $count = Convert::plural(count($markInvoiced), 'time entry', 'time entries', true);
+        $count = Inflect::format($markInvoiced, '{{#}} time {{#:entry}}');
         $total = $this->getBillableSummary($totalAmount, $totalHours);
 
         foreach ($markInvoiced as $entry) {
             printf(
                 "%s %s as %s: %.2f hours on %s ('%s', %s)\n",
-                $this->Env->dryRun() ? 'Would mark' : 'Marking',
+                Env::dryRun() ? 'Would mark' : 'Marking',
                 $entry->Id,
                 $state,
                 $entry->getBillableHours(),
-                $entry->Start->format('d/m/Y'),
+                $entry->Start
+                    ? $entry->Start->format('d/m/Y')
+                    : '<no date>',
                 $entry->Project->Name ?? '<no project>',
                 $entry->Project->Client->Name ?? '<no client>',
             );
         }
 
-        if ($this->Env->dryRun()) {
+        if (Env::dryRun()) {
             Console::info("$count would be marked as $state:", $total);
             return;
         }
 
         Console::info("Marking $count in {$this->TimeEntryProviderName} as $state:", $total);
-        $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced, $this->MarkUninvoiced);
+        $this->TimeEntryProvider->markTimeEntriesInvoiced($markInvoiced, (bool) $this->MarkUninvoiced);
 
         Console::summary("$count marked as $state");
     }
