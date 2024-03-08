@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4d5555bb69db0f5de5df0f09453ea43f",
+    "content-hash": "e015ebe22cdecd07ad2fca79f96dfff5",
     "packages": [
         {
             "name": "firebase/php-jwt",
@@ -916,16 +916,16 @@
         },
         {
             "name": "salient/toolkit",
-            "version": "v0.99.10",
+            "version": "v0.99.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/salient-labs/toolkit.git",
-                "reference": "7e97d970dc09a72456851e746f7d7671ab2f9984"
+                "reference": "65efa932c8046df5a8c0bb64be1368b5c5c936cd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/salient-labs/toolkit/zipball/7e97d970dc09a72456851e746f7d7671ab2f9984",
-                "reference": "7e97d970dc09a72456851e746f7d7671ab2f9984",
+                "url": "https://api.github.com/repos/salient-labs/toolkit/zipball/65efa932c8046df5a8c0bb64be1368b5c5c936cd",
+                "reference": "65efa932c8046df5a8c0bb64be1368b5c5c936cd",
                 "shasum": ""
             },
             "require": {
@@ -996,7 +996,7 @@
                 "issues": "https://github.com/salient-labs/toolkit/issues",
                 "source": "https://github.com/salient-labs/toolkit"
             },
-            "time": "2024-03-06T17:41:46+00:00"
+            "time": "2024-03-08T00:19:21+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -1418,16 +1418,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "1.10.59",
+            "version": "1.10.60",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "e607609388d3a6d418a50a49f7940e8086798281"
+                "reference": "95dcea7d6c628a3f2f56d091d8a0219485a86bbe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/e607609388d3a6d418a50a49f7940e8086798281",
-                "reference": "e607609388d3a6d418a50a49f7940e8086798281",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/95dcea7d6c628a3f2f56d091d8a0219485a86bbe",
+                "reference": "95dcea7d6c628a3f2f56d091d8a0219485a86bbe",
                 "shasum": ""
             },
             "require": {
@@ -1476,7 +1476,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-02-20T13:59:13+00:00"
+            "time": "2024-03-07T13:30:19+00:00"
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",

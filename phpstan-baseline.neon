@@ -4,8 +4,3 @@ parameters:
 			message: "#^Only iterables can be unpacked, mixed given\\.$#"
 			count: 1
 			path: src/Sync/Provider/Clockify/ClockifyProvider.php
-
-		-
-			message: "#^Parameter \\#2 \\$ of callable \\(Closure\\(Salient\\\\Contract\\\\Sync\\\\SyncContextInterface, int\\|string\\|null, mixed \\.\\.\\.\\)\\: Salient\\\\Contract\\\\Sync\\\\SyncEntityInterface\\)\\|\\(Closure\\(Salient\\\\Contract\\\\Sync\\\\SyncContextInterface, Salient\\\\Contract\\\\Sync\\\\SyncEntityInterface, mixed \\.\\.\\.\\)\\: Salient\\\\Contract\\\\Sync\\\\SyncEntityInterface\\)\\|\\(Closure\\(Salient\\\\Contract\\\\Sync\\\\SyncContextInterface, iterable\\<Salient\\\\Contract\\\\Sync\\\\SyncEntityInterface\\>, mixed \\.\\.\\.\\)\\: iterable\\<Salient\\\\Contract\\\\Sync\\\\SyncEntityInterface\\>\\) expects int\\|string\\|null, mixed given\\.$#"
-			count: 1
-			path: src/Sync/Provider/Clockify/ClockifyProvider.php
