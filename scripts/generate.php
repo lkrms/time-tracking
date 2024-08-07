@@ -11,21 +11,19 @@ use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
 use Salient\Cli\CliApplication;
 use Salient\Contract\Core\MessageLevel as Level;
-use Salient\Core\Exception\FilesystemErrorException;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\File;
-use Salient\Core\Utility\Json;
-use Salient\Core\Utility\Package;
-use Salient\Core\Utility\Pcre;
-use Salient\Sli\Catalog\EnvVar;
-use Salient\Sli\Command\Generate\Concept\GenerateCommand;
+use Salient\Sli\Command\Generate\AbstractGenerateCommand;
 use Salient\Sli\Command\Generate\GenerateSyncEntity;
 use Salient\Sli\Command\Generate\GenerateSyncProvider;
+use Salient\Sli\EnvVar;
+use Salient\Utility\Arr;
+use Salient\Utility\Env;
+use Salient\Utility\File;
+use Salient\Utility\Json;
+use Salient\Utility\Package;
+use Salient\Utility\Regex;
 
 $loader = require dirname(__DIR__) . '/vendor/autoload.php';
-$loader->addPsr4('Salient\\Sli\\', Package::packagePath('salient/toolkit') . '/src/Sli/');
 
 // Entity => [ name, provider|null, endpoint|null, ...args ]
 $entities = [
@@ -67,13 +65,13 @@ $args = [
 ];
 
 /**
- * @param GenerateCommand|string $commandOrFile
+ * @param AbstractGenerateCommand|string $commandOrFile
  */
 function generated($commandOrFile): void
 {
     global $generated;
 
-    $file = $commandOrFile instanceof GenerateCommand
+    $file = $commandOrFile instanceof AbstractGenerateCommand
         ? $commandOrFile->OutputFile
         : $commandOrFile;
 
@@ -81,7 +79,7 @@ function generated($commandOrFile): void
         throw new LogicException('No file generated');
     }
 
-    $generated[] = '/' . File::relativeToParent($file, Package::path());
+    $generated[] = '/' . File::getRelativePath($file, Package::path());
 }
 
 $status = 0;
@@ -99,7 +97,7 @@ foreach ($entities as $class => $entityArgs) {
             generated($file);
         }
     } elseif ($provider === null) {
-        throw new FilesystemErrorException(sprintf('File not found: %s', $file));
+        throw new LogicException(sprintf('File not found: %s', $file));
     } else {
         array_unshift($entityArgs, '--provider', $provider, '--endpoint', $endpoint);
         $save = true;
@@ -108,7 +106,7 @@ foreach ($entities as $class => $entityArgs) {
     generated($generateEntity);
     if ($save && $generateEntity->Entity !== null) {
         File::createDir(dirname($file));
-        File::putContents($file, Json::prettyPrint($generateEntity->Entity));
+        File::writeContents($file, Json::prettyPrint($generateEntity->Entity));
         generated($file);
     }
 }
@@ -119,7 +117,7 @@ foreach ($providers as $class => $providerArgs) {
 }
 
 $file = dirname(__DIR__) . '/.gitattributes';
-$attributes = Pcre::grep(
+$attributes = Regex::grep(
     '/(^#| linguist-generated$)/',
     Arr::trim(file($file)),
     \PREG_GREP_INVERT
@@ -137,7 +135,7 @@ if (File::getContents($file) !== $attributes) {
         $status |= 1;
     } else {
         Console::info('Replacing', $file);
-        File::putContents($file, $attributes);
+        File::writeContents($file, $attributes);
     }
 } else {
     Console::log('Nothing to do:', $file);

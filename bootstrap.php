@@ -6,10 +6,10 @@ use Salient\Sync\Event\SyncStoreLoadedEvent;
 
 Event::listen(
     fn(SyncStoreLoadedEvent $event) =>
-        $event->store()->namespace(
+        $event->getStore()->registerNamespace(
             'tt',
             'https://sync.linacreative.com/time-tracking',
             'Lkrms\Time\Sync',
-            SyncClassResolver::class,
+            new SyncClassResolver(),
         ),
 );

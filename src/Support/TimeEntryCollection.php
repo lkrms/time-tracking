@@ -7,10 +7,10 @@ use Salient\Collection\AbstractTypedCollection;
 use Salient\Container\Container;
 use Salient\Contract\Container\ContainerAwareInterface;
 use Salient\Contract\Container\ContainerInterface;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\Get;
-use Salient\Core\Utility\Test;
+use Salient\Utility\Arr;
+use Salient\Utility\Env;
+use Salient\Utility\Get;
+use Salient\Utility\Test;
 use UnexpectedValueException;
 
 /**
@@ -42,7 +42,7 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
         }
 
         // If not, sort by ID if both entries have integer IDs
-        if (Test::isIntValue($a->Id) && Test::isIntValue($b->Id)) {
+        if (Test::isInteger($a->Id) && Test::isInteger($b->Id)) {
             return (int) $a->Id <=> (int) $b->Id;
         }
 

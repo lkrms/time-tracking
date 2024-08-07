@@ -18,9 +18,9 @@ use Salient\Contract\Sync\SyncContextInterface;
 use Salient\Contract\Sync\SyncEntityInterface;
 use Salient\Contract\Sync\SyncProviderInterface;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Get;
-use Salient\Core\Utility\Test;
 use Salient\Sync\Exception\SyncEntityNotFoundException;
+use Salient\Utility\Get;
+use Salient\Utility\Test;
 use DateTimeImmutable;
 
 abstract class Command extends CliCommand
@@ -85,7 +85,7 @@ abstract class Command extends CliCommand
      * Get standard options for TimeEntry-related commands
      *
      * @param array<CliOption|CliOptionBuilder> $customOptions
-     * @return array<CliOption|CliOptionBuilder>
+     * @return iterable<CliOption|CliOptionBuilder>
      */
     protected function getTimeEntryOptions(
         string $action = 'List time entries',
@@ -95,7 +95,7 @@ abstract class Command extends CliCommand
         bool $addBillableOption = false,
         bool $addUnbilledOption = false,
         array $customOptions = []
-    ): array {
+    ): iterable {
         $options = [
             CliOption::build()
                 ->long('from')
@@ -191,8 +191,8 @@ abstract class Command extends CliCommand
             'project_id' => $this->getProjectId(),
             'start_date' => $this->StartDate,
             'end_date' => $this->EndDate,
-            'billable' => Get::coalesce($billable, $this->Billable ?: null),
-            'billed' => Get::coalesce($billed, $this->Unbilled ? false : null),
+            'billable' => $billable ?? ($this->Billable ? true : null),
+            'billed' => $billed ?? ($this->Unbilled ? false : null),
         ];
 
         return $this->TimeEntryProvider
@@ -284,7 +284,7 @@ abstract class Command extends CliCommand
         $providerOrContext = null,
         ?string $propertyName = null
     ) {
-        if (Test::isIntValue($nameOrId)) {
+        if (Test::isInteger($nameOrId)) {
             $nameOrId = (int) $nameOrId;
         }
 

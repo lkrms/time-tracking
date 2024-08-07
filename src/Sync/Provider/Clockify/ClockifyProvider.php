@@ -13,27 +13,25 @@ use Lkrms\Time\Sync\Entity\User;
 use Salient\Contract\Container\ContainerInterface;
 use Salient\Contract\Container\SingletonInterface;
 use Salient\Contract\Core\DateFormatterInterface;
+use Salient\Contract\Curler\CurlerInterface;
 use Salient\Contract\Http\HttpRequestMethod;
 use Salient\Contract\Sync\SyncContextInterface;
 use Salient\Contract\Sync\SyncContextInterface as Context;
 use Salient\Contract\Sync\SyncEntityInterface;
 use Salient\Contract\Sync\SyncOperation as OP;
-use Salient\Core\Exception\UnexpectedValueException;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Date;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\Get;
 use Salient\Core\DateFormatter;
-use Salient\Curler\Catalog\CurlerProperty;
 use Salient\Curler\Pager\QueryPager;
 use Salient\Http\HttpHeaders;
-use Salient\Sync\HttpSyncDefinition as HttpDef;
-use Salient\Sync\HttpSyncDefinitionBuilder as HttpDefB;
-use Salient\Sync\HttpSyncProvider;
+use Salient\Sync\Http\HttpSyncDefinition as HttpDef;
+use Salient\Sync\Http\HttpSyncProvider;
+use Salient\Utility\Arr;
+use Salient\Utility\Date;
+use Salient\Utility\Env;
 use Closure;
 use DateTimeImmutable;
 use DateTimeInterface;
+use UnexpectedValueException;
 
 /**
  * @method TimeEntry getTimeEntry(SyncContextInterface $ctx, int|string|null $id)
@@ -85,7 +83,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    public function name(): string
+    public function getName(): string
     {
         return sprintf('Clockify { %s }', $this->workspaceId());
     }
@@ -95,9 +93,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     public function getContext(?ContainerInterface $container = null): Context
     {
-        return
-            parent::getContext($container)
-                ->withValue('workspace_id', $this->workspaceId());
+        return parent::getContext($container)
+            ->withValue('workspace_id', $this->workspaceId());
     }
 
     /**
@@ -116,9 +113,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getHeartbeat()
     {
-        $user = $this->with(User::class)
-                     ->online()
-                     ->get(null);
+        $user = $this->with(User::class)->online()->get(null);
 
         Console::debug(sprintf(
             "Connected to Clockify workspace '%s' (%s) as '%s' (%s)",
@@ -138,12 +133,14 @@ final class ClockifyProvider extends HttpSyncProvider implements
     {
         if ($path && strpos($path, '/reports/') !== false) {
             return Env::get(
-                'clockify_reports_api_base_url', 'https://reports.api.clockify.me/v1'
+                'clockify_reports_api_base_url',
+                'https://reports.api.clockify.me/v1',
             );
         }
 
         return Env::get(
-            'clockify_api_base_url', 'https://api.clockify.me/api/v1'
+            'clockify_api_base_url',
+            'https://api.clockify.me/api/v1',
         );
     }
 
@@ -152,8 +149,9 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getHeaders(?string $path): HttpHeaders
     {
-        return (new HttpHeaders())
-            ->set('X-Api-Key', Env::get('clockify_api_key'));
+        return new HttpHeaders([
+            'X-Api-Key' => Env::get('clockify_api_key'),
+        ]);
     }
 
     /**
@@ -161,23 +159,19 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getExpiry(?string $path): ?int
     {
-        return Env::getInt('clockify_cache_expiry', null);
+        $expiry = Env::getNullableInt('clockify_cache_expiry', null);
+        return $expiry < 0 ? null : $expiry;
     }
 
     /**
      * @inheritDoc
      */
-    protected function getDateFormatter(?string $path = null): DateFormatterInterface
+    protected function createDateFormatter(): DateFormatterInterface
     {
         static $pending = false;
 
-        // The purpose of the following hijinks is to return a user-specific
-        // date formatter while returning a generic one if necessary to service
-        // the user endpoint request
-        if ($this->hasDateFormatter()) {
-            return $this->dateFormatter();
-        }
-
+        // Return a user-specific date formatter except when servicing the user
+        // endpoint request
         if ($pending) {
             return new DateFormatter(self::DATE_FORMAT);
         }
@@ -185,59 +179,62 @@ final class ClockifyProvider extends HttpSyncProvider implements
         $pending = true;
         try {
             /** @var array{timeZone:string} */
-            $settings = $this->with(User::class)
-                             ->get(null)
-                             ->Settings;
-            return new DateFormatter(
-                self::DATE_FORMAT,
-                $settings['timeZone'],
-            );
+            $settings = $this->with(User::class)->online()->get(null)->Settings;
+            return new DateFormatter(self::DATE_FORMAT, $settings['timeZone']);
         } finally {
             $pending = false;
         }
     }
 
     /**
-     * @inheritDoc
+     * @template TEntity of SyncEntityInterface
+     *
+     * @param class-string<TEntity> $entity
+     * @return HttpDef<TEntity,$this>
      */
-    protected function buildHttpDefinition(string $entity, HttpDefB $defB): HttpDefB
+    protected function getHttpDefinition(string $entity): HttpDef
     {
+        $defB = $this->builderFor($entity);
+        $pipelineFrom = $this->pipelineFrom($entity);
+
         return match ($entity) {
             Tenant::class =>
                 $defB
                     ->operations([OP::READ, OP::READ_LIST])
                     ->path('/workspaces')
                     ->keyMap(self::ENTITY_PROPERTY_MAP[Tenant::class])
-                    ->readFromReadList(),
+                    ->readFromList()
+                    ->build(),
 
             User::class =>
                 $defB
                     ->operations([OP::READ, OP::READ_LIST])
                     ->path('/workspaces/:workspaceId/users')
                     ->pipelineFromBackend(
-                        $this->pipelineFrom(User::class)
-                             ->throughClosure(Closure::fromCallable([$this, 'normaliseUser']))
+                        $pipelineFrom->throughClosure(Closure::fromCallable([$this, 'normaliseUser']))
                     )
                     ->keyMap(self::ENTITY_PROPERTY_MAP[User::class])
-                    ->readFromReadList()
+                    ->readFromList()
                     ->overrides([
                         OP::READ =>
-                            $defB->bindOverride(
-                                fn(HttpDef $def, $op, Context $ctx, $id = null, ...$args) =>
-                                    Get::notNull((
-                                        $id === null
-                                            ? $def->withPath('/user')
-                                                  ->withReadFromReadList(false)
-                                            : $def
-                                    )->getFallbackClosure($op))($ctx, ...[$id, ...$args])
-                            )
-                    ]),
+                            function (HttpDef $def, $op, Context $ctx, $id = null, ...$args) {
+                                /** @var HttpDef<TEntity,$this> $def */
+                                return (
+                                    $id === null
+                                        ? $def->withPath('/user')
+                                              ->withReadFromList(false)
+                                        : $def
+                                )->getFallbackClosure(OP::READ)($ctx, $id, ...$args);
+                            }
+                    ])
+                    ->build(),
 
             Client::class =>
                 $defB
                     ->operations([OP::READ, OP::READ_LIST])
                     ->path('/workspaces/:workspaceId/clients')
-                    ->keyMap(self::ENTITY_PROPERTY_MAP[Client::class]),
+                    ->keyMap(self::ENTITY_PROPERTY_MAP[Client::class])
+                    ->build(),
 
             Project::class =>
                 $defB
@@ -257,12 +254,14 @@ final class ClockifyProvider extends HttpSyncProvider implements
                                 default =>
                                     $def,
                             }
-                    ),
+                    )
+                    ->build(),
 
             Task::class =>
                 $defB
                     ->operations([OP::READ, OP::READ_LIST])
-                    ->path('/workspaces/:workspaceId/projects/:projectId/tasks'),
+                    ->path('/workspaces/:workspaceId/projects/:projectId/tasks')
+                    ->build(),
 
             TimeEntry::class =>
                 $defB
@@ -272,8 +271,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                         '/workspaces/:workspaceId/reports/detailed',
                     ])
                     ->pipelineFromBackend(
-                        $this->pipelineFrom(TimeEntry::class)
-                             ->throughClosure(Closure::fromCallable([$this, 'normaliseTimeEntry']))
+                        $pipelineFrom->throughClosure(Closure::fromCallable([$this, 'normaliseTimeEntry']))
                     )
                     ->callback(
                         fn(HttpDef $def, $op, Context $ctx) =>
@@ -284,16 +282,17 @@ final class ClockifyProvider extends HttpSyncProvider implements
                                 OP::READ_LIST =>
                                     $def->withPager(new QueryPager(null, 'timeentries'))
                                         ->withMethodMap([OP::READ_LIST => HttpRequestMethod::POST])
-                                        ->withCurlerProperties([CurlerProperty::CACHE_POST_RESPONSE => true])
-                                        ->withArgs($this->detailedReportQuery($ctx)),
+                                        ->withCurlerCallback(fn(CurlerInterface $curler) => $curler->withPostResponseCache())
+                                        ->withArgs([$this->detailedReportQuery($ctx)]),
 
                                 default =>
                                     $def,
                             }
-                    ),
+                    )
+                    ->build(),
 
             default =>
-                $defB,
+                $defB->build(),
         };
     }
 

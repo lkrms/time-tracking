@@ -3,8 +3,8 @@
 namespace Lkrms\Time\Sync\TimeEntity;
 
 use Lkrms\Time\Sync\Entity\TimeEntry as BaseTimeEntry;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Str;
+use Salient\Utility\Arr;
+use Salient\Utility\Str;
 
 class TimeEntry extends BaseTimeEntry
 {

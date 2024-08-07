@@ -8,12 +8,12 @@ use Salient\Core\Facade\Console;
 
 class ListClients extends Command
 {
-    public function description(): string
+    public function getDescription(): string
     {
         return 'List clients in ' . $this->TimeEntryProviderName;
     }
 
-    protected function getOptionList(): array
+    protected function getOptionList(): iterable
     {
         return [];
     }

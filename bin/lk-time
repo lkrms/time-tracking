@@ -1,11 +1,8 @@
 #!/usr/bin/env php
 <?php
 
-use Lkrms\Time\Command\GenerateInvoices;
-use Lkrms\Time\Command\ListClients;
-use Lkrms\Time\Command\ListInvoices;
-use Lkrms\Time\Command\ListTimeEntries;
-use Lkrms\Time\Command\MarkTimeEntriesInvoiced;
+namespace Lkrms\Time\Command;
+
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\TimeEntry as BaseTimeEntry;
@@ -13,19 +10,38 @@ use Lkrms\Time\Sync\Provider\Clockify\ClockifyProvider;
 use Lkrms\Time\Sync\Provider\Xero\XeroProvider;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Cli\CliApplication;
-use Salient\Core\Utility\Env;
 use Salient\Sync\Command\CheckSyncProviderHeartbeat;
 use Salient\Sync\Command\GetSyncEntities;
+use Salient\Utility\Env;
+use LogicException;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
+
+/**
+ * @template T
+ *
+ * @param class-string<T> $service
+ * @return class-string<T>
+ */
+function getProvider(string $name, string $service): string
+{
+    $provider = Env::get($name);
+    if (!is_a($provider, $service, true)) {
+        throw new LogicException(
+            sprintf('%s does not implement %s', $provider, $service)
+        );
+    }
+    /** @var class-string<T> */
+    return $provider;
+}
 
 (new CliApplication(dirname(__DIR__)))
     ->logOutput(null, true)
     ->startCache()
     ->startSync()
     ->providers([
-        BillableTimeProvider::class => Env::getClass('billable_time_provider', BillableTimeProvider::class),
-        InvoiceProvider::class => Env::getClass('invoice_provider', InvoiceProvider::class),
+        BillableTimeProvider::class => getProvider('billable_time_provider', BillableTimeProvider::class),
+        InvoiceProvider::class => getProvider('invoice_provider', InvoiceProvider::class),
         ClockifyProvider::class => ClockifyProvider::class,
         XeroProvider::class => XeroProvider::class,
     ])

@@ -1,8 +1,10 @@
 {
     "src": [
         "bin",
+        "scripts",
         "src",
-        "tests"
+        "tests",
+        "bootstrap.php"
     ],
     "includeIfPhp": true,
     "enable": [

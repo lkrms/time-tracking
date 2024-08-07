@@ -5,19 +5,19 @@ namespace Lkrms\Time\Command;
 use Lkrms\Time\Command\Concept\Command;
 use Salient\Cli\CliOption;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\Inflect;
+use Salient\Utility\Env;
+use Salient\Utility\Inflect;
 
 class MarkTimeEntriesInvoiced extends Command
 {
     protected ?bool $MarkUninvoiced;
 
-    public function description(): string
+    public function getDescription(): string
     {
         return 'Mark time entries as invoiced or uninvoiced';
     }
 
-    protected function getOptionList(): array
+    protected function getOptionList(): iterable
     {
         return $this->getTimeEntryOptions(
             'Mark time entries',
@@ -44,7 +44,7 @@ class MarkTimeEntriesInvoiced extends Command
     protected function run(string ...$params)
     {
         if (!$this->Force) {
-            Env::dryRun(true);
+            Env::setDryRun(true);
         }
 
         Console::info("Retrieving time entries from {$this->TimeEntryProviderName}");
@@ -66,7 +66,7 @@ class MarkTimeEntriesInvoiced extends Command
         foreach ($markInvoiced as $entry) {
             printf(
                 "%s %s as %s: %.2f hours on %s ('%s', %s)\n",
-                Env::dryRun() ? 'Would mark' : 'Marking',
+                Env::getDryRun() ? 'Would mark' : 'Marking',
                 $entry->Id,
                 $state,
                 $entry->getBillableHours(),
@@ -78,7 +78,7 @@ class MarkTimeEntriesInvoiced extends Command
             );
         }
 
-        if (Env::dryRun()) {
+        if (Env::getDryRun()) {
             Console::info("$count would be marked as $state:", $total);
             return;
         }

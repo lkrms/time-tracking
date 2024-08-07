@@ -6,13 +6,13 @@ use League\OAuth2\Client\Provider\GenericProvider;
 use Salient\Contract\Core\Immutable;
 use Salient\Core\Concern\HasImmutableProperties;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Env;
 use Salient\Http\OAuth2\AccessToken;
 use Salient\Http\OAuth2\OAuth2Client;
 use Salient\Http\OAuth2\OAuth2Flow;
 use Salient\Http\OAuth2\OAuth2GrantType;
 use Salient\Http\HttpServer;
+use Salient\Utility\Arr;
+use Salient\Utility\Env;
 
 final class XeroOAuth2Client extends OAuth2Client implements Immutable
 {
@@ -74,7 +74,7 @@ final class XeroOAuth2Client extends OAuth2Client implements Immutable
                 $proxyHost,
                 $proxyPort,
                 Env::getNullableBool('app_proxy_tls', null),
-                Env::getNullable('app_proxy_base_path', null),
+                Env::get('app_proxy_base_path', ''),
             );
         }
 

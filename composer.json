@@ -19,13 +19,24 @@
         "php": ">=8.0",
         "firebase/php-jwt": "^6",
         "league/oauth2-client": "^2",
-        "salient/toolkit": "^0.99.11"
+        "salient/cache": "^0.99",
+        "salient/cli": "^0.99",
+        "salient/collections": "^0.99",
+        "salient/container": "^0.99",
+        "salient/contracts": "^0.99",
+        "salient/core": "^0.99",
+        "salient/curler": "^0.99",
+        "salient/http": "^0.99",
+        "salient/sync": "^0.99",
+        "salient/utils": "^0.99"
     },
     "require-dev": {
         "phpstan/extension-installer": "^1",
         "phpstan/phpstan": "^1",
         "phpstan/phpstan-deprecation-rules": "^1",
-        "phpunit/phpunit": "^9"
+        "phpunit/phpunit": "^9",
+        "salient/phpstan": "^0.99",
+        "salient/sli": "^0.99"
     },
     "autoload": {
         "psr-4": {

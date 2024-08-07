@@ -1,6 +1,2 @@
 parameters:
-	ignoreErrors:
-		-
-			message: "#^Only iterables can be unpacked, mixed given\\.$#"
-			count: 1
-			path: src/Sync/Provider/Clockify/ClockifyProvider.php
+	ignoreErrors: []

@@ -85,4 +85,15 @@ class Invoice extends AbstractSyncEntity
             'LineItems' => [Cardinality::ONE_TO_MANY => InvoiceLineItem::class],
         ];
     }
+
+    /**
+     * @internal
+     */
+    public static function getDateProperties(): array
+    {
+        return [
+            'Date',
+            'DueDate',
+        ];
+    }
 }

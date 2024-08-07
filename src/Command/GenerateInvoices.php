@@ -9,25 +9,25 @@ use Lkrms\Time\Sync\Entity\Invoice;
 use Lkrms\Time\Sync\Entity\InvoiceLineItem;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Cli\CliOption;
-use Salient\Core\Exception\UnexpectedValueException;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\File;
-use Salient\Core\Utility\Get;
-use Salient\Core\Utility\Inflect;
+use Salient\Utility\Arr;
+use Salient\Utility\Env;
+use Salient\Utility\File;
+use Salient\Utility\Get;
+use Salient\Utility\Inflect;
 use DateTimeImmutable;
+use UnexpectedValueException;
 
 class GenerateInvoices extends Command
 {
     protected ?bool $NoMarkInvoiced;
 
-    public function description(): string
+    public function getDescription(): string
     {
         return 'Create invoices for unbilled time entries';
     }
 
-    protected function getOptionList(): array
+    protected function getOptionList(): iterable
     {
         return $this->getTimeEntryOptions(
             'Create an invoice',
@@ -49,7 +49,7 @@ class GenerateInvoices extends Command
     protected function run(string ...$params)
     {
         if (!$this->Force) {
-            Env::dryRun(true);
+            Env::setDryRun(true);
         }
 
         Console::info("Retrieving unbilled time from {$this->TimeEntryProviderName}");
@@ -169,7 +169,7 @@ class GenerateInvoices extends Command
                 fn(TimeEntry $t) => [$t->Project->Id ?? null, $t->BillableRate]
             );
 
-            if (Env::dryRun()) {
+            if (Env::getDryRun()) {
                 foreach ($entries as $entry) {
                     printf(
                         "==> \$%.2f (%.2f hours):\n  %s\n\n",
@@ -238,7 +238,7 @@ class GenerateInvoices extends Command
 
         $count = Inflect::format($invoices, '{{#}} {{#:invoice}}');
 
-        if (Env::dryRun()) {
+        if (Env::getDryRun()) {
             Console::info(
                 "$count would be created in {$this->InvoiceProviderName}:",
                 $this->getBillableSummary($billableAmount, $billableHours),
