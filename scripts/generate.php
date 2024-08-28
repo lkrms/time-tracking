@@ -59,6 +59,7 @@ foreach ($class->getReflectionConstants() as $constant) {
     Env::unset($constant->getValue());
 }
 
+/** @disregard P1006 */
 $args = [
     '--force',
     ...array_slice($_SERVER['argv'], 1),

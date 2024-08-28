@@ -71,7 +71,7 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
         int $show = TimeEntry::ALL,
         ?callable $callback = null,
         bool $markdown = false
-    ): TimeEntryCollection {
+    ): self {
         $dateFormat = Env::get('time_entry_date_format', 'd/m/Y');
         $timeFormat = Env::get('time_entry_time_format', 'g.ia');
 
@@ -104,7 +104,7 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
 
         [$separator, $marker] = $markdown ? ["\n\n", '*'] : ["\n", null];
 
-        $grouped = $this->app()->get(static::class);
+        $grouped = $this->app()->get(self::class);
         foreach ($groupTime as $groupBy => $time) {
             $time->Description = Arr::implode($separator, [
                 $groupSummary[$groupBy],
