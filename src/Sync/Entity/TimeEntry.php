@@ -14,64 +14,29 @@ use DateTimeInterface;
  */
 class TimeEntry extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Description;
-
-    /**
-     * @var User|DeferredEntity<User>|null
-     */
+    /** @var User|DeferredEntity<User>|null */
     public $User;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $Billable;
-
-    /**
-     * @var Task|DeferredEntity<Task>|null
-     */
+    /** @var Task|DeferredEntity<Task>|null */
     public $Task;
-
-    /**
-     * @var Project|DeferredEntity<Project>|null
-     */
+    /** @var Project|DeferredEntity<Project>|null */
     public $Project;
-
-    /**
-     * @var DateTimeInterface|null
-     */
+    /** @var DateTimeInterface|null */
     public $Start;
-
-    /**
-     * @var DateTimeInterface|null
-     */
+    /** @var DateTimeInterface|null */
     public $End;
-
-    /**
-     * @var int|null
-     */
+    /** @var int|null */
     public $Seconds;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $BillableRate;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $IsInvoiced;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $IsLocked;
 
     /**

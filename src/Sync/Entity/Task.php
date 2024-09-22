@@ -13,34 +13,17 @@ use Salient\Sync\AbstractSyncEntity;
  */
 class Task extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Name;
-
-    /**
-     * @var Project|DeferredEntity<Project>|null
-     */
+    /** @var Project|DeferredEntity<Project>|null */
     public $Project;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $Billable;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $BillableRate;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $Archived;
 
     /**

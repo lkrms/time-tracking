@@ -14,29 +14,15 @@ use Salient\Sync\AbstractSyncEntity;
  */
 class Tenant extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Name;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $LogoUrl;
-
-    /**
-     * @var array<User|DeferredEntity<User>>|DeferredRelationship<User>|null
-     */
+    /** @var array<User|DeferredEntity<User>>|DeferredRelationship<User>|null */
     public $Users;
-
-    /**
-     * @var array<string,mixed>|null
-     */
+    /** @var array<string,mixed>|null */
     public $Settings;
 
     /**

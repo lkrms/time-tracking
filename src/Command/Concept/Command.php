@@ -26,42 +26,24 @@ use DateTimeImmutable;
 abstract class Command extends CliCommand
 {
     protected ?DateTimeImmutable $StartDate;
-
     protected ?DateTimeImmutable $EndDate;
-
     protected ?string $ClientId;
-
     protected ?string $ProjectId;
-
     protected ?bool $Billable = null;
-
     protected ?bool $Unbilled = null;
-
-    /**
-     * @var string[]|null
-     */
+    /** @var string[]|null */
     protected ?array $Hide = null;
-
     protected ?bool $Force = null;
 
     // --
 
     protected BillableTimeProvider $TimeEntryProvider;
-
     protected InvoiceProvider $InvoiceProvider;
-
     protected string $TimeEntryProviderName;
-
     protected string $InvoiceProviderName;
-
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     private $ResolvedClientId;
-
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     private $ResolvedProjectId;
 
     public function __construct(
@@ -195,9 +177,10 @@ abstract class Command extends CliCommand
             'billed' => $billed ?? ($this->Unbilled ? false : null),
         ];
 
-        return $this->TimeEntryProvider
-                    ->with(TimeEntry::class)
-                    ->getList($filter);
+        return $this
+            ->TimeEntryProvider
+            ->with(TimeEntry::class)
+            ->getList($filter);
     }
 
     /**
@@ -260,9 +243,10 @@ abstract class Command extends CliCommand
                 $this->getEntityId(
                     $this->ProjectId,
                     Project::class,
-                    $this->TimeEntryProvider
-                         ->getContext()
-                         ->withValue('client_id', $clientId),
+                    $this
+                        ->TimeEntryProvider
+                        ->getContext()
+                        ->withValue('client_id', $clientId),
                 );
         }
 

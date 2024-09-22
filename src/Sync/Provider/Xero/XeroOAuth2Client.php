@@ -25,14 +25,9 @@ final class XeroOAuth2Client extends OAuth2Client implements Immutable
         'offline_access',
     ];
 
-    /**
-     * @var string[]
-     */
+    /** @var string[] */
     private array $DefaultScopes = self::MANDATORY_SCOPES;
-
-    /**
-     * @var (callable(AccessToken, array<string,mixed>|null $idToken, OAuth2GrantType::*): mixed)|null
-     */
+    /** @var (callable(AccessToken, array<string,mixed>|null $idToken, OAuth2GrantType::*): mixed)|null */
     private $Callback = null;
 
     /**

@@ -16,9 +16,7 @@ class TimeEntry extends BaseTimeEntry
     public const DESCRIPTION = 32;
     public const ALL = TimeEntry::DATE | TimeEntry::TIME | TimeEntry::PROJECT | TimeEntry::TASK | TimeEntry::USER | TimeEntry::DESCRIPTION;
 
-    /**
-     * @var TimeEntry[]|null
-     */
+    /** @var TimeEntry[]|null */
     private $Merged;
 
     public function getBillableAmount(): float

@@ -11,34 +11,17 @@ use Salient\Sync\AbstractSyncEntity;
  */
 class InvoiceLineItem extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Description;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $Quantity;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $UnitAmount;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $ItemCode;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $AccountCode;
 
     /**

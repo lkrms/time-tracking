@@ -220,8 +220,9 @@ final class ClockifyProvider extends HttpSyncProvider implements
                                 /** @var HttpDef<TEntity,$this> $def */
                                 return (
                                     $id === null
-                                        ? $def->withPath('/user')
-                                              ->withReadFromList(false)
+                                        ? $def
+                                            ->withPath('/user')
+                                            ->withReadFromList(false)
                                         : $def
                                 )->getFallbackClosure(OP::READ)($ctx, $id, ...$args);
                             }
@@ -279,7 +280,8 @@ final class ClockifyProvider extends HttpSyncProvider implements
                                     $def->withQuery(['hydrated' => true]),
 
                                 OP::READ_LIST =>
-                                    $def->withPager(new ClockifyPager('timeentries'))
+                                    $def
+                                        ->withPager(new ClockifyPager('timeentries'))
                                         ->withMethodMap([OP::READ_LIST => HttpRequestMethod::POST])
                                         ->withCurlerCallback(fn(CurlerInterface $curler) => $curler->withPostResponseCache())
                                         ->withArgs([$this->detailedReportQuery($ctx)]),

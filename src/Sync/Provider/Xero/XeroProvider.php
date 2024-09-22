@@ -105,12 +105,8 @@ final class XeroProvider extends HttpSyncProvider implements
     ];
 
     private XeroOAuth2Client $OAuth2Client;
-
     private string $TenantIdKey;
-
-    /**
-     * @var array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>|null
-     */
+    /** @var array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>|null */
     private ?array $Connections;
 
     /**
@@ -229,8 +225,8 @@ final class XeroProvider extends HttpSyncProvider implements
                         )->through(
                             function (array $payload, Closure $next) {
                                 if (
-                                    $payload['IsCustomer'] === false &&
-                                    $payload['IsSupplier'] === true
+                                    $payload['IsCustomer'] === false
+                                    && $payload['IsSupplier'] === true
                                 ) {
                                     return null;
                                 }
@@ -550,16 +546,17 @@ final class XeroProvider extends HttpSyncProvider implements
     private function getOAuth2Client(): XeroOAuth2Client
     {
         return $this->OAuth2Client
-            ??= $this->App
-                     ->get(XeroOAuth2Client::class)
-                     ->withDefaultScopes(self::OAUTH2_SCOPES)
-                     ->withCallback(
-                         function (AccessToken $token, ?array $idToken, string $grantType) {
-                             if ($grantType !== OAuth2GrantType::REFRESH_TOKEN) {
-                                 $this->Connections = null;
-                             }
-                         }
-                     );
+            ??= $this
+                ->App
+                ->get(XeroOAuth2Client::class)
+                ->withDefaultScopes(self::OAUTH2_SCOPES)
+                ->withCallback(
+                    function (AccessToken $token, ?array $idToken, string $grantType) {
+                        if ($grantType !== OAuth2GrantType::REFRESH_TOKEN) {
+                            $this->Connections = null;
+                        }
+                    }
+                );
     }
 
     private function getTenantIdKey(): string

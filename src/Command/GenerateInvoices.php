@@ -89,9 +89,10 @@ class GenerateInvoices extends Command
 
         Console::info("Retrieving clients from {$this->InvoiceProviderName}");
         $invClients = Arr::toMap(
-            $this->InvoiceProvider
-                 ->with(Client::class)
-                 ->getListA(['name' => $clientNames]),
+            $this
+                ->InvoiceProvider
+                ->with(Client::class)
+                ->getListA(['name' => $clientNames]),
             'Name'
         );
 
@@ -110,13 +111,14 @@ class GenerateInvoices extends Command
 
             /** @var iterable<Invoice> $invoices */
             $invoices =
-                $this->InvoiceProvider
-                     ->with(Invoice::class)
-                     ->getList([
-                         'number' => "{$prefix}*",
-                         '$orderby' => 'date desc',
-                         '!status' => 'DELETED',
-                     ]);
+                $this
+                    ->InvoiceProvider
+                    ->with(Invoice::class)
+                    ->getList([
+                        'number' => "{$prefix}*",
+                        '$orderby' => 'date desc',
+                        '!status' => 'DELETED',
+                    ]);
 
             $seen = 0;
             foreach ($invoices as $invoice) {
