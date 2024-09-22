@@ -85,4 +85,15 @@ class TimeEntry extends AbstractSyncEntity
             'Project' => [Cardinality::ONE_TO_ONE => Project::class],
         ];
     }
+
+    /**
+     * @internal
+     */
+    public static function getDateProperties(): array
+    {
+        return [
+            'Start',
+            'End',
+        ];
+    }
 }

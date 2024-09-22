@@ -6,25 +6,24 @@ use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
 use Salient\Contract\Container\SingletonInterface;
+use Salient\Contract\Curler\CurlerInterface;
 use Salient\Contract\Sync\SyncContextInterface as Context;
 use Salient\Contract\Sync\SyncEntityInterface;
 use Salient\Contract\Sync\SyncOperation as OP;
 use Salient\Core\Facade\Cache;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\Inflect;
-use Salient\Core\Utility\Pcre;
 use Salient\Core\DateFormatter;
 use Salient\Core\DotNetDateParser;
 use Salient\Curler\Pager\QueryPager;
-use Salient\Curler\CurlerBuilder;
 use Salient\Http\OAuth2\AccessToken;
 use Salient\Http\OAuth2\OAuth2GrantType;
 use Salient\Http\HttpHeaders;
-use Salient\Sync\HttpSyncDefinition as HttpDef;
-use Salient\Sync\HttpSyncDefinitionBuilder as HttpDefB;
-use Salient\Sync\HttpSyncProvider;
+use Salient\Sync\Http\HttpSyncDefinition as HttpDef;
+use Salient\Sync\Http\HttpSyncProvider;
+use Salient\Utility\Arr;
+use Salient\Utility\Env;
+use Salient\Utility\Inflect;
+use Salient\Utility\Regex;
 use Closure;
 use DateTimeInterface;
 use RuntimeException;
@@ -114,11 +113,17 @@ final class XeroProvider extends HttpSyncProvider implements
      */
     private ?array $Connections;
 
-    public function name(): string
+    /**
+     * @inheritDoc
+     */
+    public function getName(): string
     {
         return sprintf('Xero { %s }', $this->requireTenantId(false));
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getBackendIdentifier(): array
     {
         return [
@@ -126,7 +131,10 @@ final class XeroProvider extends HttpSyncProvider implements
         ];
     }
 
-    protected function getDateFormatter(?string $path = null): DateFormatter
+    /**
+     * @inheritDoc
+     */
+    protected function createDateFormatter(): DateFormatter
     {
         return new DateFormatter(
             DateTimeInterface::ATOM,
@@ -135,6 +143,9 @@ final class XeroProvider extends HttpSyncProvider implements
         );
     }
 
+    /**
+     * @inheritDoc
+     */
     protected function getHeartbeat()
     {
         $connections = $this->getConnections();
@@ -147,22 +158,29 @@ final class XeroProvider extends HttpSyncProvider implements
         return $connections;
     }
 
-    protected function buildCurler(CurlerBuilder $curlerB): CurlerBuilder
+    /**
+     * @inheritDoc
+     */
+    protected function filterCurler(CurlerInterface $curler, string $path): CurlerInterface
     {
-        return $curlerB->alwaysPaginate();
+        return $curler->withPager($curler->getPager(), true);
     }
 
-    protected function buildHttpDefinition(string $entity, HttpDefB $defB): HttpDefB
+    protected function getHttpDefinition(string $entity): HttpDef
     {
+        $defB = $this->builderFor($entity);
+        $pipelineFrom = $this->pipelineFrom($entity);
+        $pipelineTo = $this->pipelineTo($entity);
+
         $defB =
             $defB
                 ->path(sprintf(
                     '/api.xro/2.0/%s',
-                    self::ENTITY_PATH_MAP[$entity] ?? $entity::plural(),
+                    self::ENTITY_PATH_MAP[$entity] ?? $entity::getPlural(),
                 ))
                 ->pager(new QueryPager(
                     'page',
-                    self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::plural(),
+                    self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::getPlural(),
                     100,
                 ))
                 ->callback(
@@ -183,46 +201,48 @@ final class XeroProvider extends HttpSyncProvider implements
                 $defB
                     ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
                     ->pipelineFromBackend(
-                        $this->pipelineFrom(Invoice::class)
-                             ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
-                             ->through(
-                                 // Discard accounts payable invoices
-                                 fn(array $payload, Closure $next) =>
-                                     $payload['Type'] === 'ACCREC'
-                                         ? $next($payload)
-                                         : null
-                             )
+                        $pipelineFrom->throughKeyMap(
+                            self::ENTITY_KEY_MAPS[$entity]
+                        )->through(
+                            // Discard accounts payable invoices
+                            fn(array $payload, Closure $next) =>
+                                $payload['Type'] === 'ACCREC'
+                                    ? $next($payload)
+                                    : null
+                        )
                     )
                     ->pipelineToBackend(
-                        $this->pipelineTo(Invoice::class)
-                             ->after(
-                                 fn(Invoice $invoice) =>
-                                     $this->generateInvoice($invoice)
-                             )
-                    ),
+                        $pipelineTo->after(
+                            // @phpstan-ignore argument.type
+                            fn(Invoice $invoice) =>
+                                $this->generateInvoice($invoice)
+                        )
+                    )
+                    ->build(),
 
             Client::class =>
                 $defB
                     ->operations([OP::READ, OP::READ_LIST])
                     ->pipelineFromBackend(
-                        $this->pipelineFrom(Client::class)
-                             ->throughKeyMap(self::ENTITY_KEY_MAPS[$entity])
-                             ->through(
-                                 function (array $payload, Closure $next) {
-                                     if (
-                                         $payload['IsCustomer'] === false &&
-                                         $payload['IsSupplier'] === true
-                                     ) {
-                                         return null;
-                                     }
-                                     $payload['Archived'] = $payload['ContactStatus'] !== 'ACTIVE';
-                                     return $next($payload);
-                                 }
-                             )
-                    ),
+                        $pipelineFrom->throughKeyMap(
+                            self::ENTITY_KEY_MAPS[$entity]
+                        )->through(
+                            function (array $payload, Closure $next) {
+                                if (
+                                    $payload['IsCustomer'] === false &&
+                                    $payload['IsSupplier'] === true
+                                ) {
+                                    return null;
+                                }
+                                $payload['Archived'] = $payload['ContactStatus'] !== 'ACTIVE';
+                                return $next($payload);
+                            }
+                        )
+                    )
+                    ->build(),
 
             default =>
-                $defB,
+                $defB->build(),
         };
     }
 
@@ -470,7 +490,7 @@ final class XeroProvider extends HttpSyncProvider implements
             $parts = [];
             // Format: "<field_name>[ (ASC|DESC)][,...]"
             foreach (explode(',', $orderby) as $expr) {
-                $expr = Pcre::split('/\h+/', trim($expr));
+                $expr = Regex::split('/\h+/', trim($expr));
                 if (count($expr) > 2) {
                     throw new UnexpectedValueException(
                         sprintf('Invalid $orderby value: %s', $orderby)

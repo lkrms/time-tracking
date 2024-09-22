@@ -6,16 +6,16 @@ use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Inflect;
+use Salient\Utility\Inflect;
 
 class ListTimeEntries extends Command
 {
-    public function description(): string
+    public function getDescription(): string
     {
         return 'Summarise time entries in ' . $this->TimeEntryProviderName;
     }
 
-    protected function getOptionList(): array
+    protected function getOptionList(): iterable
     {
         return $this->getTimeEntryOptions('List time entries', true, false, true, true, true);
     }

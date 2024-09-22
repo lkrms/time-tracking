@@ -4,14 +4,11 @@ namespace Lkrms\Time\Support;
 
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Collection\AbstractTypedCollection;
-use Salient\Container\Container;
-use Salient\Contract\Container\ContainerAwareInterface;
-use Salient\Contract\Container\ContainerInterface;
-use Salient\Core\Utility\Arr;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\Get;
-use Salient\Core\Utility\Test;
-use UnexpectedValueException;
+use Salient\Utility\Arr;
+use Salient\Utility\Env;
+use Salient\Utility\Get;
+use Salient\Utility\Test;
+use LogicException;
 
 /**
  * @property-read float $BillableAmount
@@ -19,17 +16,8 @@ use UnexpectedValueException;
  *
  * @extends AbstractTypedCollection<array-key,TimeEntry>
  */
-final class TimeEntryCollection extends AbstractTypedCollection implements ContainerAwareInterface
+final class TimeEntryCollection extends AbstractTypedCollection
 {
-    protected const ITEM_CLASS = TimeEntry::class;
-
-    private ?ContainerInterface $App = null;
-
-    public function setContainer(ContainerInterface $container): void
-    {
-        $this->App = $container;
-    }
-
     /**
      * @param TimeEntry $a
      * @param TimeEntry $b
@@ -42,7 +30,7 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
         }
 
         // If not, sort by ID if both entries have integer IDs
-        if (Test::isIntValue($a->Id) && Test::isIntValue($b->Id)) {
+        if (Test::isInteger($a->Id) && Test::isInteger($b->Id)) {
             return (int) $a->Id <=> (int) $b->Id;
         }
 
@@ -71,16 +59,14 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
         int $show = TimeEntry::ALL,
         ?callable $callback = null,
         bool $markdown = false
-    ): TimeEntryCollection {
+    ): self {
         $dateFormat = Env::get('time_entry_date_format', 'd/m/Y');
         $timeFormat = Env::get('time_entry_time_format', 'g.ia');
-
-        $times = $this->sort()->all();
 
         /** @var array<string,TimeEntry> */
         $groupTime = [];
         $groupSummary = [];
-        foreach ($times as $t) {
+        foreach ($this->sort() as $t) {
             $summary = $t->getSummary(
                 // `& TimeEntry::ALL` is to satisfy PHPStan
                 $show & ~TimeEntry::DESCRIPTION & TimeEntry::ALL,
@@ -104,7 +90,7 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
 
         [$separator, $marker] = $markdown ? ["\n\n", '*'] : ["\n", null];
 
-        $grouped = $this->app()->get(static::class);
+        $grouped = new self();
         foreach ($groupTime as $groupBy => $time) {
             $time->Description = Arr::implode($separator, [
                 $groupSummary[$groupBy],
@@ -126,27 +112,18 @@ final class TimeEntryCollection extends AbstractTypedCollection implements Conta
     {
         switch ($name) {
             case 'BillableAmount':
-                return array_reduce(
-                    $this->all(),
-                    fn($prev, TimeEntry $item) => $prev + $item->getBillableAmount(),
-                    0
-                );
-
             case 'BillableHours':
-                return array_reduce(
-                    $this->all(),
-                    fn($prev, TimeEntry $item) => $prev + $item->getBillableHours(),
-                    0
-                );
+                $method = 'get' . $name;
+                break;
 
             default:
-                throw new UnexpectedValueException("Undefined property: $name");
+                throw new LogicException(sprintf('Invalid property: %s', $name));
         }
-    }
 
-    private function app(): ContainerInterface
-    {
-        return $this->App
-            ??= Container::getGlobalContainer();
+        $sum = 0.0;
+        foreach ($this as $item) {
+            $sum += $item->$method();
+        }
+        return $sum;
     }
 }

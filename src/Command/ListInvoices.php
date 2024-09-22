@@ -5,18 +5,17 @@ namespace Lkrms\Time\Command;
 use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Sync\Entity\Invoice;
 use Salient\Core\Facade\Console;
-use Salient\Core\Utility\Env;
-use Salient\Core\Utility\Format;
-use Salient\Core\Utility\Get;
+use Salient\Utility\Env;
+use Salient\Utility\Format;
 
 class ListInvoices extends Command
 {
-    public function description(): string
+    public function getDescription(): string
     {
         return 'List invoices in ' . $this->InvoiceProviderName;
     }
 
-    protected function getOptionList(): array
+    protected function getOptionList(): iterable
     {
         return [];
     }
@@ -41,7 +40,7 @@ class ListInvoices extends Command
                 "==> %s for \$%.2f\n  date: %s\n  client: %s\n\n",
                 $invoice->Number,
                 $invoice->Total,
-                Format::date(Get::notNull($invoice->Date)),
+                Format::date($invoice->Date),
                 $invoice->Client->Name ?? '<unknown>',
             );
             $count++;
