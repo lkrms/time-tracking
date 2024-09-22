@@ -2,13 +2,12 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Sync\Entity\Invoice;
 use Salient\Core\Facade\Console;
 use Salient\Utility\Env;
 use Salient\Utility\Format;
 
-final class ListInvoices extends Command
+final class ListInvoices extends AbstractCommand
 {
     public function getDescription(): string
     {

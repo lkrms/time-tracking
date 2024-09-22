@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time\Command\Concept;
+namespace Lkrms\Time\Command;
 
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
@@ -23,7 +23,7 @@ use Salient\Utility\Get;
 use Salient\Utility\Test;
 use DateTimeImmutable;
 
-abstract class Command extends CliCommand
+abstract class AbstractCommand extends CliCommand
 {
     protected ?DateTimeImmutable $StartDate;
     protected ?DateTimeImmutable $EndDate;

@@ -2,7 +2,6 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
@@ -13,13 +12,10 @@ use Salient\Core\Facade\Console;
 use Salient\Sync\Exception\SyncInvalidEntityException;
 use Salient\Utility\Arr;
 use Salient\Utility\Env;
-use Salient\Utility\File;
-use Salient\Utility\Get;
 use Salient\Utility\Inflect;
 use DateTimeImmutable;
-use UnexpectedValueException;
 
-final class GenerateInvoices extends Command
+final class GenerateInvoices extends AbstractCommand
 {
     protected bool $NoMarkInvoiced = false;
 

@@ -2,11 +2,10 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Sync\Entity\Client;
 use Salient\Core\Facade\Console;
 
-final class ListClients extends Command
+final class ListClients extends AbstractCommand
 {
     public function getDescription(): string
     {

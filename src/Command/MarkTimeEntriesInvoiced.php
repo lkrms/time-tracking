@@ -2,14 +2,13 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Command\Concept\Command;
 use Salient\Cli\CliOption;
 use Salient\Core\Facade\Console;
 use Salient\Utility\Env;
 use Salient\Utility\Format;
 use Salient\Utility\Inflect;
 
-final class MarkTimeEntriesInvoiced extends Command
+final class MarkTimeEntriesInvoiced extends AbstractCommand
 {
     protected bool $MarkUninvoiced = false;
 

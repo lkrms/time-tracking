@@ -2,13 +2,12 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Support\TimeEntryCollection;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Core\Facade\Console;
 use Salient\Utility\Inflect;
 
-final class ListTimeEntries extends Command
+final class ListTimeEntries extends AbstractCommand
 {
     public function getDescription(): string
     {

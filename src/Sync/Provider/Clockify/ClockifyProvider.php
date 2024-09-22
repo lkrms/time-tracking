@@ -12,7 +12,6 @@ use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
 use Salient\Contract\Container\ContainerInterface;
 use Salient\Contract\Container\SingletonInterface;
-use Salient\Contract\Core\DateFormatterInterface;
 use Salient\Contract\Curler\CurlerInterface;
 use Salient\Contract\Http\HttpRequestMethod;
 use Salient\Contract\Sync\SyncContextInterface;
