@@ -61,6 +61,7 @@ foreach ($class->getReflectionConstants() as $constant) {
 
 /** @disregard P1006 */
 $args = [
+    '--collapse',
     '--force',
     ...array_slice($_SERVER['argv'], 1),
 ];
