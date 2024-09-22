@@ -11,7 +11,7 @@ use Lkrms\Time\Sync\Provider\Xero\XeroProvider;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Cli\CliApplication;
 use Salient\Sync\Command\CheckSyncProviderHeartbeat;
-use Salient\Sync\Command\GetSyncEntities;
+use Salient\Sync\Command\GetSyncEntity;
 use Salient\Utility\Env;
 use LogicException;
 
@@ -52,5 +52,5 @@ function getProvider(string $name, string $service): string
     ->command(['invoice', 'generate'], GenerateInvoices::class)
     ->command(['entry', 'mark-invoiced'], MarkTimeEntriesInvoiced::class)
     ->command(['heartbeat'], CheckSyncProviderHeartbeat::class)
-    ->command(['get'], GetSyncEntities::class)
+    ->command(['get'], GetSyncEntity::class)
     ->runAndExit();
