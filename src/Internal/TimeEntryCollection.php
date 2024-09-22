@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time\Support;
+namespace Lkrms\Time\Internal;
 
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Collection\AbstractTypedCollection;

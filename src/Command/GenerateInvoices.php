@@ -2,7 +2,7 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Support\TimeEntryCollection;
+use Lkrms\Time\Internal\TimeEntryCollection;
 use Lkrms\Time\Sync\Entity\Client;
 use Lkrms\Time\Sync\Entity\Invoice;
 use Lkrms\Time\Sync\Entity\InvoiceLineItem;

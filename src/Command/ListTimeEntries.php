@@ -2,7 +2,7 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Support\TimeEntryCollection;
+use Lkrms\Time\Internal\TimeEntryCollection;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Core\Facade\Console;
 use Salient\Utility\Inflect;
