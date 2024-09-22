@@ -21,7 +21,6 @@ use Salient\Contract\Sync\SyncEntityInterface;
 use Salient\Contract\Sync\SyncOperation as OP;
 use Salient\Core\Facade\Console;
 use Salient\Core\DateFormatter;
-use Salient\Curler\Pager\QueryPager;
 use Salient\Http\HttpHeaders;
 use Salient\Sync\Http\HttpSyncDefinition as HttpDef;
 use Salient\Sync\Http\HttpSyncProvider;
@@ -280,7 +279,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
                                     $def->withQuery(['hydrated' => true]),
 
                                 OP::READ_LIST =>
-                                    $def->withPager(new QueryPager(null, 'timeentries'))
+                                    $def->withPager(new ClockifyPager('timeentries'))
                                         ->withMethodMap([OP::READ_LIST => HttpRequestMethod::POST])
                                         ->withCurlerCallback(fn(CurlerInterface $curler) => $curler->withPostResponseCache())
                                         ->withArgs([$this->detailedReportQuery($ctx)]),

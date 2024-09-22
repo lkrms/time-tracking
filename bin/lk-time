@@ -37,6 +37,7 @@ function getProvider(string $name, string $service): string
 
 (new CliApplication(dirname(__DIR__)))
     ->logOutput(null, true)
+    ->exportHar()
     ->startCache()
     ->startSync()
     ->providers([
