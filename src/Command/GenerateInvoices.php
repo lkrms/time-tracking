@@ -10,6 +10,7 @@ use Lkrms\Time\Sync\Entity\InvoiceLineItem;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Cli\CliOption;
 use Salient\Core\Facade\Console;
+use Salient\Sync\Exception\SyncInvalidEntityException;
 use Salient\Utility\Arr;
 use Salient\Utility\Env;
 use Salient\Utility\File;
@@ -18,9 +19,9 @@ use Salient\Utility\Inflect;
 use DateTimeImmutable;
 use UnexpectedValueException;
 
-class GenerateInvoices extends Command
+final class GenerateInvoices extends Command
 {
-    protected ?bool $NoMarkInvoiced;
+    protected bool $NoMarkInvoiced = false;
 
     public function getDescription(): string
     {
@@ -54,47 +55,47 @@ class GenerateInvoices extends Command
 
         Console::info("Retrieving unbilled time from {$this->TimeEntryProviderName}");
 
-        $times = $this->getTimeEntries(true, false);
+        $dateFormat = Env::get('time_entry_date_format', 'd/m/Y');
+        $timeFormat = Env::get('time_entry_time_format', 'g.ia');
 
         /** @var TimeEntryCollection[] */
         $clientTimes = [];
         $clientNames = [];
         $timeEntryCount = 0;
 
-        foreach ($times as $time) {
+        foreach ($this->getTimeEntries(true, false) as $time) {
             $clientId = $time->Project->Client->Id ?? null;
             $clientName = $time->Project->Client->Name ?? null;
             if ($clientId === null) {
-                Console::warn('Skipping time entry with no client:', $time->getSummary());
+                Console::warn(
+                    'Skipping time entry with no client:',
+                    $time->getSummary($dateFormat, $timeFormat),
+                );
                 continue;
             }
             if ($clientName === null) {
-                throw new UnexpectedValueException(sprintf(
+                throw new SyncInvalidEntityException(sprintf(
                     'Client has no name: %s',
                     $clientId,
-                ));
+                ), $this->TimeEntryProvider, Client::class, $clientId);
             }
-            $entries = $clientTimes[$clientId]
-                ??= $this->App->get(TimeEntryCollection::class);
-            $entries[] = $time;
-            $clientNames[$clientId] = $clientName;
+            $clientTimes[$clientId] ??= new TimeEntryCollection();
+            $clientTimes[$clientId][] = $time;
+            $clientNames[$clientId] ??= $clientName;
             $timeEntryCount++;
         }
 
         if (!$timeEntryCount) {
             Console::info('No unbilled time entries');
-
             return;
         }
 
         Console::info("Retrieving clients from {$this->InvoiceProviderName}");
-        $invClients = Arr::toMap(
-            $this
-                ->InvoiceProvider
-                ->with(Client::class)
-                ->getListA(['name' => $clientNames]),
-            'Name'
-        );
+        $invClients = $this
+            ->InvoiceProvider
+            ->with(Client::class)
+            ->getList(['name' => $clientNames]);
+        $invClients = Arr::toMap($invClients, 'Name');
 
         Console::log(Inflect::format(
             $clientTimes,
@@ -110,19 +111,24 @@ class GenerateInvoices extends Command
             $next = Env::getInt('invoice_number_next', 1);
 
             /** @var iterable<Invoice> $invoices */
-            $invoices =
-                $this
-                    ->InvoiceProvider
-                    ->with(Invoice::class)
-                    ->getList([
-                        'number' => "{$prefix}*",
-                        '$orderby' => 'date desc',
-                        '!status' => 'DELETED',
-                    ]);
+            $invoices = $this
+                ->InvoiceProvider
+                ->with(Invoice::class)
+                ->getList([
+                    'number' => "{$prefix}*",
+                    '$orderby' => 'date desc',
+                    '!status' => 'DELETED',
+                ]);
 
             $seen = 0;
             foreach ($invoices as $invoice) {
-                $next = max((int) substr((string) $invoice->Number, strlen($prefix)) + 1, $next, 1);
+                if ($invoice->Number === null) {
+                    throw new SyncInvalidEntityException(sprintf(
+                        'Invoice has no number: %s',
+                        $invoice->Id,
+                    ), $this->InvoiceProvider, Invoice::class, $invoice->Id);
+                }
+                $next = max((int) substr($invoice->Number, strlen($prefix)) + 1, $next, 1);
                 if ($seen++ === 99) {
                     break;
                 }
@@ -130,13 +136,6 @@ class GenerateInvoices extends Command
 
             unset($invoices);
         }
-
-        $tempDir = implode('/', [
-            $this->App->getTempPath(),
-            Get::basename(self::class),
-            $this->InvoiceProviderName . '-' . $this->InvoiceProvider->getProviderId()
-        ]);
-        File::createDir($tempDir);
 
         $invoices = 0;
         $billableAmount = 0;
@@ -168,7 +167,8 @@ class GenerateInvoices extends Command
                 $show,
                 // Even if they're excluded from the invoice, don't merge
                 // entries with different project IDs and/or billable rates
-                fn(TimeEntry $t) => [$t->Project->Id ?? null, $t->BillableRate]
+                fn(TimeEntry $t) =>
+                    [$t->Project->Id ?? null, $t->BillableRate]
             );
 
             if (Env::getDryRun()) {
@@ -223,14 +223,10 @@ class GenerateInvoices extends Command
             $totalTax[$currency] = ($totalTax[$currency] ?? 0.0) + $invoice->TotalTax;
             $total[$currency] = ($total[$currency] ?? 0.0) + $invoice->Total;
 
-            // TODO: something better with this data
-            file_put_contents($tempDir . "/{$invoice->Number}.json", json_encode($invoice));
-            file_put_contents($tempDir . "/{$invoice->Number}-timeEntries.json", json_encode($markInvoiced));
-
             $count = Inflect::format($markInvoiced, '{{#}} time {{#:entry}}');
 
             if ($this->NoMarkInvoiced) {
-                Console::error("Not marking $count as invoiced in {$this->TimeEntryProviderName}", null, null, false);
+                Console::warn("Not marking $count as invoiced in {$this->TimeEntryProviderName}");
                 continue;
             }
 

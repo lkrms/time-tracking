@@ -6,11 +6,12 @@ use Lkrms\Time\Command\Concept\Command;
 use Salient\Cli\CliOption;
 use Salient\Core\Facade\Console;
 use Salient\Utility\Env;
+use Salient\Utility\Format;
 use Salient\Utility\Inflect;
 
-class MarkTimeEntriesInvoiced extends Command
+final class MarkTimeEntriesInvoiced extends Command
 {
-    protected ?bool $MarkUninvoiced;
+    protected bool $MarkUninvoiced = false;
 
     public function getDescription(): string
     {
@@ -70,9 +71,7 @@ class MarkTimeEntriesInvoiced extends Command
                 $entry->Id,
                 $state,
                 $entry->getBillableHours(),
-                $entry->Start
-                    ? $entry->Start->format('d/m/Y')
-                    : '<no date>',
+                $entry->Start ? Format::date($entry->Start) : '<no date>',
                 $entry->Project->Name ?? '<no project>',
                 $entry->Project->Client->Name ?? '<no client>',
             );

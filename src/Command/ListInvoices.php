@@ -8,7 +8,7 @@ use Salient\Core\Facade\Console;
 use Salient\Utility\Env;
 use Salient\Utility\Format;
 
-class ListInvoices extends Command
+final class ListInvoices extends Command
 {
     public function getDescription(): string
     {

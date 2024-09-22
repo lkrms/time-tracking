@@ -130,7 +130,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     protected function getBaseUrl(?string $path = null): string
     {
-        if ($path && strpos($path, '/reports/') !== false) {
+        if ($path !== null && strpos($path, '/reports/') !== false) {
             return Env::get(
                 'clockify_reports_api_base_url',
                 'https://reports.api.clockify.me/v1',
@@ -146,17 +146,15 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    protected function getHeaders(?string $path): HttpHeaders
+    protected function getHeaders(string $path): ?HttpHeaders
     {
-        return new HttpHeaders([
-            'X-Api-Key' => Env::get('clockify_api_key'),
-        ]);
+        return $this->headers()->set('X-Api-Key', Env::get('clockify_api_key'));
     }
 
     /**
      * @inheritDoc
      */
-    protected function getExpiry(?string $path): ?int
+    protected function getExpiry(string $path): ?int
     {
         $expiry = Env::getNullableInt('clockify_cache_expiry', null);
         return $expiry < 0 ? null : $expiry;
@@ -165,7 +163,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    protected function createDateFormatter(): DateFormatterInterface
+    protected function createDateFormatter(): DateFormatter
     {
         static $pending = false;
 
@@ -197,103 +195,89 @@ final class ClockifyProvider extends HttpSyncProvider implements
         $pipelineFrom = $this->pipelineFrom($entity);
 
         return match ($entity) {
-            Tenant::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->path('/workspaces')
-                    ->keyMap(self::ENTITY_PROPERTY_MAP[Tenant::class])
-                    ->readFromList()
-                    ->build(),
+            Tenant::class => $defB
+                ->operations([OP::READ, OP::READ_LIST])
+                ->path('/workspaces')
+                ->keyMap(self::ENTITY_PROPERTY_MAP[Tenant::class])
+                ->readFromList()
+                ->build(),
 
-            User::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->path('/workspaces/:workspaceId/users')
-                    ->pipelineFromBackend(
-                        $pipelineFrom->throughClosure(Closure::fromCallable([$this, 'normaliseUser']))
-                    )
-                    ->keyMap(self::ENTITY_PROPERTY_MAP[User::class])
-                    ->readFromList()
-                    ->overrides([
-                        OP::READ =>
-                            function (HttpDef $def, $op, Context $ctx, $id = null, ...$args) {
-                                /** @var HttpDef<TEntity,$this> $def */
-                                return (
-                                    $id === null
-                                        ? $def
-                                            ->withPath('/user')
-                                            ->withReadFromList(false)
-                                        : $def
-                                )->getFallbackClosure(OP::READ)($ctx, $id, ...$args);
-                            }
-                    ])
-                    ->build(),
+            User::class => $defB
+                ->operations([OP::READ, OP::READ_LIST])
+                ->path('/workspaces/:workspaceId/users')
+                ->pipelineFromBackend(
+                    $pipelineFrom->throughClosure(Closure::fromCallable([$this, 'normaliseUser']))
+                )
+                ->keyMap(self::ENTITY_PROPERTY_MAP[User::class])
+                ->readFromList()
+                ->overrides([
+                    OP::READ => function (HttpDef $def, $op, Context $ctx, $id = null, ...$args) {
+                        /** @var HttpDef<TEntity,$this> $def */
+                        return (
+                            $id === null
+                                ? $def
+                                    ->withPath('/user')
+                                    ->withReadFromList(false)
+                                : $def
+                        )->getFallbackClosure(OP::READ)($ctx, $id, ...$args);
+                    }
+                ])
+                ->build(),
 
-            Client::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->path('/workspaces/:workspaceId/clients')
-                    ->keyMap(self::ENTITY_PROPERTY_MAP[Client::class])
-                    ->build(),
+            Client::class => $defB
+                ->operations([OP::READ, OP::READ_LIST])
+                ->path('/workspaces/:workspaceId/clients')
+                ->keyMap(self::ENTITY_PROPERTY_MAP[Client::class])
+                ->build(),
 
-            Project::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->path('/workspaces/:workspaceId/projects')
-                    ->query(['hydrated' => true])
-                    ->keyMap(self::ENTITY_PROPERTY_MAP[Project::class])
-                    ->callback(
-                        fn(HttpDef $def, $op, Context $ctx) =>
-                            match ($op) {
-                                OP::READ_LIST =>
-                                    $def->withQuery($def->Query + [
-                                        'clients' =>
-                                            implode(',', (array) $ctx->claimFilter('client'))
-                                    ]),
+            Project::class => $defB
+                ->operations([OP::READ, OP::READ_LIST])
+                ->path('/workspaces/:workspaceId/projects')
+                ->query(['hydrated' => true])
+                ->keyMap(self::ENTITY_PROPERTY_MAP[Project::class])
+                ->callback(
+                    fn(HttpDef $def, $op, Context $ctx) =>
+                        match ($op) {
+                            OP::READ_LIST => $def->withQuery($def->Query + [
+                                'clients' => implode(',', (array) $ctx->claimFilter('client'))
+                            ]),
 
-                                default =>
-                                    $def,
-                            }
-                    )
-                    ->build(),
+                            default => $def,
+                        }
+                )
+                ->build(),
 
-            Task::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->path('/workspaces/:workspaceId/projects/:projectId/tasks')
-                    ->build(),
+            Task::class => $defB
+                ->operations([OP::READ, OP::READ_LIST])
+                ->path('/workspaces/:workspaceId/projects/:projectId/tasks')
+                ->build(),
 
-            TimeEntry::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->path([
-                        '/workspaces/:workspaceId/time-entries/:id',
-                        '/workspaces/:workspaceId/reports/detailed',
-                    ])
-                    ->pipelineFromBackend(
-                        $pipelineFrom->throughClosure(Closure::fromCallable([$this, 'normaliseTimeEntry']))
-                    )
-                    ->callback(
-                        fn(HttpDef $def, $op, Context $ctx) =>
-                            match ($op) {
-                                OP::READ =>
-                                    $def->withQuery(['hydrated' => true]),
+            TimeEntry::class => $defB
+                ->operations([OP::READ, OP::READ_LIST])
+                ->path([
+                    '/workspaces/:workspaceId/time-entries/:id',
+                    '/workspaces/:workspaceId/reports/detailed',
+                ])
+                ->pipelineFromBackend(
+                    $pipelineFrom->throughClosure(Closure::fromCallable([$this, 'normaliseTimeEntry']))
+                )
+                ->callback(
+                    fn(HttpDef $def, $op, Context $ctx) =>
+                        match ($op) {
+                            OP::READ => $def->withQuery(['hydrated' => true]),
 
-                                OP::READ_LIST =>
-                                    $def
-                                        ->withPager(new ClockifyPager('timeentries'))
-                                        ->withMethodMap([OP::READ_LIST => HttpRequestMethod::POST])
-                                        ->withCurlerCallback(fn(CurlerInterface $curler) => $curler->withPostResponseCache())
-                                        ->withArgs([$this->detailedReportQuery($ctx)]),
+                            OP::READ_LIST => $def
+                                ->withPager(new ClockifyPager('timeentries'))
+                                ->withMethodMap([OP::READ_LIST => HttpRequestMethod::POST])
+                                ->withCurlerCallback(fn(CurlerInterface $curler) => $curler->withPostResponseCache())
+                                ->withArgs([$this->detailedReportQuery($ctx)]),
 
-                                default =>
-                                    $def,
-                            }
-                    )
-                    ->build(),
+                            default => $def,
+                        }
+                )
+                ->build(),
 
-            default =>
-                $defB->build(),
+            default => $defB->build(),
         };
     }
 
@@ -382,63 +366,56 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     function normaliseTimeEntry(array $entry): array
     {
-        $client =
-            ($entry['clientId'] ?? null) !== null
-                ? [
-                    'id' => $entry['clientId'],
-                    'name' => $entry['clientName'],
-                ]
-                : null;
+        $client = ($entry['clientId'] ?? null) !== null
+            ? [
+                'id' => $entry['clientId'],
+                'name' => $entry['clientName'],
+            ]
+            : null;
 
-        $user =
-            ($entry['userId'] ?? null) !== null
-                ? [
-                    'id' => $entry['userId'],
-                    'name' => $entry['userName'],
-                    'email' => $entry['userEmail'],
-                ]
-                : null;
+        $user = ($entry['userId'] ?? null) !== null
+            ? [
+                'id' => $entry['userId'],
+                'name' => $entry['userName'],
+                'email' => $entry['userEmail'],
+            ]
+            : null;
 
-        $project =
-            ($entry['projectId'] ?? null) !== null
-                ? [
-                    'id' => $entry['projectId'],
-                    'name' => $entry['projectName'],
-                    'color' => $entry['projectColor'],
-                    'client' => $client,
-                ]
-                : null;
+        $project = ($entry['projectId'] ?? null) !== null
+            ? [
+                'id' => $entry['projectId'],
+                'name' => $entry['projectName'],
+                'color' => $entry['projectColor'],
+                'client' => $client,
+            ]
+            : null;
 
-        $task =
-            ($entry['taskId'] ?? null) !== null
-                ? [
-                    'id' => $entry['taskId'],
-                    'name' => $entry['taskName'],
-                ] + (
-                    $project !== null
-                        ? ['project' => $project]
-                        : []
-                )
-                : null;
+        $task = ($entry['taskId'] ?? null) !== null
+            ? [
+                'id' => $entry['taskId'],
+                'name' => $entry['taskName'],
+            ] + (
+                $project !== null
+                    ? ['project' => $project]
+                    : []
+            )
+            : null;
 
         $entry['start'] = null;
         $entry['end'] = null;
-        $entry['seconds'] =
-            ($entry['timeInterval'] ?? null) !== null
-                ? $this->getTimeInterval($entry['timeInterval'], $entry['start'], $entry['end'])
-                : null;
+        $entry['seconds'] = ($entry['timeInterval'] ?? null) !== null
+            ? $this->getTimeInterval($entry['timeInterval'], $entry['start'], $entry['end'])
+            : null;
 
-        $entry['billableRate'] =
-            ($entry['hourlyRate'] ?? null) !== null
-                ? $this->getRate($entry['hourlyRate'])
-                : (($entry['rate'] ?? null) !== null
-                    ? $this->getRate($entry['rate'])
-                    : null);
+        $entry['billableRate'] = ($entry['hourlyRate'] ?? null) !== null
+            ? $this->getRate($entry['hourlyRate'])
+            : (($entry['rate'] ?? null) !== null
+                ? $this->getRate($entry['rate'])
+                : null);
 
-        $entry['isInvoiced'] =
-            ($entry['invoicingInfo'] ?? null) !== null
-                ? (bool) $entry['invoicingInfo']
-                : false;
+        $entry['isInvoiced'] = ($entry['invoicingInfo'] ?? null) !== null
+            ? (bool) $entry['invoicingInfo']
+            : false;
 
         $entry = array_merge($entry, [
             'user' => $user,
@@ -472,8 +449,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
      */
     public function normaliseUser(array $user): array
     {
-        $user['isActive'] =
-            $user['status'] === 'ACTIVE';
+        $user['isActive'] = $user['status'] === 'ACTIVE';
 
         unset($user['status']);
 

@@ -6,7 +6,7 @@ use Lkrms\Time\Command\Concept\Command;
 use Lkrms\Time\Sync\Entity\Client;
 use Salient\Core\Facade\Console;
 
-class ListClients extends Command
+final class ListClients extends Command
 {
     public function getDescription(): string
     {
@@ -22,15 +22,19 @@ class ListClients extends Command
     {
         Console::info("Retrieving clients from {$this->TimeEntryProviderName}");
 
+        /** @var iterable<Client> */
         $clients = $this->TimeEntryProvider->with(Client::class)->getList();
 
-        /** @var Client $client */
+        $count = 0;
         foreach ($clients as $client) {
             printf(
                 "==> %s\n  client_id: %s\n\n",
                 $client->Name,
-                $client->Id
+                $client->Id,
             );
+            $count++;
         }
+
+        Console::info('Clients retrieved:', (string) $count);
     }
 }

@@ -68,11 +68,11 @@ final class TimeEntryCollection extends AbstractTypedCollection
         $groupSummary = [];
         foreach ($this->sort() as $t) {
             $summary = $t->getSummary(
-                // `& TimeEntry::ALL` is to satisfy PHPStan
-                $show & ~TimeEntry::DESCRIPTION & TimeEntry::ALL,
                 $dateFormat,
                 $timeFormat,
-                $markdown
+                // `& TimeEntry::ALL` is to satisfy PHPStan
+                $show & ~TimeEntry::DESCRIPTION & TimeEntry::ALL,
+                $markdown,
             );
 
             $groupBy = $callback !== null ? $callback($t) : [];

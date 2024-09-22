@@ -14,10 +14,10 @@ class TimeEntry extends BaseTimeEntry
     public const TASK = 8;
     public const USER = 16;
     public const DESCRIPTION = 32;
-    public const ALL = TimeEntry::DATE | TimeEntry::TIME | TimeEntry::PROJECT | TimeEntry::TASK | TimeEntry::USER | TimeEntry::DESCRIPTION;
+    public const ALL = self::DATE | self::TIME | self::PROJECT | self::TASK | self::USER | self::DESCRIPTION;
 
     /** @var TimeEntry[]|null */
-    private $Merged;
+    private ?array $Merged = null;
 
     public function getBillableAmount(): float
     {
@@ -47,9 +47,9 @@ class TimeEntry extends BaseTimeEntry
      * @param int-mask-of<TimeEntry::*> $show
      */
     public function getSummary(
+        string $dateFormat,
+        string $timeFormat,
         int $show = TimeEntry::ALL,
-        string $dateFormat = 'd/m/Y',
-        string $timeFormat = 'g.ia',
         bool $markdown = false
     ): string {
         $esc = $markdown ? '\\' : '';
