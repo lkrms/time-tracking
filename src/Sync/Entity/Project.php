@@ -14,49 +14,23 @@ use Salient\Sync\AbstractSyncEntity;
  */
 class Project extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Name;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Description;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $Billable;
-
-    /**
-     * @var array<Task|DeferredEntity<Task>>|DeferredRelationship<Task>|null
-     */
+    /** @var array<Task|DeferredEntity<Task>>|DeferredRelationship<Task>|null */
     public $Tasks;
-
-    /**
-     * @var Client|DeferredEntity<Client>|null
-     */
+    /** @var Client|DeferredEntity<Client>|null */
     public $Client;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $BillableRate;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Colour;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $Archived;
 
     /**

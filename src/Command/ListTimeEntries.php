@@ -2,13 +2,12 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Command\Concept\Command;
-use Lkrms\Time\Support\TimeEntryCollection;
+use Lkrms\Time\Internal\TimeEntryCollection;
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Core\Facade\Console;
 use Salient\Utility\Inflect;
 
-class ListTimeEntries extends Command
+final class ListTimeEntries extends AbstractCommand
 {
     public function getDescription(): string
     {
@@ -24,8 +23,7 @@ class ListTimeEntries extends Command
     {
         Console::info("Retrieving time entries from {$this->TimeEntryProviderName}");
 
-        /** @var TimeEntryCollection */
-        $times = $this->App->get(TimeEntryCollection::class);
+        $times = new TimeEntryCollection();
         $billableCount = 0;
         $billableAmount = 0;
         $billableHours = 0;

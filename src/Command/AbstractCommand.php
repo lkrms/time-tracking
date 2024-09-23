@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time\Command\Concept;
+namespace Lkrms\Time\Command;
 
 use Lkrms\Time\Sync\ContractGroup\BillableTimeProvider;
 use Lkrms\Time\Sync\ContractGroup\InvoiceProvider;
@@ -23,45 +23,27 @@ use Salient\Utility\Get;
 use Salient\Utility\Test;
 use DateTimeImmutable;
 
-abstract class Command extends CliCommand
+abstract class AbstractCommand extends CliCommand
 {
     protected ?DateTimeImmutable $StartDate;
-
     protected ?DateTimeImmutable $EndDate;
-
     protected ?string $ClientId;
-
     protected ?string $ProjectId;
-
     protected ?bool $Billable = null;
-
     protected ?bool $Unbilled = null;
-
-    /**
-     * @var string[]|null
-     */
+    /** @var string[]|null */
     protected ?array $Hide = null;
-
     protected ?bool $Force = null;
 
     // --
 
     protected BillableTimeProvider $TimeEntryProvider;
-
     protected InvoiceProvider $InvoiceProvider;
-
     protected string $TimeEntryProviderName;
-
     protected string $InvoiceProviderName;
-
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     private $ResolvedClientId;
-
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     private $ResolvedProjectId;
 
     public function __construct(
@@ -73,18 +55,14 @@ abstract class Command extends CliCommand
 
         $this->TimeEntryProvider = $timeEntryProvider;
         $this->InvoiceProvider = $invoiceProvider;
-        $this->TimeEntryProviderName = Get::basename(
-            get_class($timeEntryProvider), 'Provider'
-        );
-        $this->InvoiceProviderName = Get::basename(
-            get_class($invoiceProvider), 'Provider'
-        );
+        $this->TimeEntryProviderName = $timeEntryProvider->getName();
+        $this->InvoiceProviderName = $invoiceProvider->getName();
     }
 
     /**
      * Get standard options for TimeEntry-related commands
      *
-     * @param array<CliOption|CliOptionBuilder> $customOptions
+     * @param iterable<CliOption|CliOptionBuilder> $customOptions
      * @return iterable<CliOption|CliOptionBuilder>
      */
     protected function getTimeEntryOptions(
@@ -94,9 +72,9 @@ abstract class Command extends CliCommand
         bool $addHideOption = false,
         bool $addBillableOption = false,
         bool $addUnbilledOption = false,
-        array $customOptions = []
+        iterable $customOptions = []
     ): iterable {
-        $options = [
+        yield from [
             CliOption::build()
                 ->long('from')
                 ->short('s')
@@ -134,49 +112,43 @@ abstract class Command extends CliCommand
         ];
 
         if ($addBillableOption) {
-            $options[] =
-                CliOption::build()
-                    ->long('billable')
-                    ->short('b')
-                    ->description("$action that are billable")
-                    ->bindTo($this->Billable);
+            yield CliOption::build()
+                ->long('billable')
+                ->short('b')
+                ->description("$action that are billable")
+                ->bindTo($this->Billable);
         }
 
         if ($addUnbilledOption) {
-            $options[] =
-                CliOption::build()
-                    ->long('unbilled')
-                    ->short('B')
-                    ->description("$action that have not been billed")
-                    ->bindTo($this->Unbilled);
+            yield CliOption::build()
+                ->long('unbilled')
+                ->short('B')
+                ->description("$action that have not been billed")
+                ->bindTo($this->Unbilled);
         }
 
         if ($addHideOption) {
-            $options[] =
-                CliOption::build()
-                    ->long('hide')
-                    ->short('h')
-                    ->valueName('value')
-                    ->description('Exclude a value from time entry descriptions')
-                    ->optionType(CliOptionType::ONE_OF)
-                    ->allowedValues(['date', 'time', 'project', 'task', 'user', 'description'])
-                    ->multipleAllowed(true)
-                    ->defaultValue(['time', 'user'])
-                    ->bindTo($this->Hide);
+            yield CliOption::build()
+                ->long('hide')
+                ->short('h')
+                ->valueName('value')
+                ->description('Exclude a value from time entry descriptions')
+                ->optionType(CliOptionType::ONE_OF)
+                ->allowedValues(['date', 'time', 'project', 'task', 'user', 'description'])
+                ->multipleAllowed(true)
+                ->defaultValue(['time', 'user'])
+                ->bindTo($this->Hide);
         }
 
-        array_push($options, ...$customOptions);
+        yield from $customOptions;
 
         if ($addForceOption) {
-            $options[] =
-                CliOption::build()
-                    ->long('force')
-                    ->short('f')
-                    ->description('Disable dry-run mode')
-                    ->bindTo($this->Force);
+            yield CliOption::build()
+                ->long('force')
+                ->short('f')
+                ->description('Disable dry-run mode')
+                ->bindTo($this->Force);
         }
-
-        return $options;
     }
 
     /**
@@ -195,9 +167,10 @@ abstract class Command extends CliCommand
             'billed' => $billed ?? ($this->Unbilled ? false : null),
         ];
 
-        return $this->TimeEntryProvider
-                    ->with(TimeEntry::class)
-                    ->getList($filter);
+        return $this
+            ->TimeEntryProvider
+            ->with(TimeEntry::class)
+            ->getList($filter);
     }
 
     /**
@@ -256,21 +229,20 @@ abstract class Command extends CliCommand
 
         $clientId = $this->getClientId();
         if ($clientId !== null) {
-            return $this->ResolvedProjectId =
-                $this->getEntityId(
-                    $this->ProjectId,
-                    Project::class,
-                    $this->TimeEntryProvider
-                         ->getContext()
-                         ->withValue('client_id', $clientId),
-                );
-        }
-
-        return $this->ResolvedProjectId =
-            $this->getEntityId(
+            return $this->ResolvedProjectId = $this->getEntityId(
                 $this->ProjectId,
                 Project::class,
+                $this
+                    ->TimeEntryProvider
+                    ->getContext()
+                    ->withValue('client_id', $clientId),
             );
+        }
+
+        return $this->ResolvedProjectId = $this->getEntityId(
+            $this->ProjectId,
+            Project::class,
+        );
     }
 
     /**

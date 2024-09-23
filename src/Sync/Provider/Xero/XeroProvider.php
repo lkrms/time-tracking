@@ -105,12 +105,8 @@ final class XeroProvider extends HttpSyncProvider implements
     ];
 
     private XeroOAuth2Client $OAuth2Client;
-
     private string $TenantIdKey;
-
-    /**
-     * @var array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>|null
-     */
+    /** @var array<array{id:string,authEventId:string,tenantId:string,tenantType:string,tenantName:string,createdDateUtc:string,updatedDateUtc:string}>|null */
     private ?array $Connections;
 
     /**
@@ -172,77 +168,73 @@ final class XeroProvider extends HttpSyncProvider implements
         $pipelineFrom = $this->pipelineFrom($entity);
         $pipelineTo = $this->pipelineTo($entity);
 
-        $defB =
-            $defB
-                ->path(sprintf(
-                    '/api.xro/2.0/%s',
-                    self::ENTITY_PATH_MAP[$entity] ?? $entity::getPlural(),
-                ))
-                ->pager(new QueryPager(
-                    'page',
-                    self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::getPlural(),
-                    100,
-                ))
-                ->callback(
-                    fn(HttpDef $def, $op, Context $ctx) =>
-                        match ($op) {
-                            OP::READ_LIST => $def->withQuery(
-                                $this->buildQuery(
-                                    $ctx, self::ENTITY_QUERY_MAPS[$entity]
-                                )
-                            ),
+        $defB = $defB
+            ->path(sprintf(
+                '/api.xro/2.0/%s',
+                self::ENTITY_PATH_MAP[$entity] ?? $entity::getPlural(),
+            ))
+            ->pager(new QueryPager(
+                'page',
+                self::ENTITY_SELECTOR_MAP[$entity] ?? $entity::getPlural(),
+                100,
+            ))
+            ->callback(
+                fn(HttpDef $def, $op, Context $ctx) =>
+                    match ($op) {
+                        OP::READ_LIST => $def->withQuery(
+                            $this->buildQuery(
+                                $ctx, self::ENTITY_QUERY_MAPS[$entity]
+                            )
+                        ),
 
-                            default => $def,
-                        }
-                );
+                        default => $def,
+                    }
+            );
 
         return match ($entity) {
-            Invoice::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
-                    ->pipelineFromBackend(
-                        $pipelineFrom->throughKeyMap(
-                            self::ENTITY_KEY_MAPS[$entity]
-                        )->through(
-                            // Discard accounts payable invoices
-                            fn(array $payload, Closure $next) =>
-                                $payload['Type'] === 'ACCREC'
-                                    ? $next($payload)
-                                    : null
-                        )
+            Invoice::class => $defB
+                ->operations([OP::READ, OP::READ_LIST, OP::CREATE])
+                ->pipelineFromBackend(
+                    $pipelineFrom->throughKeyMap(
+                        self::ENTITY_KEY_MAPS[$entity]
+                    )->through(
+                        // Discard accounts payable invoices
+                        fn(array $payload, Closure $next) =>
+                            $payload['Type'] === 'ACCREC'
+                                ? $next($payload)
+                                : null
                     )
-                    ->pipelineToBackend(
-                        $pipelineTo->after(
-                            // @phpstan-ignore argument.type
-                            fn(Invoice $invoice) =>
-                                $this->generateInvoice($invoice)
-                        )
+                )
+                ->pipelineToBackend(
+                    $pipelineTo->after(
+                        // @phpstan-ignore argument.type
+                        fn(Invoice $invoice) =>
+                            $this->generateInvoice($invoice)
                     )
-                    ->build(),
+                )
+                ->build(),
 
-            Client::class =>
-                $defB
-                    ->operations([OP::READ, OP::READ_LIST])
-                    ->pipelineFromBackend(
-                        $pipelineFrom->throughKeyMap(
-                            self::ENTITY_KEY_MAPS[$entity]
-                        )->through(
-                            function (array $payload, Closure $next) {
-                                if (
-                                    $payload['IsCustomer'] === false &&
-                                    $payload['IsSupplier'] === true
-                                ) {
-                                    return null;
-                                }
-                                $payload['Archived'] = $payload['ContactStatus'] !== 'ACTIVE';
-                                return $next($payload);
+            Client::class => $defB
+                ->operations([OP::READ, OP::READ_LIST])
+                ->pipelineFromBackend(
+                    $pipelineFrom->throughKeyMap(
+                        self::ENTITY_KEY_MAPS[$entity]
+                    )->through(
+                        function (array $payload, Closure $next) {
+                            if (
+                                $payload['IsCustomer'] === false
+                                && $payload['IsSupplier'] === true
+                            ) {
+                                return null;
                             }
-                        )
+                            $payload['Archived'] = $payload['ContactStatus'] !== 'ACTIVE';
+                            return $next($payload);
+                        }
                     )
-                    ->build(),
+                )
+                ->build(),
 
-            default =>
-                $defB->build(),
+            default => $defB->build(),
         };
     }
 
@@ -299,17 +291,15 @@ final class XeroProvider extends HttpSyncProvider implements
     {
         $d = $withMarkup ? '~~' : '';
 
-        $format =
-            count($connections) > 1
-                ? "- %s {$d}(%s){$d}"
-                : "%s {$d}(%s){$d}";
+        $format = count($connections) > 1
+            ? "- %s {$d}(%s){$d}"
+            : "%s {$d}(%s){$d}";
 
-        return
-            implode("\n", array_map(
-                fn($conn) =>
-                    sprintf($format, $conn['tenantId'], $conn['tenantName']),
-                $connections,
-            ));
+        return implode("\n", array_map(
+            fn($conn) =>
+                sprintf($format, $conn['tenantId'], $conn['tenantName']),
+            $connections,
+        ));
     }
 
     private function requireTenantId(bool $verify = true): string
@@ -550,16 +540,17 @@ final class XeroProvider extends HttpSyncProvider implements
     private function getOAuth2Client(): XeroOAuth2Client
     {
         return $this->OAuth2Client
-            ??= $this->App
-                     ->get(XeroOAuth2Client::class)
-                     ->withDefaultScopes(self::OAUTH2_SCOPES)
-                     ->withCallback(
-                         function (AccessToken $token, ?array $idToken, string $grantType) {
-                             if ($grantType !== OAuth2GrantType::REFRESH_TOKEN) {
-                                 $this->Connections = null;
-                             }
-                         }
-                     );
+            ??= $this
+                ->App
+                ->get(XeroOAuth2Client::class)
+                ->withDefaultScopes(self::OAUTH2_SCOPES)
+                ->withCallback(
+                    function (AccessToken $token, ?array $idToken, string $grantType) {
+                        if ($grantType !== OAuth2GrantType::REFRESH_TOKEN) {
+                            $this->Connections = null;
+                        }
+                    }
+                );
     }
 
     private function getTenantIdKey(): string

@@ -13,39 +13,19 @@ use Salient\Sync\AbstractSyncEntity;
  */
 class User extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Name;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Email;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $PhotoUrl;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $IsActive;
-
-    /**
-     * @var Tenant|DeferredEntity<Tenant>|null
-     */
+    /** @var Tenant|DeferredEntity<Tenant>|null */
     public $ActiveTenant;
-
-    /**
-     * @var array<string,mixed>|null
-     */
+    /** @var array<string,mixed>|null */
     public $Settings;
 
     /**

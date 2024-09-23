@@ -2,15 +2,15 @@
 
 namespace Lkrms\Time\Command;
 
-use Lkrms\Time\Command\Concept\Command;
 use Salient\Cli\CliOption;
 use Salient\Core\Facade\Console;
 use Salient\Utility\Env;
+use Salient\Utility\Format;
 use Salient\Utility\Inflect;
 
-class MarkTimeEntriesInvoiced extends Command
+final class MarkTimeEntriesInvoiced extends AbstractCommand
 {
-    protected ?bool $MarkUninvoiced;
+    protected bool $MarkUninvoiced = false;
 
     public function getDescription(): string
     {
@@ -31,11 +31,11 @@ class MarkTimeEntriesInvoiced extends Command
                     ->long('mark-uninvoiced')
                     ->short('u')
                     ->description(<<<'EOF'
-                        Mark invoiced time entries as uninvoiced
+Mark invoiced time entries as uninvoiced
 
-                        The command's default behaviour is to find uninvoiced time entries and mark them
-                        as invoiced. Use this option to achieve the opposite.
-                        EOF)
+The command's default behaviour is to find uninvoiced time entries and mark them
+as invoiced. Use this option to achieve the opposite.
+EOF)
                     ->bindTo($this->MarkUninvoiced),
             ]
         );
@@ -70,9 +70,7 @@ class MarkTimeEntriesInvoiced extends Command
                 $entry->Id,
                 $state,
                 $entry->getBillableHours(),
-                $entry->Start
-                    ? $entry->Start->format('d/m/Y')
-                    : '<no date>',
+                $entry->Start ? Format::date($entry->Start) : '<no date>',
                 $entry->Project->Name ?? '<no project>',
                 $entry->Project->Client->Name ?? '<no client>',
             );

@@ -15,64 +15,29 @@ use DateTimeInterface;
  */
 class Invoice extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Number;
-
-    /**
-     * @var DateTimeInterface|null
-     */
+    /** @var DateTimeInterface|null */
     public $Date;
-
-    /**
-     * @var DateTimeInterface|null
-     */
+    /** @var DateTimeInterface|null */
     public $DueDate;
-
-    /**
-     * @var Client|DeferredEntity<Client>|null
-     */
+    /** @var Client|DeferredEntity<Client>|null */
     public $Client;
-
-    /**
-     * @var array<InvoiceLineItem|DeferredEntity<InvoiceLineItem>>|DeferredRelationship<InvoiceLineItem>|null
-     */
+    /** @var array<InvoiceLineItem|DeferredEntity<InvoiceLineItem>>|DeferredRelationship<InvoiceLineItem>|null */
     public $LineItems;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Status;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Currency;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $Sent;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $SubTotal;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $TotalTax;
-
-    /**
-     * @var float|null
-     */
+    /** @var float|null */
     public $Total;
 
     /**

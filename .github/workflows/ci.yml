@@ -1,9 +1,11 @@
 name: CI
 
 on:
-  pull_request:
+  push:
+    branches:
+      - main
 
-  workflow_dispatch:
+  pull_request:
 
   workflow_call:
 
@@ -12,19 +14,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-ci-runs:
+    name: Check previous runs
+    if: ${{ github.event_name != 'workflow_call' }}
+    runs-on: ubuntu-latest
+    outputs:
+      ci_required: ${{ steps.check-ci-runs.outputs.ci_required }}
+    steps:
+      - name: Check CI runs
+        id: check-ci-runs
+        uses: lkrms/check-ci-runs@v1
+        with:
+          ci_workflows: CI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   check:
     name: Check generated files and formatting
+    needs:
+      - check-ci-runs
+    if: ${{ (github.event_name == 'workflow_call' || needs.check-ci-runs.outputs.ci_required == 1) && !cancelled() && !failure() }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup PHP and Composer
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.3"
-          coverage: none
 
       - name: Get Composer cache directory
         id: get-composer-cache
@@ -52,14 +66,18 @@ jobs:
 
   phpstan:
     name: PHPStan
-    runs-on: ubuntu-latest
-    needs: check
+    needs:
+      - check
+      - check-ci-runs
+    if: ${{ (github.event_name == 'workflow_call' || needs.check-ci-runs.outputs.ci_required == 1) && !cancelled() && !failure() }}
 
     strategy:
       fail-fast: false
       matrix:
         php-version:
           - "8.3"
+
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -98,7 +116,10 @@ jobs:
 
   unit-tests:
     name: PHPUnit tests
-    needs: check
+    needs:
+      - check
+      - check-ci-runs
+    if: ${{ (github.event_name == 'workflow_call' || needs.check-ci-runs.outputs.ci_required == 1) && !cancelled() && !failure() }}
 
     strategy:
       fail-fast: false
@@ -146,9 +167,15 @@ jobs:
         run: composer install --no-interaction --no-progress
 
       - name: Run PHPUnit tests and generate code coverage report
-        run: vendor/bin/phpunit --no-coverage --coverage-clover=coverage.xml
+        id: run-phpunit-tests
+        shell: bash
+        run: |
+          vendor/bin/phpunit ${RUNNER_DEBUG+--debug} --no-coverage --coverage-clover=coverage.xml && status=0 || status=$?
+          printf 'coverage_report_generated=%d\n' "$([[ -s coverage.xml ]] && echo 1 || echo 0)" >>"$GITHUB_OUTPUT"
+          (exit $status)
 
       - name: Upload code coverage report to Codecov
+        if: ${{ !cancelled() && steps.run-phpunit-tests.outputs.coverage_report_generated == 1 }}
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

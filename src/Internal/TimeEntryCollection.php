@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Lkrms\Time\Support;
+namespace Lkrms\Time\Internal;
 
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
 use Salient\Collection\AbstractTypedCollection;
@@ -68,11 +68,11 @@ final class TimeEntryCollection extends AbstractTypedCollection
         $groupSummary = [];
         foreach ($this->sort() as $t) {
             $summary = $t->getSummary(
-                // `& TimeEntry::ALL` is to satisfy PHPStan
-                $show & ~TimeEntry::DESCRIPTION & TimeEntry::ALL,
                 $dateFormat,
                 $timeFormat,
-                $markdown
+                // `& TimeEntry::ALL` is to satisfy PHPStan
+                $show & ~TimeEntry::DESCRIPTION & TimeEntry::ALL,
+                $markdown,
             );
 
             $groupBy = $callback !== null ? $callback($t) : [];

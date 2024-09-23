@@ -11,33 +11,16 @@ use Salient\Sync\AbstractSyncEntity;
  */
 class Client extends AbstractSyncEntity
 {
-    /**
-     * @var int|string|null
-     */
+    /** @var int|string|null */
     public $Id;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Name;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $FirstName;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $LastName;
-
-    /**
-     * @var string|null
-     */
+    /** @var string|null */
     public $Email;
-
-    /**
-     * @var bool|null
-     */
+    /** @var bool|null */
     public $Archived;
 }
