@@ -4,6 +4,8 @@ includes:
 parameters:
   level: 9
   paths:
-    - src
     - bin/lk-time
+    - scripts
+    - src
     - tests
+    - bootstrap.php

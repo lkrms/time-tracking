@@ -56,7 +56,9 @@ foreach ($class->getReflectionConstants() as $constant) {
     if (!$constant->isPublic()) {
         continue;
     }
-    Env::unset($constant->getValue());
+    /** @var string */
+    $value = $constant->getValue();
+    Env::unset($value);
 }
 
 /** @disregard P1006 */
@@ -89,7 +91,9 @@ $generated = [];
 
 foreach ($entities as $class => $entityArgs) {
     $entity = array_shift($entityArgs);
+    /** @var string|null */
     $provider = array_shift($entityArgs);
+    /** @var string|null */
     $endpoint = array_shift($entityArgs);
     $file = dirname(__DIR__) . "/resources/data/entity/{$entity}.json";
     $save = false;
@@ -121,7 +125,7 @@ foreach ($providers as $class => $providerArgs) {
 $file = dirname(__DIR__) . '/.gitattributes';
 $attributes = Regex::grep(
     '/(^#| linguist-generated$)/',
-    Arr::trim(file($file)),
+    Arr::trim(File::getLines($file)),
     \PREG_GREP_INVERT
 );
 // @phpstan-ignore-next-line

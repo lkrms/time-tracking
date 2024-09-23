@@ -4,11 +4,13 @@
         "scripts",
         "src",
         "tests",
-        "bootstrap.php"
+        "bootstrap.php",
+        ".php-cs-fixer.dist.php"
     ],
     "enable": [
         "strict-lists"
     ],
     "operatorsFirst": true,
-    "tight": true
+    "tight": true,
+    "heredocIndent": "none"
 }

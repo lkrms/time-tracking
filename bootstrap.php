@@ -4,7 +4,7 @@ use Lkrms\Time\Sync\SyncClassResolver;
 use Salient\Core\Facade\Event;
 use Salient\Sync\Event\SyncStoreLoadedEvent;
 
-Event::listen(
+Event::getInstance()->listen(
     fn(SyncStoreLoadedEvent $event) =>
         $event->getStore()->registerNamespace(
             'tt',

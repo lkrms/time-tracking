@@ -31,11 +31,11 @@ final class MarkTimeEntriesInvoiced extends AbstractCommand
                     ->long('mark-uninvoiced')
                     ->short('u')
                     ->description(<<<'EOF'
-                        Mark invoiced time entries as uninvoiced
+Mark invoiced time entries as uninvoiced
 
-                        The command's default behaviour is to find uninvoiced time entries and mark them
-                        as invoiced. Use this option to achieve the opposite.
-                        EOF)
+The command's default behaviour is to find uninvoiced time entries and mark them
+as invoiced. Use this option to achieve the opposite.
+EOF)
                     ->bindTo($this->MarkUninvoiced),
             ]
         );
