@@ -2,8 +2,8 @@
 
 namespace Lkrms\Time\Sync;
 
-use Salient\Contract\Sync\SyncClassResolverInterface;
 use Salient\Contract\Sync\SyncEntityInterface;
+use Salient\Contract\Sync\SyncNamespaceHelperInterface;
 use Salient\Contract\Sync\SyncProviderInterface;
 use Salient\Utility\Regex;
 
@@ -15,12 +15,12 @@ use Salient\Utility\Regex;
  * at the same location in `Lkrms\Time\Sync\Contract` with the name
  * `Provides<Entity>`.
  */
-class SyncClassResolver implements SyncClassResolverInterface
+class SyncNamespaceHelper implements SyncNamespaceHelperInterface
 {
     /**
      * @inheritDoc
      */
-    public function entityToProvider(string $entity): string
+    public function getEntityProvider(string $entity): string
     {
         /** @var class-string<SyncProviderInterface> */
         return Regex::replace(
@@ -33,7 +33,7 @@ class SyncClassResolver implements SyncClassResolverInterface
     /**
      * @inheritDoc
      */
-    public function providerToEntity(string $provider): array
+    public function getProviderEntities(string $provider): array
     {
         /** @var class-string<SyncEntityInterface> */
         $entity = Regex::replace(
