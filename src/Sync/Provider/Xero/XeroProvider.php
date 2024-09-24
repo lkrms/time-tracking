@@ -114,7 +114,7 @@ final class XeroProvider extends HttpSyncProvider implements
      */
     public function getName(): string
     {
-        return sprintf('Xero { %s }', $this->requireTenantId(false));
+        return 'Xero';
     }
 
     /**
