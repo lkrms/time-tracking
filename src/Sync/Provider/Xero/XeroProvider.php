@@ -187,9 +187,7 @@ final class XeroProvider extends HttpSyncProvider implements
                 fn(HttpDef $def, $op, Context $ctx) =>
                     match ($op) {
                         OP::READ_LIST => $def->withQuery(
-                            $this->buildQuery(
-                                $ctx, self::ENTITY_QUERY_MAPS[$entity]
-                            )
+                            $this->buildQuery($ctx, self::ENTITY_QUERY_MAPS[$entity])
                         ),
 
                         default => $def,
@@ -554,8 +552,8 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function getOAuth2Client(): XeroOAuth2Client
     {
-        return $this->OAuth2Client
-            ??= $this
+        return $this->OAuth2Client ??=
+            $this
                 ->App
                 ->get(XeroOAuth2Client::class)
                 ->withDefaultScopes(self::OAUTH2_SCOPES)
@@ -570,8 +568,8 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function getTenantIdKey(): string
     {
-        return $this->TenantIdKey
-            ??= implode(':', [
+        return $this->TenantIdKey ??=
+            implode(':', [
                 static::class,
                 'tenant',
                 $this->getBaseUrl(),
