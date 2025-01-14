@@ -21,10 +21,10 @@ final class ListClients extends AbstractCommand
     {
         Console::info("Retrieving clients from {$this->TimeEntryProviderName}");
 
-        /** @var iterable<Client> */
         $clients = $this->TimeEntryProvider->with(Client::class)->getList();
 
         $count = 0;
+        /** @var Client $client */
         foreach ($clients as $client) {
             printf(
                 "==> %s\n  client_id: %s\n\n",

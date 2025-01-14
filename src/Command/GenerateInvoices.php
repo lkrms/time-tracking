@@ -106,7 +106,6 @@ final class GenerateInvoices extends AbstractCommand
         if ($prefix !== null) {
             $next = Env::getInt('invoice_number_next', 1);
 
-            /** @var iterable<Invoice> $invoices */
             $invoices = $this
                 ->InvoiceProvider
                 ->with(Invoice::class)
@@ -117,6 +116,7 @@ final class GenerateInvoices extends AbstractCommand
                 ]);
 
             $seen = 0;
+            /** @var Invoice $invoice */
             foreach ($invoices as $invoice) {
                 if ($invoice->Number === null) {
                     throw new SyncInvalidEntityException(sprintf(

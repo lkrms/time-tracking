@@ -455,9 +455,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     }
 
     /**
-     * Mark time entries as invoiced
-     *
-     * @param iterable<TimeEntry> $timeEntries
+     * @inheritDoc
      */
     public function markTimeEntriesInvoiced(
         iterable $timeEntries,
