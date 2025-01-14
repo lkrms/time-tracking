@@ -20,20 +20,20 @@ class SyncNamespaceHelper implements SyncNamespaceHelperInterface
     /**
      * @inheritDoc
      */
-    public function getEntityProvider(string $entity): string
+    public function getEntityTypeProvider(string $entityType): string
     {
         /** @var class-string<SyncProviderInterface> */
         return Regex::replace(
             ['/(?<=^Lkrms\\\\Time\\\\Sync\\\\)Entity(?=\\\\)/', '/(?<=\\\\)([^\\\\]+)$/'],
             ['Contract', 'Provides$1'],
-            $entity
+            $entityType
         );
     }
 
     /**
      * @inheritDoc
      */
-    public function getProviderEntities(string $provider): array
+    public function getProviderEntityTypes(string $provider): array
     {
         /** @var class-string<SyncEntityInterface> */
         $entity = Regex::replace(

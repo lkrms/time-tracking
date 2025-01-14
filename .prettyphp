@@ -4,8 +4,8 @@
         "scripts",
         "src",
         "tests",
-        "bootstrap.php",
-        ".php-cs-fixer.dist.php"
+        ".php-cs-fixer.dist.php",
+        "bootstrap.php"
     ],
     "enable": [
         "strict-lists"

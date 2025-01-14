@@ -10,7 +10,7 @@ use Salient\Contract\Sync\SyncProviderInterface;
  * Syncs Task objects with a backend
  *
  * @method Task getTask(SyncContextInterface $ctx, int|string|null $id)
- * @method iterable<Task> getTasks(SyncContextInterface $ctx)
+ * @method iterable<array-key,Task> getTasks(SyncContextInterface $ctx)
  *
  * @generated
  */

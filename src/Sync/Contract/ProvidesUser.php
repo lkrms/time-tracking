@@ -10,7 +10,7 @@ use Salient\Contract\Sync\SyncProviderInterface;
  * Syncs User objects with a backend
  *
  * @method User getUser(SyncContextInterface $ctx, int|string|null $id)
- * @method iterable<User> getUsers(SyncContextInterface $ctx)
+ * @method iterable<array-key,User> getUsers(SyncContextInterface $ctx)
  *
  * @generated
  */

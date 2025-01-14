@@ -9,3 +9,6 @@ parameters:
     - src
     - tests
     - bootstrap.php
+  ignoreErrors:
+    -
+      identifier: return.unusedType

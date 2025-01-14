@@ -11,7 +11,7 @@ use Salient\Contract\Sync\SyncProviderInterface;
  *
  * @method Invoice createInvoice(SyncContextInterface $ctx, Invoice $invoice)
  * @method Invoice getInvoice(SyncContextInterface $ctx, int|string|null $id)
- * @method iterable<Invoice> getInvoices(SyncContextInterface $ctx)
+ * @method iterable<array-key,Invoice> getInvoices(SyncContextInterface $ctx)
  *
  * @generated
  */

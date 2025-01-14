@@ -2,7 +2,6 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Salient\Contract\Core\Cardinality;
 use Salient\Sync\Support\DeferredEntity;
 use Salient\Sync\AbstractSyncEntity;
 
@@ -34,7 +33,7 @@ class User extends AbstractSyncEntity
     public static function getRelationships(): array
     {
         return [
-            'ActiveTenant' => [Cardinality::ONE_TO_ONE => Tenant::class],
+            'ActiveTenant' => [self::ONE_TO_ONE => Tenant::class],
         ];
     }
 }

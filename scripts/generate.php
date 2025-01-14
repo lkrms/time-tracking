@@ -21,9 +21,11 @@ use Salient\Utility\Env;
 use Salient\Utility\File;
 use Salient\Utility\Json;
 use Salient\Utility\Package;
+use Salient\Utility\Reflect;
 use Salient\Utility\Regex;
 
-$loader = require dirname(__DIR__) . '/vendor/autoload.php';
+$dir = dirname(__DIR__);
+$loader = require "$dir/vendor/autoload.php";
 
 // Entity => [ name, provider|null, endpoint|null, ...args ]
 $entities = [
@@ -47,25 +49,21 @@ $providers = [
     User::class => ['--op', 'get,get-list'],
 ];
 
-$app = new CliApplication(dirname(__DIR__));
+$app = new CliApplication($dir);
 $generateEntity = new GenerateSyncEntity($app);
 $generateProvider = new GenerateSyncProvider($app);
 
-$class = new ReflectionClass(EnvVar::class);
-foreach ($class->getReflectionConstants() as $constant) {
-    if (!$constant->isPublic()) {
-        continue;
-    }
-    /** @var string */
-    $value = $constant->getValue();
-    Env::unset($value);
+/** @var string $name */
+foreach (Reflect::getConstants(EnvVar::class) as $name) {
+    Env::unset($name);
 }
 
-/** @disregard P1006 */
+/** @var string[] */
+$args = $_SERVER['argv'];
 $args = [
     '--collapse',
     '--force',
-    ...array_slice($_SERVER['argv'], 1),
+    ...array_slice($args, 1),
 ];
 
 /**
@@ -91,18 +89,18 @@ $generated = [];
 
 foreach ($entities as $class => $entityArgs) {
     $entity = array_shift($entityArgs);
-    /** @var string|null */
     $provider = array_shift($entityArgs);
-    /** @var string|null */
     $endpoint = array_shift($entityArgs);
-    $file = dirname(__DIR__) . "/resources/data/entity/{$entity}.json";
+    $file = "$dir/resources/data/entity/{$entity}.json";
     $save = false;
     if (is_file($file)) {
         array_unshift($entityArgs, '--json', $file);
+        // @phpstan-ignore notIdentical.alwaysFalse
         if ($provider !== null) {
             generated($file);
         }
-    } elseif ($provider === null) {
+        // @phpstan-ignore booleanOr.alwaysTrue, identical.alwaysTrue, identical.alwaysTrue
+    } elseif ($provider === null || $endpoint === null) {
         throw new LogicException(sprintf('File not found: %s', $file));
     } else {
         array_unshift($entityArgs, '--provider', $provider, '--endpoint', $endpoint);
@@ -110,6 +108,7 @@ foreach ($entities as $class => $entityArgs) {
     }
     $status |= $generateEntity(...[...$args, ...$entityArgs, $class]);
     generated($generateEntity);
+    // @phpstan-ignore booleanAnd.leftAlwaysFalse
     if ($save && $generateEntity->Entity !== null) {
         File::createDir(dirname($file));
         File::writeContents($file, Json::prettyPrint($generateEntity->Entity));
@@ -122,13 +121,13 @@ foreach ($providers as $class => $providerArgs) {
     generated($generateProvider);
 }
 
-$file = dirname(__DIR__) . '/.gitattributes';
+$file = "$dir/.gitattributes";
 $attributes = Regex::grep(
     '/(^#| linguist-generated$)/',
     Arr::trim(File::getLines($file)),
     \PREG_GREP_INVERT
 );
-// @phpstan-ignore-next-line
+// @phpstan-ignore foreach.emptyArray
 foreach ($generated as $generated) {
     $attributes[] = sprintf('%s linguist-generated', $generated);
 }

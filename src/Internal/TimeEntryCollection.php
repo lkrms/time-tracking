@@ -3,7 +3,7 @@
 namespace Lkrms\Time\Internal;
 
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
-use Salient\Collection\AbstractTypedCollection;
+use Salient\Collection\Collection;
 use Salient\Utility\Arr;
 use Salient\Utility\Env;
 use Salient\Utility\Get;
@@ -14,9 +14,9 @@ use LogicException;
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
  *
- * @extends AbstractTypedCollection<array-key,TimeEntry>
+ * @extends Collection<array-key,TimeEntry>
  */
-final class TimeEntryCollection extends AbstractTypedCollection
+final class TimeEntryCollection extends Collection
 {
     /**
      * @param TimeEntry $a

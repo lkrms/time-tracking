@@ -10,7 +10,7 @@ use Salient\Contract\Sync\SyncProviderInterface;
  * Syncs Client objects with a backend
  *
  * @method Client getClient(SyncContextInterface $ctx, int|string|null $id)
- * @method iterable<Client> getClients(SyncContextInterface $ctx)
+ * @method iterable<array-key,Client> getClients(SyncContextInterface $ctx)
  *
  * @generated
  */

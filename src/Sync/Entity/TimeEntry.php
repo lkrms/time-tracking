@@ -2,7 +2,6 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Salient\Contract\Core\Cardinality;
 use Salient\Sync\Support\DeferredEntity;
 use Salient\Sync\AbstractSyncEntity;
 use DateTimeInterface;
@@ -45,9 +44,9 @@ class TimeEntry extends AbstractSyncEntity
     public static function getRelationships(): array
     {
         return [
-            'User' => [Cardinality::ONE_TO_ONE => User::class],
-            'Task' => [Cardinality::ONE_TO_ONE => Task::class],
-            'Project' => [Cardinality::ONE_TO_ONE => Project::class],
+            'User' => [self::ONE_TO_ONE => User::class],
+            'Task' => [self::ONE_TO_ONE => Task::class],
+            'Project' => [self::ONE_TO_ONE => Project::class],
         ];
     }
 

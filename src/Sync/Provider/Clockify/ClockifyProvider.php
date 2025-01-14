@@ -10,17 +10,15 @@ use Lkrms\Time\Sync\Entity\Task;
 use Lkrms\Time\Sync\Entity\Tenant;
 use Lkrms\Time\Sync\Entity\TimeEntry;
 use Lkrms\Time\Sync\Entity\User;
-use Salient\Contract\Container\ContainerInterface;
 use Salient\Contract\Container\SingletonInterface;
 use Salient\Contract\Curler\CurlerInterface;
+use Salient\Contract\Http\HttpHeadersInterface;
 use Salient\Contract\Http\HttpRequestMethod;
-use Salient\Contract\Sync\SyncContextInterface;
 use Salient\Contract\Sync\SyncContextInterface as Context;
 use Salient\Contract\Sync\SyncEntityInterface;
 use Salient\Contract\Sync\SyncOperation as OP;
 use Salient\Core\Facade\Console;
 use Salient\Core\DateFormatter;
-use Salient\Http\HttpHeaders;
 use Salient\Sync\Http\HttpSyncDefinition as HttpDef;
 use Salient\Sync\Http\HttpSyncProvider;
 use Salient\Utility\Arr;
@@ -32,19 +30,19 @@ use DateTimeInterface;
 use UnexpectedValueException;
 
 /**
- * @method TimeEntry getTimeEntry(SyncContextInterface $ctx, int|string|null $id)
- * @method TimeEntry updateTimeEntry(SyncContextInterface $ctx, TimeEntry $timeEntry)
- * @method FluentIteratorInterface<array-key,TimeEntry> getTimeEntries(SyncContextInterface $ctx)
- * @method Client getClient(SyncContextInterface $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Client> getClients(SyncContextInterface $ctx)
- * @method Project getProject(SyncContextInterface $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Project> getProjects(SyncContextInterface $ctx)
- * @method Task getTask(SyncContextInterface $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Task> getTasks(SyncContextInterface $ctx)
- * @method User getUser(SyncContextInterface $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,User> getUsers(SyncContextInterface $ctx)
- * @method Tenant getTenant(SyncContextInterface $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Tenant> getTenants(SyncContextInterface $ctx)
+ * @method TimeEntry getTimeEntry(Context $ctx, int|string|null $id)
+ * @method TimeEntry updateTimeEntry(Context $ctx, TimeEntry $timeEntry)
+ * @method iterable<array-key,TimeEntry> getTimeEntries(Context $ctx)
+ * @method Client getClient(Context $ctx, int|string|null $id)
+ * @method iterable<array-key,Client> getClients(Context $ctx)
+ * @method Project getProject(Context $ctx, int|string|null $id)
+ * @method iterable<array-key,Project> getProjects(Context $ctx)
+ * @method Task getTask(Context $ctx, int|string|null $id)
+ * @method iterable<array-key,Task> getTasks(Context $ctx)
+ * @method User getUser(Context $ctx, int|string|null $id)
+ * @method iterable<array-key,User> getUsers(Context $ctx)
+ * @method Tenant getTenant(Context $ctx, int|string|null $id)
+ * @method iterable<array-key,Tenant> getTenants(Context $ctx)
  */
 final class ClockifyProvider extends HttpSyncProvider implements
     SingletonInterface,
@@ -89,9 +87,9 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    public function getContext(?ContainerInterface $container = null): Context
+    public function getContext(): Context
     {
-        return parent::getContext($container)
+        return parent::getContext()
             ->withValue('workspace_id', $this->workspaceId());
     }
 
@@ -145,7 +143,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
     /**
      * @inheritDoc
      */
-    protected function getHeaders(string $path): ?HttpHeaders
+    protected function getHeaders(string $path): ?HttpHeadersInterface
     {
         return $this->headers()->set('X-Api-Key', Env::get('clockify_api_key'));
     }
@@ -187,6 +185,7 @@ final class ClockifyProvider extends HttpSyncProvider implements
      *
      * @param class-string<TEntity> $entity
      * @return HttpDef<TEntity,$this>
+     * @phpstan-ignore method.childReturnType
      */
     protected function getHttpDefinition(string $entity): HttpDef
     {

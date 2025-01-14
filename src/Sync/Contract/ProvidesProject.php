@@ -10,7 +10,7 @@ use Salient\Contract\Sync\SyncProviderInterface;
  * Syncs Project objects with a backend
  *
  * @method Project getProject(SyncContextInterface $ctx, int|string|null $id)
- * @method iterable<Project> getProjects(SyncContextInterface $ctx)
+ * @method iterable<array-key,Project> getProjects(SyncContextInterface $ctx)
  *
  * @generated
  */
