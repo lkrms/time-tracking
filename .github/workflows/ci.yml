@@ -17,7 +17,7 @@ jobs:
   check-ci-runs:
     name: Check previous runs
     if: ${{ github.event_name != 'workflow_call' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       ci_required: ${{ steps.check-ci-runs.outputs.ci_required }}
     steps:
@@ -34,7 +34,7 @@ jobs:
     needs:
       - check-ci-runs
     if: ${{ (github.event_name == 'workflow_call' || needs.check-ci-runs.outputs.ci_required == 1) && !cancelled() && !failure() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -75,9 +75,9 @@ jobs:
       fail-fast: false
       matrix:
         php-version:
-          - "8.3"
+          - "8.4"
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -125,17 +125,19 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
+          - ubuntu-24.04
           - windows-latest
           - macos-latest
         php-version:
-          - "8.3"
+          - "8.4"
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
+            php-version: "8.3"
+          - os: ubuntu-24.04
             php-version: "8.2"
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             php-version: "8.1"
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             php-version: "8.0"
 
     runs-on: ${{ matrix.os }}
@@ -170,12 +172,19 @@ jobs:
         id: run-phpunit-tests
         shell: bash
         run: |
-          vendor/bin/phpunit ${RUNNER_DEBUG+--debug} --no-coverage --coverage-clover=coverage.xml && status=0 || status=$?
-          printf 'coverage_report_generated=%d\n' "$([[ -s coverage.xml ]] && echo 1 || echo 0)" >>"$GITHUB_OUTPUT"
+          vendor/bin/phpunit ${RUNNER_DEBUG+--debug} ${RUNNER_DEBUG+--no-extensions} --no-coverage --coverage-clover=coverage.xml --log-junit=junit.xml && status=0 || status=$?
+          printf 'coverage_generated=%d\n' "$([[ -s coverage.xml ]] && echo 1 || echo 0)" >>"$GITHUB_OUTPUT"
+          printf 'results_generated=%d\n' "$([[ -s junit.xml ]] && echo 1 || echo 0)" >>"$GITHUB_OUTPUT"
           (exit $status)
 
-      - name: Upload code coverage report to Codecov
-        if: ${{ !cancelled() && steps.run-phpunit-tests.outputs.coverage_report_generated == 1 }}
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() && steps.run-phpunit-tests.outputs.coverage_generated == 1 }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() && steps.run-phpunit-tests.outputs.results_generated == 1 }}
+        uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
