@@ -31,7 +31,7 @@ abstract class AbstractCommand extends CliCommand
     protected ?string $ProjectId;
     protected ?bool $Billable = null;
     protected ?bool $Unbilled = null;
-    /** @var string[]|null */
+    /** @var array<"date"|"time"|"client"|"project"|"task"|"user"|"description">|null */
     protected ?array $Hide = null;
     protected ?bool $Force = null;
 
@@ -51,28 +51,30 @@ abstract class AbstractCommand extends CliCommand
         BillableTimeProvider $timeEntryProvider,
         InvoiceProvider $invoiceProvider
     ) {
-        parent::__construct($container);
-
         $this->TimeEntryProvider = $timeEntryProvider;
         $this->InvoiceProvider = $invoiceProvider;
         $this->TimeEntryProviderName = $timeEntryProvider->getName();
         $this->InvoiceProviderName = $invoiceProvider->getName();
+
+        parent::__construct($container);
     }
 
     /**
      * Get standard options for TimeEntry-related commands
      *
      * @param iterable<CliOption|CliOptionBuilder> $customOptions
+     * @param array<"date"|"time"|"client"|"project"|"task"|"user"|"description"> $defaultHide
      * @return iterable<CliOption|CliOptionBuilder>
      */
     protected function getTimeEntryOptions(
-        string $action = 'List time entries',
-        bool $requireDates = true,
-        bool $addForceOption = true,
-        bool $addHideOption = false,
-        bool $addBillableOption = false,
-        bool $addUnbilledOption = false,
-        iterable $customOptions = []
+        string $action,
+        bool $requireDates,
+        bool $addForceOption,
+        bool $addHideOption,
+        bool $addBillableOption,
+        bool $addUnbilledOption,
+        iterable $customOptions = [],
+        array $defaultHide = ['time', 'user']
     ): iterable {
         yield from [
             CliOption::build()
@@ -134,9 +136,9 @@ abstract class AbstractCommand extends CliCommand
                 ->valueName('value')
                 ->description('Exclude a value from time entry descriptions')
                 ->optionType(CliOptionType::ONE_OF)
-                ->allowedValues(['date', 'time', 'project', 'task', 'user', 'description'])
+                ->allowedValues(['date', 'time', 'client', 'project', 'task', 'user', 'description'])
                 ->multipleAllowed(true)
-                ->defaultValue(['time', 'user'])
+                ->defaultValue($defaultHide)
                 ->bindTo($this->Hide);
         }
 
@@ -183,6 +185,7 @@ abstract class AbstractCommand extends CliCommand
         $showMap = [
             'date' => TimeEntry::DATE,
             'time' => TimeEntry::TIME,
+            'client' => TimeEntry::CLIENT,
             'project' => TimeEntry::PROJECT,
             'task' => TimeEntry::TASK,
             'user' => TimeEntry::USER,
@@ -190,7 +193,7 @@ abstract class AbstractCommand extends CliCommand
         ];
 
         $mask = 0;
-        foreach ($this->Hide ?? [] as $value) {
+        foreach ((array) $this->Hide as $value) {
             $mask |= $showMap[$value];
         }
 

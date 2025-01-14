@@ -4,10 +4,11 @@
         "scripts",
         "src",
         "tests",
-        "bootstrap.php",
-        ".php-cs-fixer.dist.php"
+        ".php-cs-fixer.dist.php",
+        "bootstrap.php"
     ],
     "enable": [
+        "semi-strict-expressions",
         "strict-lists"
     ],
     "operatorsFirst": true,

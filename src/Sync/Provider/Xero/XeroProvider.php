@@ -30,11 +30,11 @@ use RuntimeException;
 use UnexpectedValueException;
 
 /**
- * @method Invoice createInvoice(SyncContextInterface $ctx, Invoice $invoice)
- * @method Invoice getInvoice(SyncContextInterface $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Invoice> getInvoices(SyncContextInterface $ctx)
- * @method Client getClient(SyncContextInterface $ctx, int|string|null $id)
- * @method FluentIteratorInterface<array-key,Client> getClients(SyncContextInterface $ctx)
+ * @method Invoice createInvoice(Context $ctx, Invoice $invoice)
+ * @method Invoice getInvoice(Context $ctx, int|string|null $id)
+ * @method iterable<array-key,Invoice> getInvoices(Context $ctx)
+ * @method Client getClient(Context $ctx, int|string|null $id)
+ * @method iterable<array-key,Client> getClients(Context $ctx)
  */
 final class XeroProvider extends HttpSyncProvider implements
     SingletonInterface,
@@ -162,6 +162,11 @@ final class XeroProvider extends HttpSyncProvider implements
         return $curler->withPager($curler->getPager(), true);
     }
 
+    /**
+     * @inheritDoc
+     *
+     * @phpstan-ignore method.childReturnType
+     */
     protected function getHttpDefinition(string $entity): HttpDef
     {
         $defB = $this->builderFor($entity);
@@ -182,9 +187,7 @@ final class XeroProvider extends HttpSyncProvider implements
                 fn(HttpDef $def, $op, Context $ctx) =>
                     match ($op) {
                         OP::READ_LIST => $def->withQuery(
-                            $this->buildQuery(
-                                $ctx, self::ENTITY_QUERY_MAPS[$entity]
-                            )
+                            $this->buildQuery($ctx, self::ENTITY_QUERY_MAPS[$entity])
                         ),
 
                         default => $def,
@@ -411,15 +414,22 @@ final class XeroProvider extends HttpSyncProvider implements
         $where = [];
         foreach ($fieldMap as $filterField => $field) {
             $_filterField = $filterField;
-            $values = $ctx->claimFilterStringList($_filterField);
+            $values = $ctx->claimFilter($_filterField);
 
             if ($values === null) {
                 $_filterField = "!$filterField";
-                $values = $ctx->claimFilterStringList($_filterField);
+                $values = $ctx->claimFilter($_filterField);
 
                 if ($values === null) {
                     continue;
                 }
+            }
+
+            $values = Arr::wrap($values);
+            if (!Arr::ofString($values)) {
+                throw new UnexpectedValueException(
+                    sprintf('Invalid %s value', $filterField)
+                );
             }
 
             if ($_filterField === $filterField) {
@@ -475,8 +485,11 @@ final class XeroProvider extends HttpSyncProvider implements
         }
 
         // Add an "order" parameter if an "$orderby" filter is provided
-        $orderby = $ctx->claimFilterString('$orderby');
+        $orderby = $ctx->claimFilter('$orderby');
         if ($orderby !== null) {
+            if (!is_string($orderby)) {
+                throw new UnexpectedValueException('Invalid $orderby value');
+            }
             $parts = [];
             // Format: "<field_name>[ (ASC|DESC)][,...]"
             foreach (explode(',', $orderby) as $expr) {
@@ -539,8 +552,8 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function getOAuth2Client(): XeroOAuth2Client
     {
-        return $this->OAuth2Client
-            ??= $this
+        return $this->OAuth2Client ??=
+            $this
                 ->App
                 ->get(XeroOAuth2Client::class)
                 ->withDefaultScopes(self::OAUTH2_SCOPES)
@@ -555,8 +568,8 @@ final class XeroProvider extends HttpSyncProvider implements
 
     private function getTenantIdKey(): string
     {
-        return $this->TenantIdKey
-            ??= implode(':', [
+        return $this->TenantIdKey ??=
+            implode(':', [
                 static::class,
                 'tenant',
                 $this->getBaseUrl(),

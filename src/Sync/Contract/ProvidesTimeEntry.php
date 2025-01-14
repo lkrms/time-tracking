@@ -11,7 +11,7 @@ use Salient\Contract\Sync\SyncProviderInterface;
  *
  * @method TimeEntry getTimeEntry(SyncContextInterface $ctx, int|string|null $id)
  * @method TimeEntry updateTimeEntry(SyncContextInterface $ctx, TimeEntry $timeEntry)
- * @method iterable<TimeEntry> getTimeEntries(SyncContextInterface $ctx)
+ * @method iterable<array-key,TimeEntry> getTimeEntries(SyncContextInterface $ctx)
  *
  * @generated
  */

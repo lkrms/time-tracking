@@ -3,7 +3,7 @@
 namespace Lkrms\Time\Internal;
 
 use Lkrms\Time\Sync\TimeEntity\TimeEntry;
-use Salient\Collection\AbstractTypedCollection;
+use Salient\Collection\Collection;
 use Salient\Utility\Arr;
 use Salient\Utility\Env;
 use Salient\Utility\Get;
@@ -14,9 +14,9 @@ use LogicException;
  * @property-read float $BillableAmount
  * @property-read float $BillableHours
  *
- * @extends AbstractTypedCollection<array-key,TimeEntry>
+ * @extends Collection<array-key,TimeEntry>
  */
-final class TimeEntryCollection extends AbstractTypedCollection
+final class TimeEntryCollection extends Collection
 {
     /**
      * @param TimeEntry $a
@@ -88,14 +88,14 @@ final class TimeEntryCollection extends AbstractTypedCollection
             $groupTime[$groupBy] = $groupTime[$groupBy]->mergeWith($t);
         }
 
-        [$separator, $marker] = $markdown ? ["\n\n", '*'] : ["\n", null];
+        [$separator, $marker] = $markdown ? ["\n\n", '* '] : ["\n", null];
 
         $grouped = new self();
         foreach ($groupTime as $groupBy => $time) {
             $time->Description = Arr::implode($separator, [
                 $groupSummary[$groupBy],
                 $show & TimeEntry::DESCRIPTION
-                    ? $time->description($separator, $marker)
+                    ? $time->mergeDescription($separator, $marker)
                     : null,
             ]);
 

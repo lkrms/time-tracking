@@ -10,7 +10,7 @@ use Salient\Contract\Sync\SyncProviderInterface;
  * Syncs Tenant objects with a backend
  *
  * @method Tenant getTenant(SyncContextInterface $ctx, int|string|null $id)
- * @method iterable<Tenant> getTenants(SyncContextInterface $ctx)
+ * @method iterable<array-key,Tenant> getTenants(SyncContextInterface $ctx)
  *
  * @generated
  */

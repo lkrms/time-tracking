@@ -2,7 +2,6 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Salient\Contract\Core\Cardinality;
 use Salient\Sync\Support\DeferredEntity;
 use Salient\Sync\Support\DeferredRelationship;
 use Salient\Sync\AbstractSyncEntity;
@@ -39,8 +38,8 @@ class Project extends AbstractSyncEntity
     public static function getRelationships(): array
     {
         return [
-            'Tasks' => [Cardinality::ONE_TO_MANY => Task::class],
-            'Client' => [Cardinality::ONE_TO_ONE => Client::class],
+            'Tasks' => [self::ONE_TO_MANY => Task::class],
+            'Client' => [self::ONE_TO_ONE => Client::class],
         ];
     }
 }

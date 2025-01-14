@@ -2,7 +2,6 @@
 
 namespace Lkrms\Time\Sync\Entity;
 
-use Salient\Contract\Core\Cardinality;
 use Salient\Sync\Support\DeferredEntity;
 use Salient\Sync\Support\DeferredRelationship;
 use Salient\Sync\AbstractSyncEntity;
@@ -46,8 +45,8 @@ class Invoice extends AbstractSyncEntity
     public static function getRelationships(): array
     {
         return [
-            'Client' => [Cardinality::ONE_TO_ONE => Client::class],
-            'LineItems' => [Cardinality::ONE_TO_MANY => InvoiceLineItem::class],
+            'Client' => [self::ONE_TO_ONE => Client::class],
+            'LineItems' => [self::ONE_TO_MANY => InvoiceLineItem::class],
         ];
     }
 

@@ -11,12 +11,19 @@ final class ListTimeEntries extends AbstractCommand
 {
     public function getDescription(): string
     {
-        return 'Summarise time entries in ' . $this->TimeEntryProviderName;
+        return 'Summarise time entries';
     }
 
     protected function getOptionList(): iterable
     {
-        return $this->getTimeEntryOptions('List time entries', true, false, true, true, true);
+        return $this->getTimeEntryOptions(
+            'List time entries',
+            true,
+            false,
+            true,
+            true,
+            true,
+        );
     }
 
     protected function run(string ...$params)

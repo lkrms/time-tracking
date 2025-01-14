@@ -11,7 +11,7 @@ final class ListInvoices extends AbstractCommand
 {
     public function getDescription(): string
     {
-        return 'List invoices in ' . $this->InvoiceProviderName;
+        return "List invoices in {$this->InvoiceProviderName}";
     }
 
     protected function getOptionList(): iterable
@@ -30,10 +30,10 @@ final class ListInvoices extends AbstractCommand
         if ($prefix = Env::get('invoice_number_prefix', null)) {
             $query['number'] = "{$prefix}*";
         }
-        /** @var iterable<Invoice> */
         $invoices = $this->InvoiceProvider->with(Invoice::class)->getList($query);
 
         $count = 0;
+        /** @var Invoice $invoice */
         foreach ($invoices as $invoice) {
             printf(
                 "==> %s for \$%.2f\n  date: %s\n  client: %s\n\n",

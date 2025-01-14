@@ -39,7 +39,8 @@ final class GenerateInvoices extends AbstractCommand
                     ->short('u')
                     ->description('Do not mark time entries as invoiced')
                     ->bindTo($this->NoMarkInvoiced),
-            ]
+            ],
+            ['time', 'client', 'user'],
         );
     }
 
@@ -47,6 +48,11 @@ final class GenerateInvoices extends AbstractCommand
     {
         if (!$this->Force) {
             Env::setDryRun(true);
+        }
+
+        // Don't add client names to line items
+        if (!in_array('client', (array) $this->Hide, true)) {
+            $this->Hide[] = 'client';
         }
 
         Console::info("Retrieving unbilled time from {$this->TimeEntryProviderName}");
@@ -106,7 +112,6 @@ final class GenerateInvoices extends AbstractCommand
         if ($prefix !== null) {
             $next = Env::getInt('invoice_number_next', 1);
 
-            /** @var iterable<Invoice> $invoices */
             $invoices = $this
                 ->InvoiceProvider
                 ->with(Invoice::class)
@@ -117,6 +122,7 @@ final class GenerateInvoices extends AbstractCommand
                 ]);
 
             $seen = 0;
+            /** @var Invoice $invoice */
             foreach ($invoices as $invoice) {
                 if ($invoice->Number === null) {
                     throw new SyncInvalidEntityException(sprintf(
