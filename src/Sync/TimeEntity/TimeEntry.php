@@ -10,11 +10,12 @@ class TimeEntry extends BaseTimeEntry
 {
     public const DATE = 1;
     public const TIME = 2;
-    public const PROJECT = 4;
-    public const TASK = 8;
-    public const USER = 16;
-    public const DESCRIPTION = 32;
-    public const ALL = self::DATE | self::TIME | self::PROJECT | self::TASK | self::USER | self::DESCRIPTION;
+    public const CLIENT = 4;
+    public const PROJECT = 8;
+    public const TASK = 16;
+    public const USER = 32;
+    public const DESCRIPTION = 64;
+    public const ALL = self::DATE | self::TIME | self::CLIENT | self::PROJECT | self::TASK | self::USER | self::DESCRIPTION;
 
     /** @var TimeEntry[]|null */
     private ?array $Merged = null;
@@ -40,7 +41,7 @@ class TimeEntry extends BaseTimeEntry
      * groups are collapsed automatically.
      *
      * ```
-     * [<start_date> <start_time> - <end_time>] <project_name> - <task_name> (<user_name>)
+     * [<start_date> <start_time> - <end_time>] <client_name> - <project_name> - <task_name> (<user_name>)
      * <description>
      * ```
      *
@@ -55,6 +56,7 @@ class TimeEntry extends BaseTimeEntry
         $esc = $markdown ? '\\' : '';
         $tag = [
             $markdown ? ['### ', ''] : '',
+            self::CLIENT => $markdown ? '' : '',
             self::PROJECT => $markdown ? '**' : '',
             self::TASK => $markdown ? '' : '',
             self::USER => $markdown ? '*' : '',
@@ -64,10 +66,10 @@ class TimeEntry extends BaseTimeEntry
         $parts2 = [];
 
         // "[<date> <start> - <end>]" => $parts2
-        if (($show & self::DATE) && $this->Start) {
+        if ($show & self::DATE && $this->Start) {
             $parts1[] = $this->Start->format($dateFormat);
         }
-        if (($show & self::TIME) && $this->Start && $this->End) {
+        if ($show & self::TIME && $this->Start && $this->End) {
             $parts1[] = "{$this->Start->format($timeFormat)} - {$this->End->format($timeFormat)}";
         }
         if ($parts1) {
@@ -75,11 +77,14 @@ class TimeEntry extends BaseTimeEntry
             $parts1 = [];
         }
 
-        // "<project> - <task>" => $parts2
-        if (($show & self::PROJECT) && isset($this->Project->Name)) {
+        // "<client> - <project> - <task>" => $parts2
+        if ($show & self::CLIENT && isset($this->Project->Client->Name)) {
+            $parts1[] = $this->enclose($this->Project->Client->Name, $tag[self::CLIENT]);
+        }
+        if ($show & self::PROJECT && isset($this->Project->Name)) {
             $parts1[] = $this->enclose($this->Project->Name, $tag[self::PROJECT]);
         }
-        if (($show & self::TASK) && isset($this->Task->Name)) {
+        if ($show & self::TASK && isset($this->Task->Name)) {
             $parts1[] = $this->enclose($this->Task->Name, $tag[self::TASK]);
         }
         if ($parts1) {
@@ -88,29 +93,33 @@ class TimeEntry extends BaseTimeEntry
         }
 
         // "(<user>)" => $parts2
-        if (($show & self::USER) && isset($this->User->Name)) {
+        if ($show & self::USER && isset($this->User->Name)) {
             $parts2[] = $this->enclose("({$this->User->Name})", $tag[self::USER]);
         }
 
-        // "[<date> <start> - <end>] <project> - <task> (<user>)" => $parts1
+        // "[<date> <start> - <end>] <client> - <project> - <task> (<user>)" =>
+        // $parts1
         if ($parts2) {
             $parts1[] = $this->enclose(implode(' ', $parts2), $tag[0]);
         }
 
-        if (($show & self::DESCRIPTION) && ($this->Description)) {
+        if (
+            $show & self::DESCRIPTION
+            && Str::coalesce($this->Description, null) !== null
+        ) {
             $parts1[] = $this->Description;
         }
 
         return implode($markdown ? "\n\n" : "\n", $parts1);
     }
 
-    public function description(string $separator = "\n", ?string $marker = null): string
+    public function mergeDescription(string $separator = "\n", ?string $marker = null): string
     {
         return Str::mergeLists(
             (string) $this->Description,
             $separator,
             $marker,
-            '/^(?<indent>\h*[-*] )/',
+            null,
             true
         );
     }

@@ -8,6 +8,7 @@
         "bootstrap.php"
     ],
     "enable": [
+        "semi-strict-expressions",
         "strict-lists"
     ],
     "operatorsFirst": true,

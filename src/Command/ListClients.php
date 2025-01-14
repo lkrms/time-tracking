@@ -9,7 +9,7 @@ final class ListClients extends AbstractCommand
 {
     public function getDescription(): string
     {
-        return 'List clients in ' . $this->TimeEntryProviderName;
+        return "List clients in {$this->TimeEntryProviderName}";
     }
 
     protected function getOptionList(): iterable

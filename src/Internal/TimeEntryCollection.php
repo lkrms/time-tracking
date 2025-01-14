@@ -88,14 +88,14 @@ final class TimeEntryCollection extends Collection
             $groupTime[$groupBy] = $groupTime[$groupBy]->mergeWith($t);
         }
 
-        [$separator, $marker] = $markdown ? ["\n\n", '*'] : ["\n", null];
+        [$separator, $marker] = $markdown ? ["\n\n", '* '] : ["\n", null];
 
         $grouped = new self();
         foreach ($groupTime as $groupBy => $time) {
             $time->Description = Arr::implode($separator, [
                 $groupSummary[$groupBy],
                 $show & TimeEntry::DESCRIPTION
-                    ? $time->description($separator, $marker)
+                    ? $time->mergeDescription($separator, $marker)
                     : null,
             ]);
 

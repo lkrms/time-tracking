@@ -11,7 +11,7 @@ final class ListInvoices extends AbstractCommand
 {
     public function getDescription(): string
     {
-        return 'List invoices in ' . $this->InvoiceProviderName;
+        return "List invoices in {$this->InvoiceProviderName}";
     }
 
     protected function getOptionList(): iterable

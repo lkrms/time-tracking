@@ -39,7 +39,8 @@ final class GenerateInvoices extends AbstractCommand
                     ->short('u')
                     ->description('Do not mark time entries as invoiced')
                     ->bindTo($this->NoMarkInvoiced),
-            ]
+            ],
+            ['time', 'client', 'user'],
         );
     }
 
@@ -47,6 +48,11 @@ final class GenerateInvoices extends AbstractCommand
     {
         if (!$this->Force) {
             Env::setDryRun(true);
+        }
+
+        // Don't add client names to line items
+        if (!in_array('client', (array) $this->Hide, true)) {
+            $this->Hide[] = 'client';
         }
 
         Console::info("Retrieving unbilled time from {$this->TimeEntryProviderName}");
